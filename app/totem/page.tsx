@@ -106,6 +106,9 @@ export default function TotemPage() {
     Record<number, number[]>
   >({});
 
+  const [confirmingOrder, setConfirmingOrder] = useState(false);
+  const [orderMessage, setOrderMessage] = useState("");
+
   async function loadProducts() {
     try {
       setLoading(true);
@@ -140,7 +143,10 @@ export default function TotemPage() {
       const selectedIds = selectedOptionsByGroup[group.id] || [];
 
       selectedIds.forEach((optionId) => {
-        const option = group.template.options.find((item) => item.id === optionId);
+        const option = group.template.options.find(
+          (item) => item.id === optionId
+        );
+
         if (option) {
           total += option.price;
         }
@@ -166,6 +172,8 @@ export default function TotemPage() {
   }, [selectedProduct, selectedOptionsByGroup, activeModifierGroups]);
 
   function openProduct(product: Product) {
+    setOrderMessage("");
+
     const groups = getActiveModifierGroups(product);
 
     if (groups.length === 0) {
@@ -274,6 +282,50 @@ export default function TotemPage() {
 
   function clearCart() {
     setCart([]);
+    setOrderMessage("");
+  }
+
+  async function confirmOrder() {
+    if (cart.length === 0) return;
+
+    try {
+      setConfirmingOrder(true);
+      setOrderMessage("");
+
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          totemCode: "uwa-totem-local",
+          items: cart.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+            modifierOptionIds: item.modifiers.flatMap((group) =>
+              group.options.map((option) => option.id)
+            ),
+          })),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setOrderMessage(data.error || "No se pudo crear el pedido.");
+        return;
+      }
+
+      setCart([]);
+      setSelectedProduct(null);
+      setSelectedOptionsByGroup({});
+      setOrderMessage(`Pedido #${data.orderNumber} enviado a cocina.`);
+    } catch (error) {
+      console.error(error);
+      setOrderMessage("Error al confirmar pedido.");
+    } finally {
+      setConfirmingOrder(false);
+    }
   }
 
   const cartTotal = cart.reduce(
@@ -444,7 +496,9 @@ export default function TotemPage() {
                     <section
                       key={group.id}
                       className={`rounded-3xl border p-5 ${
-                        valid ? "border-zinc-200" : "border-yellow-300 bg-yellow-50"
+                        valid
+                          ? "border-zinc-200"
+                          : "border-yellow-300 bg-yellow-50"
                       }`}
                     >
                       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
@@ -552,6 +606,12 @@ export default function TotemPage() {
         <aside className="h-fit rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
           <h2 className="text-3xl font-black">Tu pedido</h2>
 
+          {orderMessage && (
+            <div className="mt-4 rounded-2xl bg-green-100 p-4 font-black text-green-700">
+              {orderMessage}
+            </div>
+          )}
+
           {cart.length === 0 ? (
             <p className="mt-4 text-zinc-500">
               Todavía no agregas productos.
@@ -593,7 +653,9 @@ export default function TotemPage() {
                             {group.options
                               .map((option) =>
                                 option.price > 0
-                                  ? `${option.name} (+${formatPrice(option.price)})`
+                                  ? `${option.name} (+${formatPrice(
+                                      option.price
+                                    )})`
                                   : option.name
                               )
                               .join(", ")}
@@ -616,14 +678,15 @@ export default function TotemPage() {
             </div>
 
             <button
-              disabled={cart.length === 0}
+              onClick={confirmOrder}
+              disabled={cart.length === 0 || confirmingOrder}
               className={`mt-5 w-full rounded-2xl py-4 text-lg font-black ${
-                cart.length > 0
+                cart.length > 0 && !confirmingOrder
                   ? "bg-[#10B557] text-white"
                   : "bg-zinc-200 text-zinc-500"
               }`}
             >
-              Confirmar pedido
+              {confirmingOrder ? "Enviando pedido..." : "Confirmar pedido"}
             </button>
 
             {cart.length > 0 && (
