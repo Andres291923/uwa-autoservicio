@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { FormEvent } from "react";
 
 type Category = {
   id: number;
@@ -42,6 +43,12 @@ export default function AdminPage() {
   const [productImageUrl, setProductImageUrl] = useState("");
   const [productOrder, setProductOrder] = useState("0");
   const [productCategoryId, setProductCategoryId] = useState("");
+  const [productActive, setProductActive] = useState(true);
+
+  const [editingProductId, setEditingProductId] = useState<number | null>(null);
+  const [updatingProductId, setUpdatingProductId] = useState<number | null>(
+    null
+  );
 
   const [loadingCategory, setLoadingCategory] = useState(false);
   const [loadingProduct, setLoadingProduct] = useState(false);
@@ -65,7 +72,32 @@ export default function AdminPage() {
     await Promise.all([loadCategories(), loadProducts()]);
   }
 
-  async function createCategory(event: React.FormEvent<HTMLFormElement>) {
+  function resetProductForm() {
+    setEditingProductId(null);
+    setProductName("");
+    setProductDescription("");
+    setProductPrice("");
+    setProductImageUrl("");
+    setProductOrder("0");
+    setProductCategoryId("");
+    setProductActive(true);
+    setProductMessage("");
+  }
+
+  function startEditProduct(product: Product) {
+    setEditingProductId(product.id);
+    setProductName(product.name);
+    setProductDescription(product.description || "");
+    setProductPrice(String(product.price));
+    setProductImageUrl(product.imageUrl || "");
+    setProductOrder(String(product.order));
+    setProductCategoryId(String(product.category.id));
+    setProductActive(product.active);
+    setProductMessage("Editando producto seleccionado.");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function createCategory(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     try {
@@ -102,48 +134,83 @@ export default function AdminPage() {
     }
   }
 
-  async function createProduct(event: React.FormEvent<HTMLFormElement>) {
+  async function saveProduct(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     try {
       setLoadingProduct(true);
       setProductMessage("");
 
+      const method = editingProductId ? "PUT" : "POST";
+
       const response = await fetch("/api/products", {
-        method: "POST",
+        method,
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          id: editingProductId,
           name: productName,
           description: productDescription,
           price: Number(productPrice),
           imageUrl: productImageUrl,
           order: Number(productOrder),
           categoryId: Number(productCategoryId),
+          active: productActive,
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        setProductMessage(data.error || "No se pudo crear el producto.");
+        setProductMessage(data.error || "No se pudo guardar el producto.");
         return;
       }
 
-      setProductName("");
-      setProductDescription("");
-      setProductPrice("");
-      setProductImageUrl("");
-      setProductOrder("0");
-      setProductCategoryId("");
-      setProductMessage("Producto creado correctamente.");
+      setProductMessage(
+        editingProductId
+          ? "Producto editado correctamente."
+          : "Producto creado correctamente."
+      );
+
+      resetProductForm();
       await loadProducts();
     } catch (error) {
       console.error(error);
-      setProductMessage("Error al crear producto.");
+      setProductMessage("Error al guardar producto.");
     } finally {
       setLoadingProduct(false);
+    }
+  }
+
+  async function toggleProductActive(product: Product) {
+    try {
+      setUpdatingProductId(product.id);
+
+      const response = await fetch("/api/products", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: product.id,
+          active: !product.active,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || "No se pudo actualizar el producto.");
+        return;
+      }
+
+      await loadProducts();
+    } catch (error) {
+      console.error(error);
+      alert("Error al actualizar el producto.");
+    } finally {
+      setUpdatingProductId(null);
     }
   }
 
@@ -242,10 +309,24 @@ export default function AdminPage() {
           </form>
 
           <form
-            onSubmit={createProduct}
+            onSubmit={saveProduct}
             className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm"
           >
-            <h2 className="text-xl font-black">Crear producto</h2>
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-xl font-black">
+                {editingProductId ? "Editar producto" : "Crear producto"}
+              </h2>
+
+              {editingProductId && (
+                <button
+                  type="button"
+                  onClick={resetProductForm}
+                  className="rounded-xl border border-zinc-300 px-4 py-2 text-xs font-black"
+                >
+                  Cancelar edición
+                </button>
+              )}
+            </div>
 
             <label className="mt-5 block">
               <span className="text-xs font-black uppercase text-zinc-500">
@@ -328,6 +409,17 @@ export default function AdminPage() {
               />
             </label>
 
+            {editingProductId && (
+              <label className="mt-4 flex items-center gap-3 rounded-xl border border-zinc-200 p-3">
+                <input
+                  type="checkbox"
+                  checked={productActive}
+                  onChange={(event) => setProductActive(event.target.checked)}
+                />
+                <span className="text-sm font-black">Producto activo</span>
+              </label>
+            )}
+
             {productMessage && (
               <p className="mt-4 rounded-xl bg-zinc-100 p-3 text-sm font-bold">
                 {productMessage}
@@ -338,7 +430,11 @@ export default function AdminPage() {
               disabled={loadingProduct}
               className="mt-5 w-full rounded-xl bg-[#10B557] py-3 text-sm font-black text-white disabled:bg-zinc-300"
             >
-              {loadingProduct ? "Guardando..." : "Guardar producto"}
+              {loadingProduct
+                ? "Guardando..."
+                : editingProductId
+                ? "Actualizar producto"
+                : "Guardar producto"}
             </button>
           </form>
         </section>
@@ -363,6 +459,7 @@ export default function AdminPage() {
                     <th className="p-3 font-black">Precio</th>
                     <th className="p-3 font-black">Orden</th>
                     <th className="p-3 font-black">Estado</th>
+                    <th className="p-3 font-black">Acciones</th>
                   </tr>
                 </thead>
 
@@ -370,15 +467,48 @@ export default function AdminPage() {
                   {products.map((product) => (
                     <tr key={product.id} className="border-t border-zinc-200">
                       <td className="p-3 font-bold">{product.name}</td>
+
                       <td className="p-3">{product.category.name}</td>
+
                       <td className="p-3 font-black text-[#10B557]">
                         {formatPrice(product.price)}
                       </td>
+
                       <td className="p-3">{product.order}</td>
+
                       <td className="p-3">
-                        <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-black text-green-700">
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-black ${
+                            product.active
+                              ? "bg-green-100 text-green-700"
+                              : "bg-red-100 text-red-700"
+                          }`}
+                        >
                           {product.active ? "Activo" : "Inactivo"}
                         </span>
+                      </td>
+
+                      <td className="flex gap-2 p-3">
+                        <button
+                          onClick={() => startEditProduct(product)}
+                          className="rounded-xl bg-zinc-900 px-4 py-2 text-xs font-black text-white"
+                        >
+                          Editar
+                        </button>
+
+                        <button
+                          onClick={() => toggleProductActive(product)}
+                          disabled={updatingProductId === product.id}
+                          className={`rounded-xl px-4 py-2 text-xs font-black text-white ${
+                            product.active ? "bg-red-500" : "bg-[#10B557]"
+                          } disabled:bg-zinc-300`}
+                        >
+                          {updatingProductId === product.id
+                            ? "Actualizando..."
+                            : product.active
+                            ? "Desactivar"
+                            : "Activar"}
+                        </button>
                       </td>
                     </tr>
                   ))}
