@@ -7,20 +7,26 @@ type IncomingOrderItem = {
   modifierOptionIds?: number[];
 };
 
-export async function GET() {
-  const orders = await prisma.order.findMany({
+const orderInclude = {
+  items: {
     include: {
-      items: {
+      product: true,
+      modifiers: {
         include: {
-          product: true,
-          modifiers: {
+          option: {
             include: {
-              option: true,
+              template: true,
             },
           },
         },
       },
     },
+  },
+};
+
+export async function GET() {
+  const orders = await prisma.order.findMany({
+    include: orderInclude,
     orderBy: {
       createdAt: "desc",
     },
@@ -56,7 +62,6 @@ export async function POST(request: Request) {
     const nextOrderNumber = lastOrder ? lastOrder.orderNumber + 1 : 1;
 
     let orderTotal = 0;
-
     const itemsToCreate = [];
 
     for (const item of items) {
@@ -74,9 +79,7 @@ export async function POST(request: Request) {
       }
 
       const product = await prisma.product.findUnique({
-        where: {
-          id: productId,
-        },
+        where: { id: productId },
       });
 
       if (!product || !product.active) {
@@ -132,18 +135,7 @@ export async function POST(request: Request) {
           create: itemsToCreate,
         },
       },
-      include: {
-        items: {
-          include: {
-            product: true,
-            modifiers: {
-              include: {
-                option: true,
-              },
-            },
-          },
-        },
-      },
+      include: orderInclude,
     });
 
     return NextResponse.json(order, { status: 201 });
@@ -152,6 +144,44 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       { error: "No se pudo crear el pedido." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+
+    const id = Number(body.id || 0);
+    const status = String(body.status || "").trim();
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "El ID del pedido es obligatorio." },
+        { status: 400 }
+      );
+    }
+
+    if (!["pending", "ready", "delivered", "cancelled"].includes(status)) {
+      return NextResponse.json(
+        { error: "Estado de pedido no válido." },
+        { status: 400 }
+      );
+    }
+
+    const order = await prisma.order.update({
+      where: { id },
+      data: { status },
+      include: orderInclude,
+    });
+
+    return NextResponse.json(order);
+  } catch (error) {
+    console.error(error);
+
+    return NextResponse.json(
+      { error: "No se pudo actualizar el pedido." },
       { status: 500 }
     );
   }
