@@ -1,11 +1,25 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+const productInclude = {
+  category: true,
+  modifierGroups: {
+    include: {
+      template: {
+        include: {
+          options: {
+            orderBy: [{ order: "asc" as const }, { createdAt: "desc" as const }],
+          },
+        },
+      },
+    },
+    orderBy: [{ order: "asc" as const }, { createdAt: "desc" as const }],
+  },
+};
+
 export async function GET() {
   const products = await prisma.product.findMany({
-    include: {
-      category: true,
-    },
+    include: productInclude,
     orderBy: [{ order: "asc" }, { createdAt: "desc" }],
   });
 
@@ -54,9 +68,7 @@ export async function POST(request: Request) {
         active: true,
         categoryId,
       },
-      include: {
-        category: true,
-      },
+      include: productInclude,
     });
 
     return NextResponse.json(product, { status: 201 });
@@ -112,9 +124,7 @@ export async function PUT(request: Request) {
     }
 
     const product = await prisma.product.update({
-      where: {
-        id,
-      },
+      where: { id },
       data: {
         name,
         description,
@@ -124,9 +134,7 @@ export async function PUT(request: Request) {
         active,
         categoryId,
       },
-      include: {
-        category: true,
-      },
+      include: productInclude,
     });
 
     return NextResponse.json(product);
@@ -155,15 +163,9 @@ export async function PATCH(request: Request) {
     }
 
     const product = await prisma.product.update({
-      where: {
-        id,
-      },
-      data: {
-        active,
-      },
-      include: {
-        category: true,
-      },
+      where: { id },
+      data: { active },
+      include: productInclude,
     });
 
     return NextResponse.json(product);

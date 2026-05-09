@@ -15,7 +15,7 @@ model Category {
   active    Boolean   @default(true)
   products  Product[]
   createdAt DateTime  @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime  @default(now()) @updatedAt
 }
 
 model Product {
@@ -30,30 +30,25 @@ model Product {
   categoryId  Int
   category    Category @relation(fields: [categoryId], references: [id])
 
-  modifierGroups ModifierGroup[]
+  modifierGroups ProductModifierGroup[]
   orderItems      OrderItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 }
 
-model ModifierGroup {
+model ModifierTemplate {
   id        Int      @id @default(autoincrement())
   name      String
-  min       Int      @default(0)
-  max       Int      @default(1)
-  required  Boolean  @default(false)
   order     Int      @default(0)
   active    Boolean  @default(true)
 
-  productId Int
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-
   options   ModifierOption[]
+  products  ProductModifierGroup[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
-  }
+}
 
 model ModifierOption {
   id        Int      @id @default(autoincrement())
@@ -63,13 +58,34 @@ model ModifierOption {
   active    Boolean  @default(true)
   order     Int      @default(0)
 
-  groupId   Int
-  group     ModifierGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  templateId Int
+  template   ModifierTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
 
   orderItemModifiers OrderItemModifier[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+}
+
+model ProductModifierGroup {
+  id        Int      @id @default(autoincrement())
+
+  productId Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  templateId Int
+  template   ModifierTemplate @relation(fields: [templateId], references: [id])
+
+  min       Int      @default(0)
+  max       Int      @default(1)
+  required  Boolean  @default(false)
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([productId, templateId])
 }
 
 model Order {
