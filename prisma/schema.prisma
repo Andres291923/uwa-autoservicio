@@ -133,3 +133,14 @@ model OrderItemModifier {
 
   createdAt DateTime @default(now())
 }
+model BusinessSettings {
+  id            Int      @id
+  businessName  String   @default("Mi negocio")
+  logoUrl       String?
+  primaryColor  String   @default("#10B557")
+  kioskSubtitle String   @default("Autoservicio")
+  kioskTitle    String   @default("Elige tus productos")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

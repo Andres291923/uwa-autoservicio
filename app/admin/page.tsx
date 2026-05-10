@@ -169,6 +169,37 @@ export default function AdminPage() {
     ]);
   }
 
+  async function uploadImage(file: File) {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch("/api/uploads/image", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      alert(data.error || "No se pudo subir la imagen.");
+      console.error("Error upload:", data);
+      return null;
+    }
+
+    if (!data.url) {
+      alert("La imagen subió, pero no llegó la URL.");
+      return null;
+    }
+
+    return data.url as string;
+  } catch (error) {
+    console.error("Error al subir imagen:", error);
+    alert("Error al subir imagen.");
+    return null;
+  }
+}
+
   function resetProductForm() {
     setEditingProductId(null);
     setProductName("");
@@ -719,17 +750,55 @@ export default function AdminPage() {
               </label>
             </div>
 
-            <label className="mt-4 block">
+            <div className="mt-4 block">
               <span className="text-xs font-black uppercase text-zinc-500">
-                URL imagen
+                Imagen del producto
               </span>
-              <input
-                value={productImageUrl}
-                onChange={(event) => setProductImageUrl(event.target.value)}
-                placeholder="URL de imagen"
-                className="mt-2 w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
-              />
-            </label>
+
+              <div className="mt-2 flex items-center gap-4">
+                <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl border border-zinc-200 bg-white">
+                  {productImageUrl ? (
+                    <img
+                      src={productImageUrl}
+                      alt="Producto"
+                      className="h-full w-full object-contain p-2"
+                    />
+                  ) : (
+                    <span className="text-xs font-black text-zinc-400">
+                      Sin foto
+                    </span>
+                  )}
+                </div>
+
+                <label className="cursor-pointer rounded-xl bg-zinc-900 px-5 py-3 text-sm font-black text-white">
+                  Subir imagen
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (event) => {
+                      const file = event.target.files?.[0];
+                      if (!file) return;
+
+                      const url = await uploadImage(file);
+                      if (!url) return;
+
+                      setProductImageUrl(url);
+                    }}
+                  />
+                </label>
+
+                {productImageUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setProductImageUrl("")}
+                    className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-black text-red-600"
+                  >
+                    Quitar
+                  </button>
+                )}
+              </div>
+            </div>
 
             {editingProductId && (
               <label className="mt-4 flex items-center gap-3 rounded-xl border border-zinc-200 p-3">
@@ -841,26 +910,6 @@ export default function AdminPage() {
                   <h3 className="text-lg font-black">
                     Importar modificador existente
                   </h3>
-
-                  <label className="mt-4 block">
-                    <span className="text-xs font-black uppercase text-zinc-500">
-                      Modificador global
-                    </span>
-                    <select
-                      value={importTemplateId}
-                      onChange={(event) =>
-                        setImportTemplateId(event.target.value)
-                      }
-                      className="mt-2 w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
-                    >
-                      <option value="">Seleccionar modificador</option>
-                      {modifierTemplates.map((template) => (
-                        <option key={template.id} value={template.id}>
-                          {template.name} ({template.options.length} opciones)
-                        </option>
-                      ))}
-                    </select>
-                  </label>
                 </div>
               ) : (
                 <div className="rounded-2xl bg-zinc-50 p-4">
@@ -957,23 +1006,65 @@ export default function AdminPage() {
                         </div>
 
                         <div className="mt-4 grid gap-4 md:grid-cols-[1fr_160px]">
-                          <label className="block">
+                          <div>
                             <span className="text-xs font-black uppercase text-zinc-500">
-                              URL imagen
+                              Imagen opción
                             </span>
-                            <input
-                              value={option.imageUrl}
-                              onChange={(event) =>
-                                updateModifierOption(
-                                  option.localId,
-                                  "imageUrl",
-                                  event.target.value
-                                )
-                              }
-                              placeholder="URL opcional"
-                              className="mt-2 w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
-                            />
-                          </label>
+
+                            <div className="mt-2 flex items-center gap-3">
+                              <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-white">
+                                {option.imageUrl ? (
+                                  <img
+                                    src={option.imageUrl}
+                                    alt={option.name || "Opción"}
+                                    className="h-full w-full object-contain p-1"
+                                  />
+                                ) : (
+                                  <span className="text-[10px] font-black text-zinc-400">
+                                    Sin foto
+                                  </span>
+                                )}
+                              </div>
+
+                              <label className="cursor-pointer rounded-xl bg-zinc-900 px-4 py-3 text-xs font-black text-white">
+                                Subir
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={async (event) => {
+                                    const file = event.target.files?.[0];
+                                    if (!file) return;
+
+                                    const url = await uploadImage(file);
+                                    if (!url) return;
+
+                                    updateModifierOption(
+                                      option.localId,
+                                      "imageUrl",
+                                      url
+                                    );
+                                  }}
+                                />
+                              </label>
+
+                              {option.imageUrl && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    updateModifierOption(
+                                      option.localId,
+                                      "imageUrl",
+                                      ""
+                                    )
+                                  }
+                                  className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-black text-red-600"
+                                >
+                                  Quitar
+                                </button>
+                              )}
+                            </div>
+                          </div>
 
                           <label className="mt-6 flex items-center gap-3 rounded-xl border border-zinc-200 bg-white p-3">
                             <input
