@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Category = {
   id: number;
@@ -527,35 +527,33 @@ export default function TotemPage() {
         <section className="p-5 pb-28">
           <div className="mx-auto max-w-5xl rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-start justify-between gap-4">
-  <div>
-    <button
-      onClick={closeProductBuilder}
-      className="mb-4 rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm font-black"
-    >
-      ← Volver
-    </button>
+              <div>
+                <button
+                  onClick={closeProductBuilder}
+                  className="mb-4 rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm font-black"
+                >
+                  ← Volver
+                </button>
 
-    <p
-      className="text-xs font-black uppercase tracking-[0.2em]"
-      style={{ color: settings.primaryColor }}
-    >
-      Producto seleccionado
-    </p>
+                <p
+                  className="text-xs font-black uppercase tracking-[0.2em]"
+                  style={{ color: settings.primaryColor }}
+                >
+                  Producto seleccionado
+                </p>
 
-    <h2 className="mt-2 text-3xl font-black">
-      {selectedProduct.name}
-    </h2>
+                <h2 className="mt-2 text-3xl font-black">
+                  {selectedProduct.name}
+                </h2>
 
-    <p
-      className="mt-2 text-2xl font-black"
-      style={{ color: settings.primaryColor }}
-    >
-      {formatPrice(selectedProduct.price)}
-    </p>
-  </div>
-</div>
-
-              
+                <p
+                  className="mt-2 text-2xl font-black"
+                  style={{ color: settings.primaryColor }}
+                >
+                  {formatPrice(selectedProduct.price)}
+                </p>
+              </div>
+            </div>
 
             <div className="space-y-4">
               {activeModifierGroups.map((group) => {
@@ -595,62 +593,106 @@ export default function TotemPage() {
                       )}
                     </div>
 
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                       {group.template.options.map((option) => {
                         const selected = selectedIds.includes(option.id);
 
                         return (
                           <button
                             key={option.id}
+                            type="button"
                             onClick={() => toggleOption(group, option.id)}
-                            className={`rounded-2xl border p-3 text-left transition ${
-                              selected
-                                ? "text-white"
-                                : "border-zinc-200 bg-white text-zinc-950"
-                            }`}
+                            className="relative rounded-2xl border bg-white p-3 text-left transition"
                             style={{
                               borderColor: selected
                                 ? settings.primaryColor
-                                : undefined,
-                              background: selected
-                                ? settings.primaryColor
-                                : undefined,
+                                : "#e4e4e7",
+                              boxShadow: selected
+                                ? `0 0 0 2px ${settings.primaryColor}22`
+                                : "0 1px 3px rgba(0,0,0,0.05)",
                             }}
                           >
                             <div className="flex items-center gap-3">
                               <div
-                                className={`flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl ${
-                                  selected ? "bg-white/20" : "bg-zinc-100"
-                                }`}
+                                style={{
+                                  width: "62px",
+                                  height: "62px",
+                                  minWidth: "62px",
+                                  maxWidth: "62px",
+                                  minHeight: "62px",
+                                  maxHeight: "62px",
+                                  overflow: "hidden",
+                                  borderRadius: "16px",
+                                  background: "#ffffff",
+                                  border: "1px solid #f1f1f1",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
                               >
                                 {option.imageUrl ? (
                                   <img
                                     src={option.imageUrl}
                                     alt={option.name}
-                                    className="h-full w-full object-cover"
+                                    style={{
+                                      maxWidth: "54px",
+                                      maxHeight: "54px",
+                                      width: "auto",
+                                      height: "auto",
+                                      objectFit: "contain",
+                                      objectPosition: "center",
+                                      display: "block",
+                                    }}
                                   />
                                 ) : (
-                                  <span className="text-2xl">+</span>
+                                  <span
+                                    style={{
+                                      fontSize: "22px",
+                                      fontWeight: 900,
+                                      color: "#a1a1aa",
+                                    }}
+                                  >
+                                    +
+                                  </span>
                                 )}
                               </div>
 
-                              <div>
-                                <p className="font-black">{option.name}</p>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-base font-black text-zinc-950">
+                                  {option.name}
+                                </p>
 
                                 {option.price > 0 && (
                                   <p
-                                    className={`mt-1 text-sm font-black ${
-                                      selected ? "text-white" : ""
-                                    }`}
-                                    style={{
-                                      color: selected
-                                        ? "white"
-                                        : settings.primaryColor,
-                                    }}
+                                    className="mt-1 text-sm font-black"
+                                    style={{ color: settings.primaryColor }}
                                   >
                                     + {formatPrice(option.price)}
                                   </p>
                                 )}
+                              </div>
+
+                              <div
+                                style={{
+                                  width: "24px",
+                                  height: "24px",
+                                  minWidth: "24px",
+                                  borderRadius: "999px",
+                                  border: selected
+                                    ? "none"
+                                    : "2px solid #d4d4d8",
+                                  background: selected
+                                    ? settings.primaryColor
+                                    : "#ffffff",
+                                  color: "#ffffff",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontSize: "14px",
+                                  fontWeight: 900,
+                                }}
+                              >
+                                {selected ? "✓" : ""}
                               </div>
                             </div>
                           </button>
@@ -956,69 +998,69 @@ export default function TotemPage() {
 
                   return (
                     <article
-  key={product.id}
-  className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm transition hover:shadow-md"
-  style={{
-    minHeight: "330px",
-    maxHeight: "330px",
-  }}
->
+                      key={product.id}
+                      className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm transition hover:shadow-md"
+                      style={{
+                        minHeight: "330px",
+                        maxHeight: "330px",
+                      }}
+                    >
                       <button
                         onClick={() => openProduct(product)}
                         className="block w-full text-left"
                       >
                         <div
-  style={{
-    width: "100%",
-    height: "150px",
-    minHeight: "150px",
-    maxHeight: "150px",
-    overflow: "hidden",
-    background: "#fFF",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  }}
->
-  {product.imageUrl ? (
-    <img
-      src={product.imageUrl}
-      alt={product.name}
-      style={{
-        width: "100%",
-        height: "100%",
-        objectFit: "contain",
-        objectPosition: "center",
-        display: "block",
-        padding: "10px",
-      }}
-    />
-  ) : (
-    <div
-      style={{
-        width: "100%",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "#a1a1aa",
-      }}
-    >
-      <div style={{ fontSize: "30px" }}>🛒</div>
-      <p
-        style={{
-          marginTop: "4px",
-          fontSize: "11px",
-          fontWeight: 900,
-          textTransform: "uppercase",
-        }}
-      >
-        Sin foto
-      </p>
-    </div>
-  )}
-</div>
+                          style={{
+                            width: "100%",
+                            height: "150px",
+                            minHeight: "150px",
+                            maxHeight: "150px",
+                            overflow: "hidden",
+                            background: "#fff",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          {product.imageUrl ? (
+                            <img
+                              src={product.imageUrl}
+                              alt={product.name}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "contain",
+                                objectPosition: "center",
+                                display: "block",
+                                padding: "10px",
+                              }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                color: "#a1a1aa",
+                              }}
+                            >
+                              <div style={{ fontSize: "30px" }}>🛒</div>
+                              <p
+                                style={{
+                                  marginTop: "4px",
+                                  fontSize: "11px",
+                                  fontWeight: 900,
+                                  textTransform: "uppercase",
+                                }}
+                              >
+                                Sin foto
+                              </p>
+                            </div>
+                          )}
+                        </div>
 
                         <div className="p-4">
                           <div
@@ -1052,7 +1094,7 @@ export default function TotemPage() {
 
                               {hasModifiers && (
                                 <p className="mt-1 text-[10px] font-black uppercase tracking-wide text-zinc-400">
-                                  Requiere selección
+                                  
                                 </p>
                               )}
                             </div>
@@ -1074,92 +1116,92 @@ export default function TotemPage() {
           </section>
 
           <footer
-  style={{
-    position: "fixed",
-    right: "26px",
-    bottom: "26px",
-    zIndex: 9999,
-  }}
->
-  <div
-    style={{
-      display: "flex",
-      alignItems: "stretch",
-      overflow: "hidden",
-      borderRadius: "28px",
-      border: "1px solid #e4e4e7",
-      background: "white",
-      boxShadow: "0 18px 45px rgba(0,0,0,0.16)",
-    }}
-  >
-    <div
-      style={{
-        padding: "18px 24px",
-        minWidth: "150px",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-      }}
-    >
-      <p
-        style={{
-          margin: 0,
-          fontSize: "13px",
-          fontWeight: 900,
-          textTransform: "uppercase",
-          letterSpacing: "0.18em",
-          color: "#a1a1aa",
-        }}
-      >
-        Total
-      </p>
+            style={{
+              position: "fixed",
+              right: "26px",
+              bottom: "26px",
+              zIndex: 9999,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "stretch",
+                overflow: "hidden",
+                borderRadius: "28px",
+                border: "1px solid #e4e4e7",
+                background: "white",
+                boxShadow: "0 18px 45px rgba(0,0,0,0.16)",
+              }}
+            >
+              <div
+                style={{
+                  padding: "18px 24px",
+                  minWidth: "150px",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                }}
+              >
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "13px",
+                    fontWeight: 900,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.18em",
+                    color: "#a1a1aa",
+                  }}
+                >
+                  Total
+                </p>
 
-      <p
-        style={{
-          margin: 0,
-          marginTop: "4px",
-          fontSize: "26px",
-          lineHeight: "28px",
-          fontWeight: 900,
-          color: settings.primaryColor,
-        }}
-      >
-        {formatPrice(cartTotal)}
-      </p>
+                <p
+                  style={{
+                    margin: 0,
+                    marginTop: "4px",
+                    fontSize: "26px",
+                    lineHeight: "28px",
+                    fontWeight: 900,
+                    color: settings.primaryColor,
+                  }}
+                >
+                  {formatPrice(cartTotal)}
+                </p>
 
-      {cartQuantity > 0 && (
-        <p
-          style={{
-            margin: 0,
-            marginTop: "6px",
-            fontSize: "14px",
-            fontWeight: 900,
-            color: "#8a8a93",
-          }}
-        >
-          {cartQuantity} producto{cartQuantity > 1 ? "s" : ""}
-        </p>
-      )}
-    </div>
+                {cartQuantity > 0 && (
+                  <p
+                    style={{
+                      margin: 0,
+                      marginTop: "6px",
+                      fontSize: "14px",
+                      fontWeight: 900,
+                      color: "#8a8a93",
+                    }}
+                  >
+                    {cartQuantity} producto{cartQuantity > 1 ? "s" : ""}
+                  </p>
+                )}
+              </div>
 
-    <button
-      onClick={goToSummary}
-      disabled={cart.length === 0}
-      style={{
-        minWidth: "210px",
-        border: "none",
-        background: cart.length > 0 ? settings.primaryColor : "#e4e4e7",
-        color: cart.length > 0 ? "white" : "#71717a",
-        fontSize: "24px",
-        fontWeight: 900,
-        padding: "0 28px",
-        cursor: cart.length > 0 ? "pointer" : "not-allowed",
-      }}
-    >
-      Siguiente →
-    </button>
-  </div>
-</footer>
+              <button
+                onClick={goToSummary}
+                disabled={cart.length === 0}
+                style={{
+                  minWidth: "210px",
+                  border: "none",
+                  background: cart.length > 0 ? settings.primaryColor : "#e4e4e7",
+                  color: cart.length > 0 ? "white" : "#71717a",
+                  fontSize: "24px",
+                  fontWeight: 900,
+                  padding: "0 28px",
+                  cursor: cart.length > 0 ? "pointer" : "not-allowed",
+                }}
+              >
+                Siguiente →
+              </button>
+            </div>
+          </footer>
         </section>
       )}
     </main>
