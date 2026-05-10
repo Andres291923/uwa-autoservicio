@@ -1,7 +1,7 @@
-"use client";
+﻿"use client";
 
-import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { usePathname } from "next/navigation";
 
 type MenuItem = {
   label: string;
@@ -15,41 +15,39 @@ const mainMenu: MenuItem[] = [
   {
     label: "Dashboard",
     href: "/admin",
-    icon: "⌂",
+    icon: "D",
   },
   {
     label: "Productos",
     href: "/admin",
-    icon: "□",
+    icon: "P",
   },
   {
-    label: "Configuración",
+    label: "Configuracion",
     href: "/admin/settings",
-    icon: "⚙",
+    icon: "C",
   },
   {
-  label: "Reportes",
-  href: "/admin/reports",
-  icon: "◷",
-},
-{
+    label: "Reportes",
+    href: "/admin/reports",
+    icon: "R",
+  },
+  {
     label: "Inventario",
     href: "/admin/inventory",
-    icon: "▣",
+    icon: "I",
     disabled: true,
     badge: "Pronto",
   },
   {
     label: "Clientes",
     href: "/admin/customers",
-    icon: "◎",
-    disabled: true,
-    badge: "Pronto",
+    icon: "CL",
   },
   {
     label: "Beneficios",
     href: "/admin/benefits",
-    icon: "★",
+    icon: "B",
     disabled: true,
     badge: "Pronto",
   },
@@ -57,14 +55,14 @@ const mainMenu: MenuItem[] = [
 
 const operationMenu: MenuItem[] = [
   {
-    label: "Ver tótem",
+    label: "Ver totem",
     href: "/totem",
-    icon: "▤",
+    icon: "T",
   },
   {
     label: "Ver cocina",
     href: "/cocina",
-    icon: "☰",
+    icon: "CO",
   },
 ];
 
@@ -80,7 +78,7 @@ function MenuLink({ item }: { item: MenuItem }) {
     return (
       <div className="flex cursor-not-allowed items-center justify-between rounded-2xl px-4 py-3 text-zinc-400">
         <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-100 text-sm font-black">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-100 text-xs font-black">
             {item.icon}
           </span>
 
@@ -107,7 +105,7 @@ function MenuLink({ item }: { item: MenuItem }) {
     >
       <div className="flex items-center gap-3">
         <span
-          className={`flex h-9 w-9 items-center justify-center rounded-xl text-sm font-black ${
+          className={`flex h-9 w-9 items-center justify-center rounded-xl text-xs font-black ${
             isActive ? "bg-white/20 text-white" : "bg-zinc-100 text-zinc-500"
           }`}
         >
@@ -117,7 +115,7 @@ function MenuLink({ item }: { item: MenuItem }) {
         <span className="text-sm font-black">{item.label}</span>
       </div>
 
-      {isActive && <span className="text-lg font-black">›</span>}
+      {isActive && <span className="text-lg font-black">{">"}</span>}
     </a>
   );
 }
@@ -140,8 +138,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <aside className="fixed left-0 top-0 z-50 flex h-screen w-[280px] flex-col border-r border-zinc-200 bg-white">
         <div className="border-b border-zinc-100 p-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#10B557] text-xl font-black text-white shadow-lg shadow-green-200">
-              Ü
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#10B557] text-lg font-black text-white shadow-lg shadow-green-200">
+              OS
             </div>
 
             <div>
@@ -155,14 +153,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           </div>
 
           <p className="mt-4 text-xs font-bold leading-relaxed text-zinc-500">
-            Sistema configurable para restaurante, cafetería, heladería o
-            cualquier negocio.
+            Sistema configurable para restaurante, cafeteria, heladeria o cualquier negocio.
           </p>
         </div>
 
         <nav className="flex-1 overflow-y-auto p-4">
           <p className="mb-3 px-4 text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">
-            Gestión
+            Gestion
           </p>
 
           <div className="space-y-2">
@@ -172,7 +169,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           </div>
 
           <p className="mb-3 mt-8 px-4 text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">
-            Operación
+            Operacion
           </p>
 
           <div className="space-y-2">
@@ -191,13 +188,15 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           </button>
 
           <p className="mt-4 text-center text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-400">
-            ÜWA Autoservicio
+            Autoservicio OS
           </p>
         </div>
       </aside>
 
       <main className="min-h-screen pl-[280px]">
-        <div className="mx-auto max-w-[1500px] px-8 py-8">{children}</div>
+        <div className="mx-auto max-w-[1500px] px-8 py-8">
+          {children}
+        </div>
       </main>
     </div>
   );
