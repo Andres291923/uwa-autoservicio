@@ -353,7 +353,7 @@ export default function CocinaPage() {
         </div>
 
         <a
-          href="/"
+          href="/admin"
           className="rounded-xl border border-zinc-300 bg-white px-5 py-3 font-bold"
         >
           Volver

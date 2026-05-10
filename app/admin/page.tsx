@@ -822,6 +822,53 @@ async function deleteGlobalOption(option: ModifierOption) {
     setLoadingGlobalModifier(false);
   }
 }
+async function toggleGlobalOptionActive(option: ModifierOption) {
+  try {
+    setLoadingGlobalModifier(true);
+    setGlobalModifierMessage("");
+
+    const response = await fetch("/api/modifier-options", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: option.id,
+        name: option.name,
+        price: option.price,
+        imageUrl: option.imageUrl || "",
+        order: option.order,
+        active: !option.active,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      setGlobalModifierMessage(
+        data.error || "No se pudo cambiar el estado de la opción."
+      );
+      return;
+    }
+
+    await loadModifierTemplates();
+
+    if (selectedProductForModifiers) {
+      await loadProductModifierGroups(selectedProductForModifiers.id);
+    }
+
+    setGlobalModifierMessage(
+      !option.active
+        ? `La opción "${option.name}" fue activada.`
+        : `La opción "${option.name}" fue desactivada.`
+    );
+  } catch (error) {
+    console.error(error);
+    setGlobalModifierMessage("Error al cambiar estado de la opción.");
+  } finally {
+    setLoadingGlobalModifier(false);
+  }
+}
   useEffect(() => {
     loadData();
   }, []);
@@ -837,12 +884,35 @@ async function deleteGlobalOption(option: ModifierOption) {
             <h1 className="mt-1 text-3xl font-black">Administración ÜWA</h1>
           </div>
 
-          <a
-            href="/"
-            className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-bold"
-          >
-            Volver
-          </a>
+          <div className="flex items-center gap-3">
+  <a
+    href="/admin/settings"
+    className="rounded-xl bg-[#10B557] px-4 py-2 text-sm font-black text-white shadow-sm"
+  >
+    Configuración
+  </a>
+
+  <a
+    href="/totem"
+    className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-bold"
+  >
+    Ver tótem
+  </a>
+
+  <a
+    href="/cocina"
+    className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-bold"
+  >
+    Ver cocina
+  </a>
+
+  <a
+    href="/"
+    className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-bold"
+  >
+    Volver
+  </a>
+</div>
         </header>
 
         <section className="mb-6 grid gap-4 md:grid-cols-3">
@@ -1854,21 +1924,29 @@ async function deleteGlobalOption(option: ModifierOption) {
                       </div>
 
                       <div className="mt-4 flex flex-wrap gap-2">
-                        {group.template.options.map((option) => (
-                          <span
-                            key={option.id}
-                            className={`rounded-full px-3 py-1 text-xs font-black ${
-                              option.active
-                                ? "bg-zinc-100 text-zinc-700"
-                                : "bg-red-100 text-red-700"
-                            }`}
-                          >
-                            {option.name}
-                            {option.price > 0 &&
-                              ` +${formatPrice(option.price)}`}
-                          </span>
-                        ))}
-                      </div>
+  {group.template.options.map((option) => (
+    <button
+      key={option.id}
+      type="button"
+      onClick={() => toggleGlobalOptionActive(option)}
+      disabled={loadingGlobalModifier}
+      className={`rounded-full px-3 py-2 text-xs font-black transition disabled:opacity-50 ${
+        option.active
+          ? "bg-green-100 text-green-700 hover:bg-green-200"
+          : "bg-red-100 text-red-700 hover:bg-red-200"
+      }`}
+      title={
+        option.active
+          ? "Click para desactivar esta opción"
+          : "Click para activar esta opción"
+      }
+    >
+      {option.name}
+      {option.price > 0 && ` +${formatPrice(option.price)}`}
+      {option.active ? " · Activo" : " · Inactivo"}
+    </button>
+  ))}
+</div>
 
                       <div className="mt-4 flex flex-wrap gap-2">
                         <button

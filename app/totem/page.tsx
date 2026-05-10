@@ -508,7 +508,7 @@ export default function TotemPage() {
             </button>
 
             <a
-              href="/"
+              href="/admin"
               className="rounded-2xl border border-zinc-200 bg-white px-5 py-4 text-sm font-black shadow-sm"
             >
               Volver
@@ -593,109 +593,113 @@ export default function TotemPage() {
                       )}
                     </div>
 
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                       {group.template.options.map((option) => {
                         const selected = selectedIds.includes(option.id);
 
                         return (
                           <button
-                            key={option.id}
-                            type="button"
-                            onClick={() => toggleOption(group, option.id)}
-                            className="relative rounded-2xl border bg-white p-3 text-left transition"
-                            style={{
-                              borderColor: selected
-                                ? settings.primaryColor
-                                : "#e4e4e7",
-                              boxShadow: selected
-                                ? `0 0 0 2px ${settings.primaryColor}22`
-                                : "0 1px 3px rgba(0,0,0,0.05)",
-                            }}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div
-                                style={{
-                                  width: "62px",
-                                  height: "62px",
-                                  minWidth: "62px",
-                                  maxWidth: "62px",
-                                  minHeight: "62px",
-                                  maxHeight: "62px",
-                                  overflow: "hidden",
-                                  borderRadius: "16px",
-                                  background: "#ffffff",
-                                  border: "1px solid #f1f1f1",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                }}
-                              >
-                                {option.imageUrl ? (
-                                  <img
-                                    src={option.imageUrl}
-                                    alt={option.name}
-                                    style={{
-                                      maxWidth: "54px",
-                                      maxHeight: "54px",
-                                      width: "auto",
-                                      height: "auto",
-                                      objectFit: "contain",
-                                      objectPosition: "center",
-                                      display: "block",
-                                    }}
-                                  />
-                                ) : (
-                                  <span
-                                    style={{
-                                      fontSize: "22px",
-                                      fontWeight: 900,
-                                      color: "#a1a1aa",
-                                    }}
-                                  >
-                                    +
-                                  </span>
-                                )}
-                              </div>
+  key={option.id}
+  type="button"
+  onClick={() => toggleOption(group, option.id)}
+  className="relative rounded-2xl border bg-white p-3 text-center transition"
+  style={{
+    minHeight: "150px",
+    borderColor: selected ? settings.primaryColor : "#e4e4e7",
+    boxShadow: selected
+      ? `0 0 0 2px ${settings.primaryColor}22`
+      : "0 1px 3px rgba(0,0,0,0.05)",
+  }}
+>
+  <div className="flex h-full flex-col items-center justify-start gap-2">
+    <div
+  style={{
+    width: "86px",
+    height: "72px",
+    minWidth: "86px",
+    maxWidth: "86px",
+    minHeight: "72px",
+    maxHeight: "72px",
+    overflow: "hidden",
+    borderRadius: "0",
+    background: "transparent",
+    border: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  }}
+>
+      {option.imageUrl ? (
+        <img
+          src={option.imageUrl}
+          alt={option.name}
+          style={{
+            maxWidth: "86px",
+            maxHeight: "72px",
+            width: "auto",
+            height: "auto",
+            objectFit: "contain",
+            objectPosition: "center",
+            display: "block",
+          }}
+        />
+      ) : (
+        <span
+          style={{
+            fontSize: "24px",
+            fontWeight: 900,
+            color: "#a1a1aa",
+          }}
+        >
+          +
+        </span>
+      )}
+    </div>
 
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate text-base font-black text-zinc-950">
-                                  {option.name}
-                                </p>
+    <p
+      className="text-sm font-black text-zinc-950"
+      style={{
+        width: "100%",
+        lineHeight: "17px",
+        whiteSpace: "normal",
+        overflow: "visible",
+        wordBreak: "break-word",
+      }}
+    >
+      {option.name}
+    </p>
 
-                                {option.price > 0 && (
-                                  <p
-                                    className="mt-1 text-sm font-black"
-                                    style={{ color: settings.primaryColor }}
-                                  >
-                                    + {formatPrice(option.price)}
-                                  </p>
-                                )}
-                              </div>
+    {option.price > 0 && (
+      <p
+        className="text-xs font-black"
+        style={{ color: settings.primaryColor }}
+      >
+        + {formatPrice(option.price)}
+      </p>
+    )}
+  </div>
 
-                              <div
-                                style={{
-                                  width: "24px",
-                                  height: "24px",
-                                  minWidth: "24px",
-                                  borderRadius: "999px",
-                                  border: selected
-                                    ? "none"
-                                    : "2px solid #d4d4d8",
-                                  background: selected
-                                    ? settings.primaryColor
-                                    : "#ffffff",
-                                  color: "#ffffff",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  fontSize: "14px",
-                                  fontWeight: 900,
-                                }}
-                              >
-                                {selected ? "✓" : ""}
-                              </div>
-                            </div>
-                          </button>
+  <div
+    style={{
+      position: "absolute",
+      top: "12px",
+      right: "12px",
+      width: "26px",
+      height: "26px",
+      borderRadius: "999px",
+      border: selected ? "none" : "2px solid #d4d4d8",
+      background: selected ? settings.primaryColor : "#ffffff",
+      color: "#ffffff",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: "14px",
+      fontWeight: 900,
+    }}
+  >
+    {selected ? "✓" : ""}
+  </div>
+</button>
                         );
                       })}
                     </div>
@@ -998,17 +1002,17 @@ export default function TotemPage() {
 
                   return (
                     <article
-                      key={product.id}
-                      className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm transition hover:shadow-md"
-                      style={{
-                        minHeight: "330px",
-                        maxHeight: "330px",
-                      }}
-                    >
-                      <button
-                        onClick={() => openProduct(product)}
-                        className="block w-full text-left"
-                      >
+  key={product.id}
+  className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm transition hover:shadow-md"
+  style={{
+    height: "380px",
+  }}
+>
+  <button
+    onClick={() => openProduct(product)}
+    className="flex h-full w-full flex-col text-left"
+  >
+                      
                         <div
                           style={{
                             width: "100%",
@@ -1062,7 +1066,7 @@ export default function TotemPage() {
                           )}
                         </div>
 
-                        <div className="p-4">
+                        <div className="flex flex-1 flex-col p-4">
                           <div
                             className="mb-2 inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase"
                             style={{
@@ -1083,7 +1087,7 @@ export default function TotemPage() {
                             </p>
                           )}
 
-                          <div className="mt-4 flex items-end justify-between gap-3">
+                          <div className="mt-auto flex items-end justify-between gap-3 pt-4">
                             <div>
                               <p
                                 className="text-[28px] font-black leading-none"
