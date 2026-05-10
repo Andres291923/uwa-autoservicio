@@ -34,6 +34,9 @@ type Order = {
   status: string;
   total: number;
   customerName: string | null;
+    orderSource?: string;
+  fulfillmentType?: string;
+  scheduledFor?: string | null;
   totemCode: string | null;
   createdAt: string;
   items: OrderItem[];
@@ -45,6 +48,36 @@ function formatPrice(price: number) {
     currency: "CLP",
     maximumFractionDigits: 0,
   }).format(price);
+  function isOnlineOrder(order: Order) {
+  return order.orderSource === "online" || order.totemCode === "online";
+}
+
+
+function getOrderSourceLabel(order: Order) {
+  return isOnlineOrder(order) ? "PEDIDO ONLINE" : "PEDIDO TÓTEM";
+}
+
+function getFulfillmentLabel(order: Order) {
+  if (!isOnlineOrder(order)) return "";
+
+  if (order.fulfillmentType === "scheduled") {
+    return "PROGRAMADO";
+  }
+
+  return "RETIRO AHORA";
+}
+
+function formatScheduledFor(value?: string | null) {
+  if (!value) return "";
+
+  return new Date(value).toLocaleString("es-CL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 }
 
 function formatTime(date: string) {
@@ -53,7 +86,35 @@ function formatTime(date: string) {
     minute: "2-digit",
   });
 }
+function isOnlineOrder(order: Order) {
+  return order.orderSource === "online" || order.totemCode === "online";
+}
 
+function getOrderSourceLabel(order: Order) {
+  return isOnlineOrder(order) ? "PEDIDO ONLINE" : "PEDIDO TOTEM";
+}
+
+function getFulfillmentLabel(order: Order) {
+  if (!isOnlineOrder(order)) return "";
+
+  if (order.fulfillmentType === "scheduled") {
+    return "PROGRAMADO";
+  }
+
+  return "RETIRO AHORA";
+}
+
+function formatScheduledFor(value?: string | null) {
+  if (!value) return "";
+
+  return new Date(value).toLocaleString("es-CL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 function formatDate(date: string) {
   return new Date(date).toLocaleDateString("es-CL", {
     day: "2-digit",
@@ -283,6 +344,7 @@ export default function CocinaPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
+  const [orderSearch, setOrderSearch] = useState("");
 
   async function loadOrders() {
     try {
@@ -340,7 +402,24 @@ export default function CocinaPage() {
   }, []);
 
   const pendingOrders = orders.filter((order) => order.status === "pending");
-  const readyOrders = orders.filter((order) => order.status === "ready");
+const readyOrders = orders.filter((order) => order.status === "ready");
+
+const cleanOrderSearch = orderSearch.replace(/\D/g, "");
+
+function orderMatchesSearch(order: Order) {
+  if (!cleanOrderSearch) return true;
+
+  const rawOrderNumber = String(order.orderNumber);
+  const paddedOrderNumber = String(order.orderNumber).padStart(3, "0");
+
+  return (
+    rawOrderNumber.includes(cleanOrderSearch) ||
+    paddedOrderNumber.includes(cleanOrderSearch)
+  );
+}
+
+const filteredPendingOrders = pendingOrders.filter(orderMatchesSearch);
+const filteredReadyOrders = readyOrders.filter(orderMatchesSearch);
 
   return (
     <main className="min-h-screen bg-zinc-100 p-6 text-zinc-900">
@@ -397,6 +476,35 @@ export default function CocinaPage() {
       ) : (
         <div className="grid gap-6">
           <section>
+            <section className="mb-6 rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm">
+  <div className="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h2 className="text-xl font-black">Buscar pedido</h2>
+      <p className="text-sm font-bold text-zinc-500">
+        Busca por numero de orden. Ej: 8, 008, 10 o 010.
+      </p>
+    </div>
+
+    <div className="flex w-full max-w-md items-center gap-3">
+      <input
+        value={orderSearch}
+        onChange={(event) => setOrderSearch(event.target.value)}
+        placeholder="Buscar pedido #..."
+        className="w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-lg font-black outline-none focus:border-[#10B557]"
+      />
+
+      {orderSearch && (
+        <button
+          type="button"
+          onClick={() => setOrderSearch("")}
+          className="rounded-2xl bg-zinc-900 px-4 py-3 text-sm font-black text-white"
+        >
+          Limpiar
+        </button>
+      )}
+    </div>
+  </div>
+</section>
             <h2 className="mb-4 text-2xl font-black">Pendientes</h2>
 
             {pendingOrders.length === 0 ? (
@@ -406,26 +514,53 @@ export default function CocinaPage() {
                 </p>
               </div>
             ) : (
-              <div className="grid gap-5 xl:grid-cols-2">
-                {pendingOrders.map((order) => (
+              <div className="grid gap-2 xl:grid-cols-4">
+                {filteredPendingOrders.map((order) => (
                   <article
                     key={order.id}
                     className="rounded-3xl border-2 border-[#10B557] bg-white p-6 shadow-sm"
                   >
-                    <div className="mb-5 flex items-start justify-between gap-4">
-                      <div>
-                        <h3 className="text-4xl font-black">
-                          Pedido #{String(order.orderNumber).padStart(3, "0")}
-                        </h3>
-                        <p className="mt-1 text-sm font-bold text-zinc-500">
-                          Hora: {formatTime(order.createdAt)}
-                        </p>
-                      </div>
+      <div className="mb-5 flex items-start justify-between gap-4">
+  <div>
+    <h3 className="text-3xl font-black">
+      Pedido #{String(order.orderNumber).padStart(3, "0")}
+    </h3>
 
-                      <span className="rounded-full bg-yellow-100 px-4 py-2 text-sm font-black text-yellow-700">
-                        Pendiente
-                      </span>
-                    </div>
+    <p className="mt-1 text-sm font-bold text-zinc-500">
+      Hora: {formatTime(order.createdAt)}
+    </p>
+    <p className="mt-1 text-sm font-black text-zinc-700">
+  Cliente: {order.customerName || "Sin nombre"}
+</p>
+    <div className="mt-3 flex flex-wrap gap-2">
+      <span
+        className={`rounded-full px-4 py-2 text-xs font-black uppercase ${
+          isOnlineOrder(order)
+            ? "bg-blue-100 text-blue-700"
+            : "bg-green-100 text-green-700"
+        }`}
+      >
+        {getOrderSourceLabel(order)}
+      </span>
+
+      {isOnlineOrder(order) && (
+        <span className="rounded-full bg-purple-100 px-4 py-2 text-xs font-black uppercase text-purple-700">
+          {getFulfillmentLabel(order)}
+        </span>
+      )}
+
+      {isOnlineOrder(order) && order.fulfillmentType === "scheduled" && (
+        <span className="rounded-full bg-yellow-100 px-4 py-2 text-xs font-black uppercase text-yellow-700">
+          {formatScheduledFor(order.scheduledFor)}
+        </span>
+      )}
+    </div>
+  </div>
+
+  <span className="rounded-full bg-yellow-100 px-4 py-2 text-sm font-black">
+    Pendiente
+  </span>
+</div>
 
                     <div className="space-y-5">
                       {order.items.map((item) => {
@@ -436,7 +571,7 @@ export default function CocinaPage() {
                             key={item.id}
                             className="rounded-2xl bg-zinc-50 p-4"
                           >
-                            <h4 className="text-2xl font-black">
+                            <h4 className="text-xl font-black">
                               {item.quantity}x {item.product.name}
                             </h4>
 
@@ -502,7 +637,7 @@ export default function CocinaPage() {
               </div>
             ) : (
               <div className="grid gap-4 xl:grid-cols-2">
-                {readyOrders.map((order) => (
+                {filteredReadyOrders.map((order) => (
                   <article
                     key={order.id}
                     className="rounded-3xl bg-white p-5 opacity-80 shadow-sm"
@@ -515,6 +650,9 @@ export default function CocinaPage() {
                         <p className="mt-1 text-sm font-bold text-zinc-500">
                           Hora: {formatTime(order.createdAt)}
                         </p>
+                        <p className="mt-1 text-sm font-black text-zinc-700">
+  Cliente: {order.customerName || "Sin nombre"}
+</p>
                       </div>
 
                       <span className="rounded-full bg-green-100 px-4 py-2 text-sm font-black text-green-700">

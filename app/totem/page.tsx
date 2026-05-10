@@ -532,13 +532,6 @@ if (!selectedPaymentMethod) {
                 Identifícate
               </p>
             </button>
-
-            <a
-              href="/admin"
-              className="rounded-2xl border border-zinc-200 bg-white px-5 py-4 text-sm font-black shadow-sm"
-            >
-              Volver
-            </a>
           </div>
         </div>
       </header>
@@ -1274,15 +1267,6 @@ if (!selectedPaymentMethod) {
                         </div>
 
                         <div className="flex flex-1 flex-col p-4">
-                          <div
-                            className="mb-2 inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase"
-                            style={{
-                              background: `${settings.primaryColor}20`,
-                              color: settings.primaryColor,
-                            }}
-                          >
-                            {product.category.name}
-                          </div>
 
                           <h2 className="min-h-[48px] text-[20px] font-black leading-tight">
                             {product.name}
