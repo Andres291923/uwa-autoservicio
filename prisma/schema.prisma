@@ -95,6 +95,7 @@ model Order {
   total        Int      @default(0)
   customerName String?
   totemCode    String?
+  paymentMethod String @default("unknown")
 
   items        OrderItem[]
 

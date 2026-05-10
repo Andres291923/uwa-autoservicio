@@ -28,11 +28,13 @@ const mainMenu: MenuItem[] = [
     icon: "⚙",
   },
   {
-  label: "Reportes",
-  href: "/admin/reports",
-  icon: "◷",
-},
-{
+    label: "Reportes",
+    href: "/admin/reports",
+    icon: "◷",
+    disabled: true,
+    badge: "Pronto",
+  },
+  {
     label: "Inventario",
     href: "/admin/inventory",
     icon: "▣",

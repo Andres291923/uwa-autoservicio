@@ -69,7 +69,9 @@ type CartItem = {
   total: number;
 };
 
-type TotemStep = "catalog" | "summary" | "customer";
+type TotemStep = "catalog" | "summary" | "customer" | "payment";
+
+type PaymentMethod = "debit_credit" | "food_benefit";
 
 type BusinessSettings = {
   id: number;
@@ -138,6 +140,8 @@ export default function TotemPage() {
   const [confirmingOrder, setConfirmingOrder] = useState(false);
   const [orderMessage, setOrderMessage] = useState("");
   const [customerMessage, setCustomerMessage] = useState("");
+  const [selectedPaymentMethod, setSelectedPaymentMethod] =
+  useState<PaymentMethod | null>(null);
 
   const loggedCustomerName = "";
 
@@ -355,11 +359,12 @@ export default function TotemPage() {
   }
 
   function clearCart() {
-    setCart([]);
-    setOrderMessage("");
-    setCustomerMessage("");
-    setStep("catalog");
-  }
+  setCart([]);
+  setOrderMessage("");
+  setCustomerMessage("");
+  setSelectedPaymentMethod(null);
+  setStep("catalog");
+}
 
   function goToSummary() {
     if (cart.length === 0) return;
@@ -376,7 +381,21 @@ export default function TotemPage() {
     setCustomerMessage("");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
+function goToPaymentStep() {
+  if (cart.length === 0) return;
 
+  const finalCustomerName = (loggedCustomerName || customerName).trim();
+
+  if (!finalCustomerName) {
+    setCustomerMessage("Debes ingresar el nombre del cliente.");
+    return;
+  }
+
+  setSelectedPaymentMethod(null);
+  setCustomerMessage("");
+  setStep("payment");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
   async function confirmOrder() {
     if (cart.length === 0) return;
 
@@ -386,7 +405,10 @@ export default function TotemPage() {
       setCustomerMessage("Debes ingresar el nombre del cliente.");
       return;
     }
-
+if (!selectedPaymentMethod) {
+  setCustomerMessage("Debes seleccionar un medio de pago.");
+  return;
+}
     try {
       setConfirmingOrder(true);
       setOrderMessage("");
@@ -398,9 +420,10 @@ export default function TotemPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          customerName: finalCustomerName,
-          totemCode: "totem-local",
-          items: cart.map((item) => ({
+  customerName: finalCustomerName,
+  totemCode: "totem-local",
+  paymentMethod: selectedPaymentMethod,
+  items: cart.map((item) => ({
             productId: item.productId,
             quantity: item.quantity,
             modifierOptionIds: item.modifiers.flatMap((group) =>
@@ -421,6 +444,7 @@ export default function TotemPage() {
       setSelectedProduct(null);
       setSelectedOptionsByGroup({});
       setCustomerName("");
+      setSelectedPaymentMethod(null);
       setStep("catalog");
       setOrderMessage(`Pedido #${data.orderNumber} enviado a cocina.`);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -487,12 +511,14 @@ export default function TotemPage() {
 
               <h1 className="truncate text-[30px] font-black leading-none tracking-tight">
                 {selectedProduct
-                  ? "Personaliza tu producto"
-                  : step === "summary"
-                  ? "Resumen de compra"
-                  : step === "customer"
-                  ? "Datos del pedido"
-                  : settings.kioskTitle}
+  ? "Personaliza tu producto"
+  : step === "summary"
+  ? "Resumen de compra"
+  : step === "customer"
+  ? "Datos del pedido"
+  : step === "payment"
+  ? "Medio de pago"
+  : settings.kioskTitle}
               </h1>
             </div>
           </div>
@@ -896,28 +922,209 @@ export default function TotemPage() {
             </div>
 
             <button
-              onClick={confirmOrder}
-              disabled={
-                cart.length === 0 ||
-                confirmingOrder ||
-                (!loggedCustomerName && !customerName.trim())
-              }
-              className="mt-5 w-full rounded-2xl py-5 text-xl font-black text-white disabled:bg-zinc-200 disabled:text-zinc-500"
-              style={{
-                background:
-                  cart.length > 0 &&
-                  !confirmingOrder &&
-                  (loggedCustomerName || customerName.trim())
-                    ? settings.primaryColor
-                    : undefined,
-              }}
-            >
-              {confirmingOrder ? "Enviando pedido..." : "Confirmar pedido"}
-            </button>
+  onClick={goToPaymentStep}
+  disabled={cart.length === 0 || (!loggedCustomerName && !customerName.trim())}
+  className="mt-5 w-full rounded-2xl py-5 text-xl font-black text-white disabled:bg-zinc-200 disabled:text-zinc-500"
+  style={{
+    background:
+      cart.length > 0 && (loggedCustomerName || customerName.trim())
+        ? settings.primaryColor
+        : undefined,
+  }}
+>
+  Continuar al pago
+</button>
 
             <button
               onClick={clearCart}
               className="mt-3 w-full rounded-2xl border border-zinc-200 bg-white py-4 text-sm font-black"
+            >
+              Cancelar pedido
+            </button>
+                    </div>
+        </section>
+      ) : step === "payment" ? (
+        <section className="p-5 pb-28">
+          <div className="mx-auto max-w-2xl rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <h2 className="text-3xl font-black">Elige medio de pago</h2>
+                <p className="mt-1 text-sm font-bold text-zinc-500">
+                  Selecciona cómo pagará el cliente.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setStep("customer")}
+                className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm font-black"
+              >
+                Volver
+              </button>
+            </div>
+
+            <div className="rounded-3xl bg-zinc-50 p-5">
+              <p className="text-xs font-black uppercase tracking-[0.15em] text-zinc-400">
+                Cliente
+              </p>
+
+              <p className="mt-1 text-2xl font-black">
+                {loggedCustomerName || customerName}
+              </p>
+            </div>
+
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setSelectedPaymentMethod("debit_credit")}
+                className="rounded-3xl border p-6 text-left transition"
+                style={{
+                  borderColor:
+                    selectedPaymentMethod === "debit_credit"
+                      ? settings.primaryColor
+                      : "#e4e4e7",
+                  background:
+                    selectedPaymentMethod === "debit_credit"
+                      ? `${settings.primaryColor}12`
+                      : "#ffffff",
+                  boxShadow:
+                    selectedPaymentMethod === "debit_credit"
+                      ? `0 0 0 2px ${settings.primaryColor}22`
+                      : "0 1px 3px rgba(0,0,0,0.05)",
+                }}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div
+                      className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl text-2xl font-black text-white"
+                      style={{ background: settings.primaryColor }}
+                    >
+                      💳
+                    </div>
+
+                    <h3 className="text-2xl font-black">Débito / Crédito</h3>
+
+                    <p className="mt-2 text-sm font-bold text-zinc-500">
+                      Pago con tarjeta bancaria en terminal.
+                    </p>
+                  </div>
+
+                  <div
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-black"
+                    style={{
+                      background:
+                        selectedPaymentMethod === "debit_credit"
+                          ? settings.primaryColor
+                          : "#ffffff",
+                      border:
+                        selectedPaymentMethod === "debit_credit"
+                          ? "none"
+                          : "2px solid #d4d4d8",
+                      color: "#ffffff",
+                    }}
+                  >
+                    {selectedPaymentMethod === "debit_credit" ? "✓" : ""}
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedPaymentMethod("food_benefit")}
+                className="rounded-3xl border p-6 text-left transition"
+                style={{
+                  borderColor:
+                    selectedPaymentMethod === "food_benefit"
+                      ? settings.primaryColor
+                      : "#e4e4e7",
+                  background:
+                    selectedPaymentMethod === "food_benefit"
+                      ? `${settings.primaryColor}12`
+                      : "#ffffff",
+                  boxShadow:
+                    selectedPaymentMethod === "food_benefit"
+                      ? `0 0 0 2px ${settings.primaryColor}22`
+                      : "0 1px 3px rgba(0,0,0,0.05)",
+                }}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div
+                      className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl text-2xl font-black text-white"
+                      style={{ background: settings.primaryColor }}
+                    >
+                      🍽️
+                    </div>
+
+                    <h3 className="text-2xl font-black">
+                      Beneficio alimentación
+                    </h3>
+
+                    <p className="mt-2 text-sm font-bold text-zinc-500">
+                      Edenred, Pluxee
+                    </p>
+                  </div>
+
+                  <div
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-black"
+                    style={{
+                      background:
+                        selectedPaymentMethod === "food_benefit"
+                          ? settings.primaryColor
+                          : "#ffffff",
+                      border:
+                        selectedPaymentMethod === "food_benefit"
+                          ? "none"
+                          : "2px solid #d4d4d8",
+                      color: "#ffffff",
+                    }}
+                  >
+                    {selectedPaymentMethod === "food_benefit" ? "✓" : ""}
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            {customerMessage && (
+              <p className="mt-5 rounded-2xl bg-red-50 p-4 font-black text-red-600">
+                {customerMessage}
+              </p>
+            )}
+
+            <div className="mt-6 flex items-center justify-between rounded-3xl bg-zinc-100 p-5">
+              <p className="text-2xl font-black">Total</p>
+
+              <p
+                className="text-4xl font-black"
+                style={{ color: settings.primaryColor }}
+              >
+                {formatPrice(cartTotal)}
+              </p>
+            </div>
+
+            <button
+              onClick={confirmOrder}
+              disabled={!selectedPaymentMethod || confirmingOrder}
+              className="mt-5 w-full rounded-2xl py-5 text-xl font-black text-white disabled:bg-zinc-200 disabled:text-zinc-500"
+              style={{
+                background:
+                  selectedPaymentMethod && !confirmingOrder
+                    ? settings.primaryColor
+                    : undefined,
+              }}
+            >
+              {confirmingOrder
+                ? "Confirmando pago..."
+                : "Confirmar pago y enviar a cocina"}
+            </button>
+
+            <p className="mt-3 text-center text-xs font-bold text-zinc-400">
+              Modo prueba: este botón simula pago aprobado. Más adelante se
+              conectará con el terminal de pago.
+            </p>
+
+            <button
+              onClick={clearCart}
+              className="mt-4 w-full rounded-2xl border border-zinc-200 bg-white py-4 text-sm font-black"
             >
               Cancelar pedido
             </button>

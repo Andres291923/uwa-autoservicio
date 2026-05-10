@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 const allowedStatuses = ["pending", "ready", "cancelled"];
@@ -82,11 +82,8 @@ export async function POST(request: Request) {
     for (const item of items) {
       const productId = Number(item.productId);
       const quantity = Number(item.quantity || 1);
-
       const modifierOptionIds = Array.isArray(item.modifierOptionIds)
-        ? item.modifierOptionIds
-            .map((id: unknown) => Number(id))
-            .filter(Boolean)
+        ? item.modifierOptionIds.map((id: unknown) => Number(id)).filter(Boolean)
         : [];
 
       if (!productId) {
