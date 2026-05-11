@@ -1,4 +1,4 @@
-generator client {
+﻿generator client {
   provider = "prisma-client-js"
 }
 
@@ -6,6 +6,7 @@ datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
+
 model Category {
   id        Int       @id @default(autoincrement())
   name      String
@@ -188,5 +189,4 @@ model CashbackRule {
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 }
-
 

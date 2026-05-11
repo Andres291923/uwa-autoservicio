@@ -109,7 +109,6 @@ export default function SettingsPage() {
 
       const response = await fetch("/api/settings", {
         method: "POST",
-        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -467,4 +466,3 @@ export default function SettingsPage() {
     </main>
   );
 }
-

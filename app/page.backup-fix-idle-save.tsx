@@ -47,7 +47,7 @@ export default function HomePage() {
       {backgroundImage ? (
         <img
           src={backgroundImage}
-          alt="Pantalla de reposo"
+          alt={settings.businessName || "Pantalla de reposo"}
           className="absolute inset-0 h-full w-full object-cover"
         />
       ) : (
@@ -56,22 +56,34 @@ export default function HomePage() {
 
       <div className="absolute inset-0 bg-black/25" />
 
-      <section className="relative z-10 flex min-h-screen items-center justify-center px-6 text-center">
-        <a
-  href="/totem"
-  className="inline-flex w-auto max-w-[360px] flex-col items-center justify-center rounded-[2rem] px-8 py-6 text-white shadow-[0_18px_45px_rgba(0,0,0,0.45)] ring-4 ring-white/25 transition active:scale-95"
-  style={{
-    background: settings.primaryColor || "#10B557",
-  }}
->
-          <div className="text-4xl font-black uppercase leading-none">
-            Pide aquí
+      <section className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center">
+        {settings.logoUrl && (
+          <div className="mb-8 flex h-28 w-28 items-center justify-center overflow-hidden rounded-[2rem] bg-white/95 p-3 shadow-2xl">
+            <img
+              src={settings.logoUrl}
+              alt={settings.businessName || "Logo"}
+              className="h-full w-full object-contain"
+            />
           </div>
+        )}
 
-          <div className="mt-1 text-xl font-black leading-tight text-white/95">
-           
-          </div>
+        <p className="mb-4 text-sm font-black uppercase tracking-[0.35em] text-white/80">
+          {settings.businessName || "Autoservicio"}
+        </p>
+
+        <a
+          href="/totem"
+          className="rounded-[2rem] px-12 py-8 text-4xl font-black uppercase text-white shadow-2xl transition active:scale-95"
+          style={{
+            background: settings.primaryColor || "#10B557",
+          }}
+        >
+          Pide aquí
         </a>
+
+        <p className="mt-6 text-lg font-bold text-white/80">
+          Toca la pantalla para comenzar tu pedido
+        </p>
       </section>
     </main>
   );

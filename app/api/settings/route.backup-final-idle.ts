@@ -33,6 +33,7 @@ export async function GET() {
     return NextResponse.json(settings || defaultSettings);
   } catch (error) {
     console.error("GET_SETTINGS_ERROR", error);
+
     return NextResponse.json(defaultSettings);
   }
 }
@@ -41,21 +42,33 @@ export async function POST(request: Request) {
   try {
     if (!isAdmin(request)) {
       return NextResponse.json(
-        { error: "No autorizado. Debes estar logueado en admin." },
+        { error: "No autorizado." },
         { status: 401 }
       );
     }
 
     const body = await request.json();
 
-    const businessName = String(body.businessName || "Mi negocio").trim();
-    const logoUrl = body.logoUrl ? String(body.logoUrl).trim() : null;
-    const idleBackgroundUrl = body.idleBackgroundUrl
-      ? String(body.idleBackgroundUrl).trim()
-      : null;
+    const businessName = String(body.businessName || "").trim();
+    const logoUrl = String(body.logoUrl || "").trim();
+    const idleBackgroundUrl = String(body.idleBackgroundUrl || "").trim();
     const primaryColor = String(body.primaryColor || "#10B557").trim();
-    const kioskSubtitle = String(body.kioskSubtitle || "Autoservicio").trim();
-    const kioskTitle = String(body.kioskTitle || "Elige tus productos").trim();
+    const kioskSubtitle = String(body.kioskSubtitle || "").trim();
+    const kioskTitle = String(body.kioskTitle || "").trim();
+
+    if (!businessName) {
+      return NextResponse.json(
+        { error: "El nombre del negocio es obligatorio." },
+        { status: 400 }
+      );
+    }
+
+    if (!kioskTitle) {
+      return NextResponse.json(
+        { error: "El titulo del totem es obligatorio." },
+        { status: 400 }
+      );
+    }
 
     const settings = await prisma.businessSettings.upsert({
       where: {
@@ -63,19 +76,19 @@ export async function POST(request: Request) {
       },
       update: {
         businessName,
-        logoUrl,
-        idleBackgroundUrl,
+        logoUrl: logoUrl || null,
+        idleBackgroundUrl: idleBackgroundUrl || null,
         primaryColor,
-        kioskSubtitle,
+        kioskSubtitle: kioskSubtitle || "Autoservicio",
         kioskTitle,
       },
       create: {
         id: 1,
         businessName,
-        logoUrl,
-        idleBackgroundUrl,
+        logoUrl: logoUrl || null,
+        idleBackgroundUrl: idleBackgroundUrl || null,
         primaryColor,
-        kioskSubtitle,
+        kioskSubtitle: kioskSubtitle || "Autoservicio",
         kioskTitle,
       },
     });
@@ -90,3 +103,4 @@ export async function POST(request: Request) {
     );
   }
 }
+

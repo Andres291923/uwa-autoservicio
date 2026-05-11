@@ -18,7 +18,8 @@ const mainMenu: MenuItem[] = [
     icon: "D",
   },
   {
-    label: "Productos", href: "/admin/products",
+    label: "Productos",
+    href: "/admin",
     icon: "P",
   },
   {
@@ -200,4 +201,3 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     </div>
   );
 }
-
