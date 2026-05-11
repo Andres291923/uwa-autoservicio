@@ -180,11 +180,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
         <div className="border-t border-zinc-100 p-4">
           <button
-            onClick={logout}
-            className="w-full rounded-2xl bg-zinc-950 px-4 py-4 text-sm font-black text-white shadow-lg shadow-zinc-200 transition hover:bg-zinc-800"
-          >
-            Salir
-          </button>
+  type="button"
+  suppressHydrationWarning
+  onClick={logout}
+  className="w-full rounded-2xl bg-zinc-950 px-4 py-4 text-sm font-black text-white shadow-lg shadow-zinc-200 transition hover:bg-zinc-800"
+>
+  Salir
+</button>
 
           <p className="mt-4 text-center text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-400">
             Autoservicio OS
