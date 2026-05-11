@@ -62,14 +62,6 @@ type CartItem = {
   modifiersText: string[];
 };
 
-type LoggedCustomer = {
-  id: number;
-  name: string;
-  email: string;
-  active: boolean;
-  walletBalance: number;
-};
-
 const defaultSettings: Settings = {
   businessName: "Mi negocio",
   kioskTitle: "Pedido online",
@@ -99,23 +91,13 @@ export default function PedidoPage() {
   const [selectedOptionsByGroup, setSelectedOptionsByGroup] = useState<Record<number, number[]>>({});
 
   const [cart, setCart] = useState<CartItem[]>([]);
-
-  const [loggedCustomer, setLoggedCustomer] = useState<LoggedCustomer | null>(null);
-  const [authMode, setAuthMode] = useState<"login" | "register" | "guest">("login");
-  const [authName, setAuthName] = useState("");
-  const [authEmail, setAuthEmail] = useState("");
-  const [authPassword, setAuthPassword] = useState("");
-  const [guestName, setGuestName] = useState("");
-  const [useWallet, setUseWallet] = useState(false);
-
+  const [customerName, setCustomerName] = useState("");
   const [fulfillmentType, setFulfillmentType] = useState<"immediate" | "scheduled">("immediate");
   const [scheduledFor, setScheduledFor] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"debit_credit" | "food_benefit">("debit_credit");
 
   const [message, setMessage] = useState("");
-  const [authMessage, setAuthMessage] = useState("");
   const [loadingOrder, setLoadingOrder] = useState(false);
-  const [loadingAuth, setLoadingAuth] = useState(false);
 
   async function loadInitialData() {
     try {
@@ -189,13 +171,6 @@ export default function PedidoPage() {
   const cartTotal = useMemo(() => {
     return cart.reduce((sum, item) => sum + item.total, 0);
   }, [cart]);
-
-  const walletAmountToUse = useMemo(() => {
-    if (!loggedCustomer || !useWallet) return 0;
-    return Math.min(loggedCustomer.walletBalance, cartTotal);
-  }, [loggedCustomer, useWallet, cartTotal]);
-
-  const totalToPay = Math.max(0, cartTotal - walletAmountToUse);
 
   function openProduct(product: Product) {
     const groups = (product.modifierGroups || []).filter((group) => group.active !== false);
@@ -310,114 +285,6 @@ export default function PedidoPage() {
     setCart((current) => current.filter((item) => item.id !== id));
   }
 
-  async function refreshCustomerWallet(customerId: number) {
-    try {
-      const response = await fetch("/api/customer-auth/wallet", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          customerId,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) return;
-
-      setLoggedCustomer({
-        id: data.id,
-        name: data.name,
-        email: data.email,
-        active: data.active,
-        walletBalance: data.walletBalance,
-      });
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  async function loginCustomer() {
-    try {
-      setLoadingAuth(true);
-      setAuthMessage("");
-
-      const response = await fetch("/api/customer-auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: authEmail,
-          password: authPassword,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setAuthMessage(data.error || "No se pudo ingresar.");
-        return;
-      }
-
-      setLoggedCustomer(data);
-      setGuestName(data.name);
-      setAuthPassword("");
-      setUseWallet(false);
-      setAuthMessage("Cuenta ingresada correctamente.");
-    } catch (error) {
-      console.error(error);
-      setAuthMessage("Error al ingresar.");
-    } finally {
-      setLoadingAuth(false);
-    }
-  }
-
-  async function registerCustomer() {
-    try {
-      setLoadingAuth(true);
-      setAuthMessage("");
-
-      const response = await fetch("/api/customer-auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: authName,
-          email: authEmail,
-          password: authPassword,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setAuthMessage(data.error || "No se pudo crear la cuenta.");
-        return;
-      }
-
-      setLoggedCustomer(data);
-      setGuestName(data.name);
-      setAuthPassword("");
-      setUseWallet(false);
-      setAuthMessage("Cuenta creada correctamente.");
-    } catch (error) {
-      console.error(error);
-      setAuthMessage("Error al crear cuenta.");
-    } finally {
-      setLoadingAuth(false);
-    }
-  }
-
-  function logoutCustomer() {
-    setLoggedCustomer(null);
-    setUseWallet(false);
-    setAuthPassword("");
-    setAuthMessage("");
-  }
-
   async function createOnlineOrder() {
     try {
       setLoadingOrder(true);
@@ -428,10 +295,8 @@ export default function PedidoPage() {
         return;
       }
 
-      const finalCustomerName = loggedCustomer?.name || guestName.trim();
-
-      if (!finalCustomerName) {
-        setMessage("Ingresa tu nombre o entra con tu cuenta.");
+      if (!customerName.trim()) {
+        setMessage("Ingresa tu nombre.");
         return;
       }
 
@@ -446,9 +311,7 @@ export default function PedidoPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          customerId: loggedCustomer?.id || null,
-          customerName: finalCustomerName,
-          walletAmountUsed: walletAmountToUse,
+          customerName: customerName.trim(),
           totemCode: "online",
           paymentMethod,
           orderSource: "online",
@@ -473,29 +336,11 @@ export default function PedidoPage() {
       }
 
       setCart([]);
-      setGuestName(loggedCustomer?.name || "");
+      setCustomerName("");
       setFulfillmentType("immediate");
       setScheduledFor("");
       setPaymentMethod("debit_credit");
-      setUseWallet(false);
-
-      if (loggedCustomer) {
-        await refreshCustomerWallet(loggedCustomer.id);
-      }
-
-      const cashbackText =
-        loggedCustomer && data.cashbackEarned > 0
-          ? ` Cashback ganado: ${formatPrice(data.cashbackEarned)}.`
-          : "";
-
-      const walletText =
-        walletAmountToUse > 0
-          ? ` Saldo usado: ${formatPrice(walletAmountToUse)}.`
-          : "";
-
-      setMessage(
-        `Pedido online #${data.orderNumber} enviado a cocina.${walletText}${cashbackText}`
-      );
+      setMessage(`Pedido online #${data.orderNumber} enviado a cocina.`);
     } catch (error) {
       console.error(error);
       setMessage("Error al crear pedido online.");
@@ -546,7 +391,7 @@ export default function PedidoPage() {
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[1fr_410px]">
+      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[1fr_390px]">
         <section>
           <div className="mb-5">
             <h2 className="text-3xl font-black">Elige tus productos</h2>
@@ -650,191 +495,6 @@ export default function PedidoPage() {
         <aside className="h-fit rounded-3xl bg-white p-5 shadow-sm lg:sticky lg:top-28">
           <h2 className="text-2xl font-black">Tu pedido</h2>
 
-          <section className="mt-4 rounded-2xl bg-zinc-50 p-4">
-            {loggedCustomer ? (
-              <div>
-                <p className="text-xs font-black uppercase text-[#10B557]">
-                  Cliente registrado
-                </p>
-
-                <h3 className="mt-1 text-xl font-black">
-                  Hola, {loggedCustomer.name}
-                </h3>
-
-                <p className="mt-1 text-sm font-bold text-zinc-500">
-                  {loggedCustomer.email}
-                </p>
-
-                <div className="mt-4 rounded-2xl bg-white p-4">
-                  <p className="text-xs font-black uppercase text-zinc-500">
-                    Saldo disponible
-                  </p>
-
-                  <p className="mt-1 text-3xl font-black text-[#10B557]">
-                    {formatPrice(loggedCustomer.walletBalance)}
-                  </p>
-
-                  {loggedCustomer.walletBalance > 0 && cartTotal > 0 && (
-                    <label className="mt-3 flex items-center gap-3 rounded-xl border border-zinc-200 p-3">
-                      <input
-                        type="checkbox"
-                        checked={useWallet}
-                        onChange={(event) => setUseWallet(event.target.checked)}
-                      />
-                      <span className="text-sm font-black">
-                        Usar saldo en esta compra
-                      </span>
-                    </label>
-                  )}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={logoutCustomer}
-                  className="mt-3 rounded-xl border border-zinc-300 bg-white px-4 py-2 text-xs font-black"
-                >
-                  Salir de la cuenta
-                </button>
-              </div>
-            ) : (
-              <div>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setAuthMode("login")}
-                    className={`rounded-xl px-3 py-2 text-xs font-black ${
-                      authMode === "login"
-                        ? "text-white"
-                        : "bg-white text-zinc-600"
-                    }`}
-                    style={{
-                      background:
-                        authMode === "login" ? settings.primaryColor : undefined,
-                    }}
-                  >
-                    Ingresar
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setAuthMode("register")}
-                    className={`rounded-xl px-3 py-2 text-xs font-black ${
-                      authMode === "register"
-                        ? "text-white"
-                        : "bg-white text-zinc-600"
-                    }`}
-                    style={{
-                      background:
-                        authMode === "register"
-                          ? settings.primaryColor
-                          : undefined,
-                    }}
-                  >
-                    Crear cuenta
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setAuthMode("guest")}
-                    className={`rounded-xl px-3 py-2 text-xs font-black ${
-                      authMode === "guest"
-                        ? "text-white"
-                        : "bg-white text-zinc-600"
-                    }`}
-                    style={{
-                      background:
-                        authMode === "guest" ? settings.primaryColor : undefined,
-                    }}
-                  >
-                    Invitado
-                  </button>
-                </div>
-
-                {authMode === "register" && (
-                  <label className="mt-4 block">
-                    <span className="text-xs font-black uppercase text-zinc-500">
-                      Nombre
-                    </span>
-                    <input
-                      value={authName}
-                      onChange={(event) => setAuthName(event.target.value)}
-                      className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
-                      placeholder="Ej: Andres"
-                    />
-                  </label>
-                )}
-
-                {authMode !== "guest" ? (
-                  <>
-                    <label className="mt-4 block">
-                      <span className="text-xs font-black uppercase text-zinc-500">
-                        Correo
-                      </span>
-                      <input
-                        value={authEmail}
-                        onChange={(event) => setAuthEmail(event.target.value)}
-                        className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
-                        placeholder="correo@email.com"
-                      />
-                    </label>
-
-                    <label className="mt-4 block">
-                      <span className="text-xs font-black uppercase text-zinc-500">
-                        Clave
-                      </span>
-                      <input
-                        type="password"
-                        value={authPassword}
-                        onChange={(event) => setAuthPassword(event.target.value)}
-                        className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
-                        placeholder="Clave"
-                      />
-                    </label>
-
-                    <button
-                      type="button"
-                      onClick={authMode === "login" ? loginCustomer : registerCustomer}
-                      disabled={loadingAuth}
-                      className="mt-4 w-full rounded-2xl py-3 text-sm font-black text-white disabled:bg-zinc-300"
-                      style={{
-                        background: loadingAuth
-                          ? "#d4d4d8"
-                          : settings.primaryColor,
-                      }}
-                    >
-                      {loadingAuth
-                        ? "Procesando..."
-                        : authMode === "login"
-                        ? "Ingresar"
-                        : "Crear cuenta"}
-                    </button>
-                  </>
-                ) : (
-                  <label className="mt-4 block">
-                    <span className="text-xs font-black uppercase text-zinc-500">
-                      Nombre para el pedido
-                    </span>
-                    <input
-                      value={guestName}
-                      onChange={(event) => setGuestName(event.target.value)}
-                      className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
-                      placeholder="Ej: Andres"
-                    />
-                    <p className="mt-2 text-xs font-bold text-zinc-500">
-                      Como invitado no acumulas cashback ni puedes usar saldo.
-                    </p>
-                  </label>
-                )}
-
-                {authMessage && (
-                  <p className="mt-3 rounded-xl bg-white p-3 text-xs font-black">
-                    {authMessage}
-                  </p>
-                )}
-              </div>
-            )}
-          </section>
-
           {cart.length === 0 ? (
             <p className="mt-4 rounded-2xl bg-zinc-50 p-4 text-sm font-bold text-zinc-500">
               Aun no agregas productos.
@@ -881,7 +541,19 @@ export default function PedidoPage() {
           )}
 
           <div className="mt-5 border-t border-zinc-200 pt-5">
-            <div className="grid grid-cols-2 gap-2">
+            <label className="block">
+              <span className="text-xs font-black uppercase text-zinc-500">
+                Nombre
+              </span>
+              <input
+                value={customerName}
+                onChange={(event) => setCustomerName(event.target.value)}
+                placeholder="Ej: Andres"
+                className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
+              />
+            </label>
+
+            <div className="mt-4 grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setFulfillmentType("immediate")}
@@ -958,32 +630,14 @@ export default function PedidoPage() {
             </p>
           )}
 
-          <div className="mt-5 space-y-2 rounded-2xl bg-zinc-50 p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-black text-zinc-500">Subtotal</p>
-              <p className="text-lg font-black">{formatPrice(cartTotal)}</p>
-            </div>
-
-            {walletAmountToUse > 0 && (
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-black text-zinc-500">Saldo usado</p>
-                <p className="text-lg font-black text-red-600">
-                  - {formatPrice(walletAmountToUse)}
-                </p>
-              </div>
-            )}
-
-            <div className="border-t border-zinc-200 pt-3">
-              <div className="flex items-center justify-between">
-                <p className="text-lg font-black">Total a pagar</p>
-                <p
-                  className="text-3xl font-black"
-                  style={{ color: settings.primaryColor }}
-                >
-                  {formatPrice(totalToPay)}
-                </p>
-              </div>
-            </div>
+          <div className="mt-5 flex items-center justify-between rounded-2xl bg-zinc-50 p-4">
+            <p className="text-lg font-black">Total</p>
+            <p
+              className="text-3xl font-black"
+              style={{ color: settings.primaryColor }}
+            >
+              {formatPrice(cartTotal)}
+            </p>
           </div>
 
           <button

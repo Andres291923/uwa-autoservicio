@@ -6,7 +6,126 @@ const allowedStatuses = ["pending", "ready", "cancelled"];
 function normalizePaymentMethod(value: unknown) {
   if (value === "debit_credit") return "debit_credit";
   if (value === "food_benefit") return "food_benefit";
+  if (value === "online") return "online";
   return "unknown";
+}
+
+function normalizeOrderSource(value: unknown) {
+  if (value === "online") return "online";
+  return "totem";
+}
+
+function normalizeFulfillmentType(value: unknown) {
+  if (value === "scheduled") return "scheduled";
+  return "immediate";
+}
+
+function parseIds(value: string | null | undefined) {
+  if (!value || value === "all") return [];
+
+  return value
+    .split(",")
+    .map((item) => Number(item.trim()))
+    .filter(Boolean);
+}
+
+function calculateBalance(transactions: { type: string; amount: number }[]) {
+  return transactions.reduce((sum, transaction) => {
+    if (transaction.type === "credit") return sum + transaction.amount;
+    if (transaction.type === "debit") return sum - transaction.amount;
+    return sum;
+  }, 0);
+}
+
+async function calculateCashback(params: {
+  customerId: number | null;
+  paymentMethod: string;
+  orderTotal: number;
+  walletAmountUsed: number;
+  itemsMeta: {
+    productId: number;
+    categoryId: number | null;
+    lineTotal: number;
+  }[];
+}) {
+  const { customerId, paymentMethod, walletAmountUsed, itemsMeta } = params;
+
+  if (!customerId) {
+    return { cashbackEarned: 0, expiresAt: null as Date | null };
+  }
+
+  const now = new Date();
+
+  const rules = await prisma.cashbackRule.findMany({
+    where: {
+      active: true,
+    },
+    orderBy: [{ priority: "asc" }, { id: "asc" }],
+  });
+
+  const rule = rules.find((item) => {
+    const startsOk = !item.startDate || item.startDate <= now;
+    const endsOk = !item.endDate || item.endDate >= now;
+    const paymentOk =
+      item.allowedPaymentMethods === "all" ||
+      item.allowedPaymentMethods === paymentMethod;
+
+    return startsOk && endsOk && paymentOk;
+  });
+
+  if (!rule) {
+    return { cashbackEarned: 0, expiresAt: null as Date | null };
+  }
+
+  const includedCategoryIds =
+    rule.includedCategoryIds === "all"
+      ? []
+      : parseIds(rule.includedCategoryIds);
+
+  const excludedProductIds = parseIds(rule.excludedProductIds);
+
+  const eligibleItemsTotal = itemsMeta
+    .filter((item) => {
+      const categoryOk =
+        rule.includedCategoryIds === "all" ||
+        includedCategoryIds.includes(item.categoryId || 0);
+
+      const productOk = !excludedProductIds.includes(item.productId);
+
+      return categoryOk && productOk;
+    })
+    .reduce((sum, item) => sum + item.lineTotal, 0);
+
+  const eligibleAmount = Math.max(0, eligibleItemsTotal - walletAmountUsed);
+
+  if (eligibleAmount <= 0) {
+    return { cashbackEarned: 0, expiresAt: null as Date | null };
+  }
+
+  if (eligibleAmount < rule.minPurchase) {
+    return { cashbackEarned: 0, expiresAt: null as Date | null };
+  }
+
+  let cashbackEarned = Math.round(
+    eligibleAmount * (Number(rule.cashbackPercent) / 100)
+  );
+
+  if (rule.maxCashback > 0) {
+    cashbackEarned = Math.min(cashbackEarned, rule.maxCashback);
+  }
+
+  if (cashbackEarned <= 0) {
+    return { cashbackEarned: 0, expiresAt: null as Date | null };
+  }
+
+  let expiresAt: Date | null = null;
+
+  if (rule.validityDays > 0) {
+    expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + rule.validityDays);
+  }
+
+  return { cashbackEarned, expiresAt };
 }
 
 export async function GET() {
@@ -16,6 +135,7 @@ export async function GET() {
         createdAt: "desc",
       },
       include: {
+        customer: true,
         items: {
           include: {
             product: {
@@ -52,18 +172,60 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
+    const customerId = body.customerId ? Number(body.customerId) : null;
+
     const customerName = body.customerName
       ? String(body.customerName).trim()
       : null;
 
     const totemCode = body.totemCode ? String(body.totemCode) : "totem-local";
     const paymentMethod = normalizePaymentMethod(body.paymentMethod);
+    const orderSource = normalizeOrderSource(body.orderSource);
+    const fulfillmentType = normalizeFulfillmentType(body.fulfillmentType);
+    const scheduledFor = body.scheduledFor ? new Date(body.scheduledFor) : null;
+
+    const requestedWalletAmount = Math.max(
+      0,
+      Math.round(Number(body.walletAmountUsed || 0))
+    );
 
     const items = Array.isArray(body.items) ? body.items : [];
 
     if (items.length === 0) {
       return NextResponse.json(
         { error: "El pedido no tiene productos." },
+        { status: 400 }
+      );
+    }
+
+    if (!customerName) {
+      return NextResponse.json(
+        { error: "El nombre del cliente es obligatorio." },
+        { status: 400 }
+      );
+    }
+
+    if (fulfillmentType === "scheduled" && !scheduledFor) {
+      return NextResponse.json(
+        { error: "Falta fecha u hora programada." },
+        { status: 400 }
+      );
+    }
+
+    const customer = customerId
+      ? await prisma.customer.findUnique({
+          where: {
+            id: customerId,
+          },
+          include: {
+            walletTransactions: true,
+          },
+        })
+      : null;
+
+    if (customerId && (!customer || !customer.active)) {
+      return NextResponse.json(
+        { error: "Cliente no encontrado o inactivo." },
         { status: 400 }
       );
     }
@@ -76,12 +238,18 @@ export async function POST(request: Request) {
 
     const orderNumber = (lastOrder?.orderNumber || 0) + 1;
 
-    const orderItemsData = [];
+    const orderItemsData: any[] = [];
+    const itemsMeta: {
+      productId: number;
+      categoryId: number | null;
+      lineTotal: number;
+    }[] = [];
+
     let orderTotal = 0;
 
     for (const item of items) {
       const productId = Number(item.productId);
-      const quantity = Number(item.quantity || 1);
+      const quantity = Math.max(1, Number(item.quantity || 1));
 
       const modifierOptionIds = Array.isArray(item.modifierOptionIds)
         ? item.modifierOptionIds
@@ -91,7 +259,7 @@ export async function POST(request: Request) {
 
       if (!productId) {
         return NextResponse.json(
-          { error: "Producto inválido en el pedido." },
+          { error: "Producto invalido en el pedido." },
           { status: 400 }
         );
       }
@@ -100,11 +268,14 @@ export async function POST(request: Request) {
         where: {
           id: productId,
         },
+        include: {
+          category: true,
+        },
       });
 
       if (!product || !product.active) {
         return NextResponse.json(
-          { error: "Uno de los productos no está disponible." },
+          { error: "Uno de los productos no esta disponible." },
           { status: 400 }
         );
       }
@@ -131,6 +302,12 @@ export async function POST(request: Request) {
 
       orderTotal += lineTotal;
 
+      itemsMeta.push({
+        productId: product.id,
+        categoryId: product.categoryId || null,
+        lineTotal,
+      });
+
       orderItemsData.push({
         productId: product.id,
         quantity,
@@ -145,38 +322,107 @@ export async function POST(request: Request) {
       });
     }
 
-    const order = await prisma.order.create({
-      data: {
+    const walletBalance = customer
+      ? calculateBalance(customer.walletTransactions)
+      : 0;
+
+    const walletAmountUsed = customer
+      ? Math.min(requestedWalletAmount, walletBalance, orderTotal)
+      : 0;
+
+    const { cashbackEarned, expiresAt } = await calculateCashback({
+      customerId,
+      paymentMethod,
+      orderTotal,
+      walletAmountUsed,
+      itemsMeta,
+    });
+
+    const order = await prisma.$transaction(async (tx) => {
+      const orderData: any = {
         orderNumber,
         status: "pending",
         total: orderTotal,
         customerName,
+        walletAmountUsed,
+        cashbackEarned,
         totemCode,
         paymentMethod,
+        orderSource,
+        fulfillmentType,
+        scheduledFor,
         items: {
           create: orderItemsData,
         },
-      },
-      include: {
-        items: {
-          include: {
-            product: {
-              include: {
-                category: true,
+      };
+
+      if (customerId) {
+        orderData.customer = {
+          connect: {
+            id: customerId,
+          },
+        };
+      }
+
+      const createdOrder = await tx.order.create({
+        data: orderData,
+        include: {
+          customer: true,
+          items: {
+            include: {
+              product: {
+                include: {
+                  category: true,
+                },
               },
-            },
-            modifiers: {
-              include: {
-                option: {
-                  include: {
-                    template: true,
+              modifiers: {
+                include: {
+                  option: {
+                    include: {
+                      template: true,
+                    },
                   },
                 },
               },
             },
           },
         },
-      },
+      });
+
+      if (customerId && walletAmountUsed > 0) {
+        await tx.walletTransaction.create({
+          data: {
+            customer: {
+              connect: {
+                id: customerId,
+              },
+            },
+            type: "debit",
+            amount: walletAmountUsed,
+            reason: `Uso de saldo en pedido #${orderNumber}`,
+          },
+        });
+      }
+
+      if (customerId && cashbackEarned > 0) {
+        const cashbackTransactionData: any = {
+          customer: {
+            connect: {
+              id: customerId,
+            },
+          },
+          type: "credit",
+          amount: cashbackEarned,
+          reason: `Cashback pedido #${orderNumber}`,
+          expiresAt,
+        };
+
+        await tx.walletTransaction.create({
+          data: cashbackTransactionData,
+        });
+      }
+
+      return createdOrder;
     });
 
     return NextResponse.json(order);
@@ -206,7 +452,7 @@ export async function PATCH(request: Request) {
 
     if (!allowedStatuses.includes(status)) {
       return NextResponse.json(
-        { error: "Estado de pedido inválido." },
+        { error: "Estado de pedido invalido." },
         { status: 400 }
       );
     }
@@ -219,6 +465,7 @@ export async function PATCH(request: Request) {
         status,
       },
       include: {
+        customer: true,
         items: {
           include: {
             product: {
