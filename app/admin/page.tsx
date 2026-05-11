@@ -257,13 +257,15 @@ export default function AdminDashboardPage() {
             </p>
           </div>
 
-          <button
-            onClick={loadRangeOnly}
-            disabled={loading}
-            className="rounded-2xl bg-[#10B557] px-6 py-3 text-sm font-black text-white disabled:bg-zinc-300"
-          >
-            {loading ? "Cargando..." : "Filtrar rango"}
-          </button>
+         <button
+  type="button"
+  suppressHydrationWarning
+  onClick={loadRangeOnly}
+  disabled={loading}
+  className="rounded-2xl bg-[#10B557] px-6 py-3 text-sm font-black text-white disabled:bg-zinc-300"
+>
+  {loading ? "Cargando..." : "Filtrar rango"}
+</button>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
