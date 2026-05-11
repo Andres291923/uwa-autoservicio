@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type OrderModifier = {
   id: number;
@@ -345,7 +345,16 @@ export default function CocinaPage() {
   const [loading, setLoading] = useState(true);
   const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
   const [orderSearch, setOrderSearch] = useState("");
+const [soundEnabled, setSoundEnabled] = useState(false);
+const [alarmActive, setAlarmActive] = useState(false);
 
+
+const audioContextRef = useRef<AudioContext | null>(null);
+const firstOrdersLoadRef = useRef(true);
+const knownPendingOrderIdsRef = useRef<Set<number>>(new Set());
+const alarmIntervalRef = useRef<number | null>(null);
+const titleIntervalRef = useRef<number | null>(null);
+const originalTitleRef = useRef("Cocina");
   async function loadOrders() {
     try {
       const response = await fetch("/api/orders");
@@ -421,6 +430,117 @@ function orderMatchesSearch(order: Order) {
 const filteredPendingOrders = pendingOrders.filter(orderMatchesSearch);
 const filteredReadyOrders = readyOrders.filter(orderMatchesSearch);
 
+function getAudioContext() {
+  if (typeof window === "undefined") return null;
+
+  const AudioContextConstructor =
+    window.AudioContext || (window as any).webkitAudioContext;
+
+  if (!AudioContextConstructor) return null;
+
+  if (!audioContextRef.current) {
+    audioContextRef.current = new AudioContextConstructor();
+  }
+
+  return audioContextRef.current;
+}
+
+function getAudioContext() {
+  if (typeof window === "undefined") return null;
+
+  const AudioContextConstructor =
+    window.AudioContext || (window as any).webkitAudioContext;
+
+  if (!AudioContextConstructor) return null;
+
+  if (!audioContextRef.current) {
+    audioContextRef.current = new AudioContextConstructor();
+  }
+
+  return audioContextRef.current;
+}
+
+function playNewOrderSound(force = false) {
+  if (!force && !soundEnabled) return;
+
+  const audioContext = getAudioContext();
+
+  if (!audioContext) return;
+
+  if (audioContext.state === "suspended") {
+    audioContext.resume();
+  }
+
+  const now = audioContext.currentTime;
+
+  const tones = [
+    1800, 850,
+    1800, 850,
+    2100, 950,
+    2100, 950,
+    1800, 850,
+    1800, 850,
+  ];
+
+  tones.forEach((frequency, index) => {
+    const startTime = now + index * 0.14;
+
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+
+    oscillator.type = "square";
+    oscillator.frequency.setValueAtTime(frequency, startTime);
+
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.exponentialRampToValueAtTime(0.9, startTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.11);
+
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+
+    oscillator.start(startTime);
+    oscillator.stop(startTime + 0.12);
+  });
+}
+async function enableKitchenSound() {
+  const audioContext = getAudioContext();
+
+  if (!audioContext) {
+    alert("Este navegador no permite activar sonido.");
+    return;
+  }
+
+  if (audioContext.state === "suspended") {
+    await audioContext.resume();
+  }
+
+  setSoundEnabled(true);
+  playNewOrderSound(true);
+}
+
+useEffect(() => {
+  const pendingOrderIds = new Set(
+    orders
+      .filter((order) => order.status === "pending")
+      .map((order) => order.id)
+  );
+
+  if (firstOrdersLoadRef.current) {
+    knownPendingOrderIdsRef.current = pendingOrderIds;
+    firstOrdersLoadRef.current = false;
+    return;
+  }
+
+  const hasNewPendingOrder = Array.from(pendingOrderIds).some(
+    (orderId) => !knownPendingOrderIdsRef.current.has(orderId)
+  );
+
+  knownPendingOrderIdsRef.current = pendingOrderIds;
+
+  if (hasNewPendingOrder) {
+    playNewOrderSound();
+  }
+}, [orders, soundEnabled]);
   return (
     <main className="min-h-screen bg-zinc-100 p-6 text-zinc-900">
       <header className="mb-6 flex items-center justify-between">
@@ -437,6 +557,17 @@ const filteredReadyOrders = readyOrders.filter(orderMatchesSearch);
         >
           Volver
         </a>
+        <button
+  type="button"
+  onClick={enableKitchenSound}
+  className={`rounded-2xl px-5 py-4 text-sm font-black shadow-sm ${
+    soundEnabled
+      ? "bg-green-100 text-green-700"
+      : "bg-zinc-950 text-white"
+  }`}
+>
+  {soundEnabled ? "Sonido activo" : "Activar sonido"}
+</button>
       </header>
 
       <section className="mb-6 grid gap-4 md:grid-cols-3">
