@@ -141,7 +141,7 @@ export default function TotemPage() {
   const [orderMessage, setOrderMessage] = useState("");
   const [customerMessage, setCustomerMessage] = useState("");
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
-  useState<PaymentMethod | null>(null);
+    useState<PaymentMethod | null>(null);
 
   const loggedCustomerName = "";
 
@@ -359,12 +359,12 @@ export default function TotemPage() {
   }
 
   function clearCart() {
-  setCart([]);
-  setOrderMessage("");
-  setCustomerMessage("");
-  setSelectedPaymentMethod(null);
-  setStep("catalog");
-}
+    setCart([]);
+    setOrderMessage("");
+    setCustomerMessage("");
+    setSelectedPaymentMethod(null);
+    setStep("catalog");
+  }
 
   function goToSummary() {
     if (cart.length === 0) return;
@@ -381,21 +381,23 @@ export default function TotemPage() {
     setCustomerMessage("");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
-function goToPaymentStep() {
-  if (cart.length === 0) return;
 
-  const finalCustomerName = (loggedCustomerName || customerName).trim();
+  function goToPaymentStep() {
+    if (cart.length === 0) return;
 
-  if (!finalCustomerName) {
-    setCustomerMessage("Debes ingresar el nombre del cliente.");
-    return;
+    const finalCustomerName = (loggedCustomerName || customerName).trim();
+
+    if (!finalCustomerName) {
+      setCustomerMessage("Debes ingresar el nombre del cliente.");
+      return;
+    }
+
+    setSelectedPaymentMethod(null);
+    setCustomerMessage("");
+    setStep("payment");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  setSelectedPaymentMethod(null);
-  setCustomerMessage("");
-  setStep("payment");
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
   async function confirmOrder() {
     if (cart.length === 0) return;
 
@@ -405,10 +407,12 @@ function goToPaymentStep() {
       setCustomerMessage("Debes ingresar el nombre del cliente.");
       return;
     }
-if (!selectedPaymentMethod) {
-  setCustomerMessage("Debes seleccionar un medio de pago.");
-  return;
-}
+
+    if (!selectedPaymentMethod) {
+      setCustomerMessage("Debes seleccionar un medio de pago.");
+      return;
+    }
+
     try {
       setConfirmingOrder(true);
       setOrderMessage("");
@@ -420,10 +424,12 @@ if (!selectedPaymentMethod) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-  customerName: finalCustomerName,
-  totemCode: "totem-local",
-  paymentMethod: selectedPaymentMethod,
-  items: cart.map((item) => ({
+          customerName: finalCustomerName,
+          totemCode: "totem-local",
+          paymentMethod: selectedPaymentMethod,
+          orderSource: "totem",
+          fulfillmentType: "immediate",
+          items: cart.map((item) => ({
             productId: item.productId,
             quantity: item.quantity,
             modifierOptionIds: item.modifiers.flatMap((group) =>
@@ -462,94 +468,71 @@ if (!selectedPaymentMethod) {
   }, []);
 
   return (
-    <main className="min-h-screen bg-white text-zinc-950">
-      <header className="sticky top-0 z-40 border-b border-zinc-100 bg-white px-5 py-3 shadow-sm">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <div
-              style={{
-                width: 58,
-                height: 58,
-                minWidth: 58,
-                maxWidth: 58,
-                maxHeight: 58,
-                overflow: "hidden",
-                borderRadius: 18,
-                background: "#f4f4f5",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
+    <main className="min-h-screen overflow-x-hidden bg-white pb-[112px] text-zinc-950">
+      <header className="sticky top-0 z-40 border-b border-zinc-100 bg-white px-3 py-2 shadow-sm">
+        <div className="flex h-[70px] items-center justify-between gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <div className="flex h-[50px] w-[50px] min-w-[50px] items-center justify-center overflow-hidden rounded-2xl bg-zinc-100">
               {settings.logoUrl ? (
                 <img
                   src={settings.logoUrl}
                   alt={settings.businessName}
-                  style={{
-                    maxWidth: 48,
-                    maxHeight: 48,
-                    width: "auto",
-                    height: "auto",
-                    objectFit: "contain",
-                    display: "block",
-                  }}
+                  className="block h-auto max-h-[42px] w-auto max-w-[42px] object-contain"
                 />
               ) : (
-                <span className="text-base font-black text-zinc-400">
+                <span className="text-sm font-black text-zinc-400">
                   {settings.businessName.slice(0, 2).toUpperCase()}
                 </span>
               )}
             </div>
 
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p
-                className="truncate text-[11px] font-black uppercase tracking-[0.22em]"
+                className="truncate text-[9px] font-black uppercase tracking-[0.18em]"
                 style={{ color: settings.primaryColor }}
               >
                 {settings.businessName} {settings.kioskSubtitle}
               </p>
 
-              <h1 className="truncate text-[30px] font-black leading-none tracking-tight">
+              <h1 className="truncate text-[23px] font-black leading-none tracking-tight">
                 {selectedProduct
-  ? "Personaliza tu producto"
-  : step === "summary"
-  ? "Resumen de compra"
-  : step === "customer"
-  ? "Datos del pedido"
-  : step === "payment"
-  ? "Medio de pago"
-  : settings.kioskTitle}
+                  ? "Personaliza tu producto"
+                  : step === "summary"
+                  ? "Resumen de compra"
+                  : step === "customer"
+                  ? "Datos del pedido"
+                  : step === "payment"
+                  ? "Medio de pago"
+                  : settings.kioskTitle}
               </h1>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <button className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-center shadow-sm">
-              <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-50 text-sm font-black">
-                QR
-              </div>
-              <p className="mt-1 text-[10px] font-black uppercase text-zinc-500">
-                Identifícate
-              </p>
-            </button>
-          </div>
+          <button className="shrink-0 rounded-2xl border border-zinc-200 bg-white px-3 py-2 text-center shadow-sm">
+            <div className="mx-auto flex h-7 w-7 items-center justify-center rounded-xl bg-zinc-50 text-[11px] font-black">
+              QR
+            </div>
+            <p className="mt-1 text-[8px] font-black uppercase text-zinc-500">
+              Identifícate
+            </p>
+          </button>
         </div>
       </header>
 
       {orderMessage && (
-        <div className="mx-5 mt-4 rounded-2xl border border-green-200 bg-green-50 p-4 text-base font-black text-green-700">
+        <div className="mx-3 mt-3 rounded-2xl border border-green-200 bg-green-50 p-3 text-sm font-black text-green-700">
           {orderMessage}
         </div>
       )}
 
       {selectedProduct ? (
-        <section className="p-5 pb-28">
-          <div className="mx-auto max-w-5xl rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <div className="mb-5 flex items-start justify-between gap-4">
+        <section className="p-3 pb-32">
+          <div className="mx-auto max-w-5xl rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex items-start justify-between gap-4">
               <div>
                 <button
                   onClick={closeProductBuilder}
-                  className="mb-4 rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm font-black"
+                  className="mb-3 rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm font-black"
                 >
                   ← Volver
                 </button>
@@ -612,113 +595,69 @@ if (!selectedPaymentMethod) {
                       )}
                     </div>
 
-                    <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                       {group.template.options.map((option) => {
                         const selected = selectedIds.includes(option.id);
 
                         return (
                           <button
-  key={option.id}
-  type="button"
-  onClick={() => toggleOption(group, option.id)}
-  className="relative rounded-2xl border bg-white p-3 text-center transition"
-  style={{
-    minHeight: "150px",
-    borderColor: selected ? settings.primaryColor : "#e4e4e7",
-    boxShadow: selected
-      ? `0 0 0 2px ${settings.primaryColor}22`
-      : "0 1px 3px rgba(0,0,0,0.05)",
-  }}
->
-  <div className="flex h-full flex-col items-center justify-start gap-2">
-    <div
-  style={{
-    width: "86px",
-    height: "72px",
-    minWidth: "86px",
-    maxWidth: "86px",
-    minHeight: "72px",
-    maxHeight: "72px",
-    overflow: "hidden",
-    borderRadius: "0",
-    background: "transparent",
-    border: "none",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  }}
->
-      {option.imageUrl ? (
-        <img
-          src={option.imageUrl}
-          alt={option.name}
-          style={{
-            maxWidth: "86px",
-            maxHeight: "72px",
-            width: "auto",
-            height: "auto",
-            objectFit: "contain",
-            objectPosition: "center",
-            display: "block",
-          }}
-        />
-      ) : (
-        <span
-          style={{
-            fontSize: "24px",
-            fontWeight: 900,
-            color: "#a1a1aa",
-          }}
-        >
-          +
-        </span>
-      )}
-    </div>
+                            key={option.id}
+                            type="button"
+                            onClick={() => toggleOption(group, option.id)}
+                            className="relative rounded-2xl border bg-white p-3 text-center transition"
+                            style={{
+                              minHeight: "150px",
+                              borderColor: selected
+                                ? settings.primaryColor
+                                : "#e4e4e7",
+                              boxShadow: selected
+                                ? `0 0 0 2px ${settings.primaryColor}22`
+                                : "0 1px 3px rgba(0,0,0,0.05)",
+                            }}
+                          >
+                            <div className="flex h-full flex-col items-center justify-start gap-2">
+                              <div className="flex h-[72px] w-[86px] items-center justify-center overflow-hidden bg-transparent">
+                                {option.imageUrl ? (
+                                  <img
+                                    src={option.imageUrl}
+                                    alt={option.name}
+                                    className="block h-auto max-h-[72px] w-auto max-w-[86px] object-contain"
+                                  />
+                                ) : (
+                                  <span className="text-2xl font-black text-zinc-400">
+                                    +
+                                  </span>
+                                )}
+                              </div>
 
-    <p
-      className="text-sm font-black text-zinc-950"
-      style={{
-        width: "100%",
-        lineHeight: "17px",
-        whiteSpace: "normal",
-        overflow: "visible",
-        wordBreak: "break-word",
-      }}
-    >
-      {option.name}
-    </p>
+                              <p className="w-full break-words text-sm font-black leading-[17px] text-zinc-950">
+                                {option.name}
+                              </p>
 
-    {option.price > 0 && (
-      <p
-        className="text-xs font-black"
-        style={{ color: settings.primaryColor }}
-      >
-        + {formatPrice(option.price)}
-      </p>
-    )}
-  </div>
+                              {option.price > 0 && (
+                                <p
+                                  className="text-xs font-black"
+                                  style={{ color: settings.primaryColor }}
+                                >
+                                  + {formatPrice(option.price)}
+                                </p>
+                              )}
+                            </div>
 
-  <div
-    style={{
-      position: "absolute",
-      top: "12px",
-      right: "12px",
-      width: "26px",
-      height: "26px",
-      borderRadius: "999px",
-      border: selected ? "none" : "2px solid #d4d4d8",
-      background: selected ? settings.primaryColor : "#ffffff",
-      color: "#ffffff",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontSize: "14px",
-      fontWeight: 900,
-    }}
-  >
-    {selected ? "✓" : ""}
-  </div>
-</button>
+                            <div
+                              className="absolute right-3 top-3 flex h-[26px] w-[26px] items-center justify-center rounded-full text-sm font-black text-white"
+                              style={{
+                                border: selected
+                                  ? "none"
+                                  : "2px solid #d4d4d8",
+                                background: selected
+                                  ? settings.primaryColor
+                                  : "#ffffff",
+                              }}
+                            >
+                              {selected ? "✓" : ""}
+                            </div>
+                          </button>
                         );
                       })}
                     </div>
@@ -759,8 +698,8 @@ if (!selectedPaymentMethod) {
           </div>
         </section>
       ) : step === "summary" ? (
-        <section className="p-5 pb-28">
-          <div className="mx-auto max-w-3xl rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="p-3 pb-32">
+          <div className="mx-auto max-w-3xl rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-3xl font-black">Resumen compra</h2>
 
@@ -855,8 +794,8 @@ if (!selectedPaymentMethod) {
           </div>
         </section>
       ) : step === "customer" ? (
-        <section className="p-5 pb-28">
-          <div className="mx-auto max-w-2xl rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="p-3 pb-32">
+          <div className="mx-auto max-w-2xl rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-3xl font-black">Datos del pedido</h2>
 
@@ -915,18 +854,21 @@ if (!selectedPaymentMethod) {
             </div>
 
             <button
-  onClick={goToPaymentStep}
-  disabled={cart.length === 0 || (!loggedCustomerName && !customerName.trim())}
-  className="mt-5 w-full rounded-2xl py-5 text-xl font-black text-white disabled:bg-zinc-200 disabled:text-zinc-500"
-  style={{
-    background:
-      cart.length > 0 && (loggedCustomerName || customerName.trim())
-        ? settings.primaryColor
-        : undefined,
-  }}
->
-  Continuar al pago
-</button>
+              onClick={goToPaymentStep}
+              disabled={
+                cart.length === 0 ||
+                (!loggedCustomerName && !customerName.trim())
+              }
+              className="mt-5 w-full rounded-2xl py-5 text-xl font-black text-white disabled:bg-zinc-200 disabled:text-zinc-500"
+              style={{
+                background:
+                  cart.length > 0 && (loggedCustomerName || customerName.trim())
+                    ? settings.primaryColor
+                    : undefined,
+              }}
+            >
+              Continuar al pago
+            </button>
 
             <button
               onClick={clearCart}
@@ -934,11 +876,11 @@ if (!selectedPaymentMethod) {
             >
               Cancelar pedido
             </button>
-                    </div>
+          </div>
         </section>
       ) : step === "payment" ? (
-        <section className="p-5 pb-28">
-          <div className="mx-auto max-w-2xl rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <section className="p-3 pb-32">
+          <div className="mx-auto max-w-2xl rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <h2 className="text-3xl font-black">Elige medio de pago</h2>
@@ -1124,22 +1066,16 @@ if (!selectedPaymentMethod) {
           </div>
         </section>
       ) : (
-        <section
-          style={{
-            display: "grid",
-            gridTemplateColumns: "190px 1fr",
-            minHeight: "calc(100vh - 83px)",
-          }}
-        >
-          <aside className="border-r border-zinc-100 bg-zinc-50 p-4">
-            <h2 className="mb-4 text-[11px] font-black uppercase tracking-[0.25em] text-zinc-400">
+        <section className="grid min-h-[calc(100vh-71px)] grid-cols-[118px_minmax(0,1fr)] overflow-x-hidden">
+          <aside className="sticky top-[71px] h-[calc(100vh-71px)] overflow-y-auto border-r border-zinc-100 bg-zinc-50 px-2 py-3">
+            <h2 className="mb-3 px-1 text-[9px] font-black uppercase tracking-[0.22em] text-zinc-400">
               Categorías
             </h2>
 
             <div className="space-y-2">
               <button
                 onClick={() => setSelectedCategoryId("all")}
-                className="w-full rounded-2xl px-4 py-4 text-left text-sm font-black uppercase"
+                className="w-full rounded-2xl px-3 py-4 text-left text-[12px] font-black uppercase leading-tight"
                 style={{
                   background:
                     selectedCategoryId === "all"
@@ -1155,7 +1091,7 @@ if (!selectedPaymentMethod) {
                 <button
                   key={category.id}
                   onClick={() => setSelectedCategoryId(category.id)}
-                  className="w-full rounded-2xl px-4 py-4 text-left text-sm font-black uppercase"
+                  className="w-full rounded-2xl px-3 py-4 text-left text-[12px] font-black uppercase leading-tight"
                   style={{
                     background:
                       selectedCategoryId === category.id
@@ -1171,7 +1107,7 @@ if (!selectedPaymentMethod) {
             </div>
           </aside>
 
-          <section className="bg-white p-5 pb-36">
+          <section className="min-w-0 overflow-x-hidden bg-white p-3 pb-36">
             {loading && (
               <div className="rounded-3xl bg-zinc-50 p-10 text-center">
                 <p className="text-xl font-black">Cargando productos...</p>
@@ -1189,113 +1125,68 @@ if (!selectedPaymentMethod) {
             )}
 
             {!loading && visibleProducts.length > 0 && (
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
-                  gap: "16px",
-                }}
-              >
+              <div className="grid grid-cols-2 gap-3 xl:grid-cols-3 2xl:grid-cols-4">
                 {visibleProducts.map((product) => {
                   const hasModifiers =
                     getActiveModifierGroups(product).length > 0;
 
                   return (
                     <article
-  key={product.id}
-  className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm transition hover:shadow-md"
-  style={{
-    height: "380px",
-  }}
->
-  <button
-    onClick={() => openProduct(product)}
-    className="flex h-full w-full flex-col text-left"
-  >
-                      
-                        <div
-                          style={{
-                            width: "100%",
-                            height: "150px",
-                            minHeight: "150px",
-                            maxHeight: "150px",
-                            overflow: "hidden",
-                            background: "#fff",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
+                      key={product.id}
+                      className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm transition active:scale-[0.99]"
+                    >
+                      <button
+                        onClick={() => openProduct(product)}
+                        className="flex h-[315px] w-full flex-col text-left"
+                      >
+                        <div className="flex h-[125px] min-h-[125px] w-full items-center justify-center overflow-hidden bg-white">
                           {product.imageUrl ? (
                             <img
                               src={product.imageUrl}
                               alt={product.name}
-                              style={{
-                                width: "100%",
-                                height: "100%",
-                                objectFit: "contain",
-                                objectPosition: "center",
-                                display: "block",
-                                padding: "10px",
-                              }}
+                              className="block h-full w-full object-contain p-2"
                             />
                           ) : (
-                            <div
-                              style={{
-                                width: "100%",
-                                height: "100%",
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                color: "#a1a1aa",
-                              }}
-                            >
-                              <div style={{ fontSize: "30px" }}>🛒</div>
-                              <p
-                                style={{
-                                  marginTop: "4px",
-                                  fontSize: "11px",
-                                  fontWeight: 900,
-                                  textTransform: "uppercase",
-                                }}
-                              >
+                            <div className="flex h-full w-full flex-col items-center justify-center text-zinc-400">
+                              <div className="text-2xl">🛒</div>
+                              <p className="mt-1 text-[10px] font-black uppercase">
                                 Sin foto
                               </p>
                             </div>
                           )}
                         </div>
 
-                        <div className="flex flex-1 flex-col p-4">
-
-                          <h2 className="min-h-[48px] text-[20px] font-black leading-tight">
+                        <div className="flex min-h-0 flex-1 flex-col p-3">
+                          <h2 className="min-h-[44px] text-[17px] font-black leading-[20px]">
                             {product.name}
                           </h2>
 
-                          {product.description && (
-                            <p className="mt-1 min-h-[38px] text-sm leading-snug text-zinc-500">
+                          {product.description ? (
+                            <p className="mt-1 line-clamp-2 min-h-[36px] text-[12px] leading-[17px] text-zinc-500">
                               {product.description}
                             </p>
+                          ) : (
+                            <div className="mt-1 min-h-[36px]" />
                           )}
 
-                          <div className="mt-auto flex items-end justify-between gap-3 pt-4">
-                            <div>
+                          <div className="mt-auto flex items-end justify-between gap-2 pt-3">
+                            <div className="min-w-0">
                               <p
-                                className="text-[28px] font-black leading-none"
+                                className="whitespace-nowrap text-[24px] font-black leading-none"
                                 style={{ color: settings.primaryColor }}
                               >
                                 {formatPrice(product.price)}
                               </p>
 
                               {hasModifiers && (
-                                <p className="mt-1 text-[10px] font-black uppercase tracking-wide text-zinc-400">
-                                  
+                                <p className="mt-1 text-[9px] font-black uppercase tracking-wide text-zinc-400">
+                                  Personalizable
                                 </p>
                               )}
                             </div>
 
                             <div
-                              className="flex h-12 w-12 items-center justify-center rounded-2xl text-2xl font-black text-white"
+                              className="flex h-11 w-11 min-w-11 items-center justify-center rounded-2xl text-2xl font-black text-white shadow-sm"
                               style={{ background: settings.primaryColor }}
                             >
                               +
@@ -1310,70 +1201,22 @@ if (!selectedPaymentMethod) {
             )}
           </section>
 
-          <footer
-            style={{
-              position: "fixed",
-              right: "26px",
-              bottom: "26px",
-              zIndex: 9999,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "stretch",
-                overflow: "hidden",
-                borderRadius: "28px",
-                border: "1px solid #e4e4e7",
-                background: "white",
-                boxShadow: "0 18px 45px rgba(0,0,0,0.16)",
-              }}
-            >
-              <div
-                style={{
-                  padding: "18px 24px",
-                  minWidth: "150px",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                }}
-              >
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: "13px",
-                    fontWeight: 900,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.18em",
-                    color: "#a1a1aa",
-                  }}
-                >
+          <footer className="fixed inset-x-0 bottom-0 z-[9999] border-t border-zinc-200 bg-white/95 px-3 py-3 shadow-[0_-12px_40px_rgba(0,0,0,0.12)] backdrop-blur">
+            <div className="mx-auto flex max-w-[760px] items-stretch overflow-hidden rounded-[26px] border border-zinc-200 bg-white shadow-2xl">
+              <div className="flex min-w-[155px] flex-col justify-center px-5 py-3">
+                <p className="m-0 text-[12px] font-black uppercase tracking-[0.16em] text-zinc-400">
                   Total
                 </p>
 
                 <p
-                  style={{
-                    margin: 0,
-                    marginTop: "4px",
-                    fontSize: "26px",
-                    lineHeight: "28px",
-                    fontWeight: 900,
-                    color: settings.primaryColor,
-                  }}
+                  className="m-0 mt-1 text-[27px] font-black leading-none"
+                  style={{ color: settings.primaryColor }}
                 >
                   {formatPrice(cartTotal)}
                 </p>
 
                 {cartQuantity > 0 && (
-                  <p
-                    style={{
-                      margin: 0,
-                      marginTop: "6px",
-                      fontSize: "14px",
-                      fontWeight: 900,
-                      color: "#8a8a93",
-                    }}
-                  >
+                  <p className="m-0 mt-1 text-[12px] font-black text-zinc-500">
                     {cartQuantity} producto{cartQuantity > 1 ? "s" : ""}
                   </p>
                 )}
@@ -1382,15 +1225,11 @@ if (!selectedPaymentMethod) {
               <button
                 onClick={goToSummary}
                 disabled={cart.length === 0}
+                className="flex flex-1 items-center justify-center px-5 text-[22px] font-black disabled:cursor-not-allowed"
                 style={{
-                  minWidth: "210px",
                   border: "none",
                   background: cart.length > 0 ? settings.primaryColor : "#e4e4e7",
                   color: cart.length > 0 ? "white" : "#71717a",
-                  fontSize: "24px",
-                  fontWeight: 900,
-                  padding: "0 28px",
-                  cursor: cart.length > 0 ? "pointer" : "not-allowed",
                 }}
               >
                 Siguiente →
