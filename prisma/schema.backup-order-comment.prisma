@@ -94,7 +94,6 @@ model Order {
   status           String  @default("pending")
   total            Int     @default(0)
   customerName     String?
-  customerComment  String?
   customerId       Int?
   walletAmountUsed Int     @default(0)
   cashbackEarned   Int     @default(0)

@@ -60,6 +60,7 @@ type CartItem = {
   total: number;
   modifierOptionIds: number[];
   modifiersText: string[];
+  customerComment: string;
 };
 
 type LoggedCustomer = {
@@ -214,6 +215,7 @@ export default function PedidoPage() {
   const [selectedOptionsByGroup, setSelectedOptionsByGroup] = useState<
     Record<number, number[]>
   >({});
+  const [selectedProductComment, setSelectedProductComment] = useState("");
 
   const [cart, setCart] = useState<CartItem[]>([]);
 
@@ -384,6 +386,7 @@ export default function PedidoPage() {
 
     setSelectedProduct(product);
     setSelectedOptionsByGroup({});
+    setSelectedProductComment("");
     setMessage("");
   }
 
@@ -397,6 +400,7 @@ export default function PedidoPage() {
         total: product.price,
         modifierOptionIds: [],
         modifiersText: [],
+        customerComment: "",
       },
     ]);
   }
@@ -477,11 +481,13 @@ export default function PedidoPage() {
         total,
         modifierOptionIds,
         modifiersText,
+        customerComment: selectedProductComment.trim(),
       },
     ]);
 
     setSelectedProduct(null);
     setSelectedOptionsByGroup({});
+    setSelectedProductComment("");
     setMessage("");
   }
 
@@ -597,6 +603,13 @@ export default function PedidoPage() {
     setAuthMessage("");
   }
 
+  function buildOnlineOrderCustomerComment() {
+    return cart
+      .filter((item) => item.customerComment.trim())
+      .map((item) => `${item.productName}: ${item.customerComment.trim()}`)
+      .join(" | ");
+  }
+
   async function createOnlineOrder() {
     try {
       setLoadingOrder(true);
@@ -635,6 +648,8 @@ export default function PedidoPage() {
         scheduledForValue = `${scheduledDate}T${scheduledTime}:00`;
       }
 
+      const customerComment = buildOnlineOrderCustomerComment();
+
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: {
@@ -643,6 +658,7 @@ export default function PedidoPage() {
         body: JSON.stringify({
           customerId: loggedCustomer?.id || null,
           customerName: finalCustomerName,
+          customerComment,
           walletAmountUsed: walletAmountToUse,
           totemCode: "online",
           paymentMethod,
@@ -1111,6 +1127,17 @@ export default function PedidoPage() {
                     <div>
                       <h3 className="font-black">{item.productName}</h3>
 
+                      {item.customerComment && (
+                        <div className="mt-2 rounded-xl bg-yellow-50 p-3">
+                          <p className="text-xs font-black uppercase text-yellow-700">
+                            Comentario cocina
+                          </p>
+                          <p className="mt-1 text-xs font-bold text-zinc-700">
+                            {item.customerComment}
+                          </p>
+                        </div>
+                      )}
+
                       {item.modifiersText.length > 0 && (
                         <div className="mt-2 space-y-1">
                           {item.modifiersText.map((text) => (
@@ -1426,6 +1453,28 @@ export default function PedidoPage() {
                   </section>
                 );
               })}
+            </div>
+
+            <div className="mt-5 rounded-3xl border border-zinc-200 bg-zinc-50 p-4">
+              <label className="block">
+                <span className="text-xs font-black uppercase tracking-[0.18em] text-zinc-500">
+                  Comentario para cocina
+                </span>
+
+                <textarea
+                  value={selectedProductComment}
+                  onChange={(event) =>
+                    setSelectedProductComment(event.target.value.slice(0, 180))
+                  }
+                  placeholder="Ej: Con poca salsa"
+                  rows={3}
+                  className="mt-3 w-full resize-none rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-base font-bold outline-none focus:border-[#10B557]"
+                />
+
+                <p className="mt-2 text-xs font-bold text-zinc-500">
+                  Este comentario aparecerá en cocina y en la comanda.
+                </p>
+              </label>
             </div>
 
             <button

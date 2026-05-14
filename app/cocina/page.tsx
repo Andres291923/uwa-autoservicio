@@ -34,6 +34,7 @@ type Order = {
   status: string;
   total: number;
   customerName: string | null;
+  customerComment: string | null;
     orderSource?: string;
   fulfillmentType?: string;
   scheduledFor?: string | null;
@@ -260,6 +261,22 @@ function printOrderTicket(order: Order) {
             line-height: 1.25;
           }
 
+          .comment-box {
+            margin: 10px 0;
+            padding: 8px;
+            border: 2px solid black;
+            font-size: 15px;
+            font-weight: 900;
+            line-height: 1.25;
+          }
+
+          .comment-title {
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+          }
+
           .total {
             display: flex;
             justify-content: space-between;
@@ -301,6 +318,12 @@ function printOrderTicket(order: Order) {
           </div>
 
           <div class="line"></div>
+
+          ${
+            order.customerComment
+              ? `<div class="comment-box"><div class="comment-title">COMENTARIO COCINA</div>${escapeHtml(order.customerComment)}</div><div class="line"></div>`
+              : ""
+          }
 
           ${itemsHtml}
 
@@ -663,6 +686,16 @@ useEffect(() => {
     <p className="mt-1 text-sm font-black text-zinc-700">
   Cliente: {order.customerName || "Sin nombre"}
 </p>
+{order.customerComment && (
+  <div className="mt-3 rounded-2xl bg-yellow-50 p-4">
+    <p className="text-xs font-black uppercase text-yellow-700">
+      Comentario cocina
+    </p>
+    <p className="mt-1 text-base font-black text-zinc-800">
+      {order.customerComment}
+    </p>
+  </div>
+)}
     <div className="mt-3 flex flex-wrap gap-2">
       <span
         className={`rounded-full px-4 py-2 text-xs font-black uppercase ${
@@ -784,6 +817,16 @@ useEffect(() => {
                         <p className="mt-1 text-sm font-black text-zinc-700">
   Cliente: {order.customerName || "Sin nombre"}
 </p>
+{order.customerComment && (
+  <div className="mt-3 rounded-2xl bg-yellow-50 p-4">
+    <p className="text-xs font-black uppercase text-yellow-700">
+      Comentario cocina
+    </p>
+    <p className="mt-1 text-base font-black text-zinc-800">
+      {order.customerComment}
+    </p>
+  </div>
+)}
                       </div>
 
                       <span className="rounded-full bg-green-100 px-4 py-2 text-sm font-black text-green-700">

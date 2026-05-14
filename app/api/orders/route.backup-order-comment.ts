@@ -309,10 +309,6 @@ export async function POST(request: Request) {
       ? String(body.customerName).trim()
       : null;
 
-    const customerComment = body.customerComment
-      ? String(body.customerComment).trim().slice(0, 500)
-      : null;
-
     const totemCode = body.totemCode ? String(body.totemCode) : "totem-local";
     const paymentMethod = normalizePaymentMethod(body.paymentMethod);
     const orderSource = normalizeOrderSource(body.orderSource);
@@ -517,7 +513,6 @@ export async function POST(request: Request) {
         status: "pending",
         total: orderTotal,
         customerName,
-        customerComment,
         walletAmountUsed,
         cashbackEarned,
         tipAmount,
@@ -672,4 +667,5 @@ export async function PATCH(request: Request) {
     );
   }
 }
+
 

@@ -67,6 +67,7 @@ type CartItem = {
   quantity: number;
   modifiers: CartModifierGroup[];
   total: number;
+  customerComment: string;
 };
 
 type TotemStep = "catalog" | "summary" | "customer" | "payment";
@@ -149,6 +150,7 @@ export default function TotemPage() {
   const [selectedOptionsByGroup, setSelectedOptionsByGroup] = useState<
     Record<number, number[]>
   >({});
+  const [selectedProductComment, setSelectedProductComment] = useState("");
 
   const [customerName, setCustomerName] = useState("");
   const [confirmingOrder, setConfirmingOrder] = useState(false);
@@ -301,12 +303,14 @@ export default function TotemPage() {
 
     setSelectedProduct(product);
     setSelectedOptionsByGroup({});
+    setSelectedProductComment("");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function closeProductBuilder() {
     setSelectedProduct(null);
     setSelectedOptionsByGroup({});
+    setSelectedProductComment("");
   }
 
   function toggleOption(group: ProductModifierGroup, optionId: number) {
@@ -350,6 +354,7 @@ export default function TotemPage() {
         quantity: 1,
         modifiers: [],
         total: product.price,
+        customerComment: "",
       },
     ]);
   }
@@ -388,6 +393,7 @@ export default function TotemPage() {
         quantity: 1,
         modifiers,
         total: selectedProductTotal,
+        customerComment: selectedProductComment.trim(),
       },
     ]);
 
@@ -428,6 +434,13 @@ export default function TotemPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  function buildOrderCustomerComment() {
+    return cart
+      .filter((item) => item.customerComment.trim())
+      .map((item) => `${item.name}: ${item.customerComment.trim()}`)
+      .join(" | ");
+  }
+
   function goToPaymentStep() {
     if (cart.length === 0) return;
 
@@ -459,6 +472,8 @@ export default function TotemPage() {
       return;
     }
 
+    const customerComment = buildOrderCustomerComment();
+
     try {
       setConfirmingOrder(true);
       setOrderMessage("");
@@ -471,6 +486,7 @@ export default function TotemPage() {
         },
         body: JSON.stringify({
           customerName: finalCustomerName,
+          customerComment,
           totemCode: "totem-local",
           paymentMethod: selectedPaymentMethod,
           tipAmount,
@@ -753,6 +769,28 @@ export default function TotemPage() {
               })}
             </div>
 
+            <div className="mt-5 rounded-3xl border border-zinc-200 bg-zinc-50 p-4">
+              <label className="block">
+                <span className="text-xs font-black uppercase tracking-[0.18em] text-zinc-500">
+                  Comentario para cocina
+                </span>
+
+                <textarea
+                  value={selectedProductComment}
+                  onChange={(event) =>
+                    setSelectedProductComment(event.target.value.slice(0, 180))
+                  }
+                  placeholder="Ej: Con poca salsa"
+                  rows={3}
+                  className="mt-3 w-full resize-none rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-base font-bold outline-none focus:border-[#10B557]"
+                />
+
+                <p className="mt-2 text-xs font-bold text-zinc-500">
+                  Este comentario aparecerá en cocina y en la comanda.
+                </p>
+              </label>
+            </div>
+
             <div className="sticky bottom-4 mt-5 rounded-3xl border border-zinc-200 bg-white p-4 shadow-xl">
               <div className="flex items-center justify-between gap-4">
                 <div>
@@ -828,6 +866,17 @@ export default function TotemPage() {
                         Quitar
                       </button>
                     </div>
+
+                    {item.customerComment && (
+                      <div className="mt-3 rounded-2xl bg-yellow-50 p-3">
+                        <p className="text-xs font-black uppercase text-yellow-700">
+                          Comentario cocina
+                        </p>
+                        <p className="mt-1 text-sm font-bold text-zinc-700">
+                          {item.customerComment}
+                        </p>
+                      </div>
+                    )}
 
                     {item.modifiers.length > 0 && (
                       <div className="mt-3 space-y-2 border-t border-zinc-100 pt-3">
@@ -1093,7 +1142,7 @@ export default function TotemPage() {
                       color: "#ffffff",
                     }}
                   >
-                    {selectedPaymentMethod === "debit_credit" ? "âœ“" : ""}
+                    {selectedPaymentMethod === "debit_credit" ? "\u2713" : ""}
                   </div>
                 </div>
               </button>
@@ -1149,7 +1198,7 @@ export default function TotemPage() {
                       color: "#ffffff",
                     }}
                   >
-                    {selectedPaymentMethod === "food_benefit" ? "âœ“" : ""}
+                    {selectedPaymentMethod === "food_benefit" ? "\u2713" : ""}
                   </div>
                 </div>
               </button>
@@ -1380,6 +1429,7 @@ export default function TotemPage() {
     </main>
   );
 }
+
 
 
 
