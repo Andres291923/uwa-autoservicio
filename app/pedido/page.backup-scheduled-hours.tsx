@@ -70,13 +70,6 @@ type LoggedCustomer = {
   walletBalance: number;
 };
 
-type OpeningHour = {
-  dayOfWeek: number;
-  enabled: boolean;
-  openTime: string;
-  closeTime: string;
-};
-
 const defaultSettings: Settings = {
   businessName: "Mi negocio",
   kioskTitle: "Pedido online",
@@ -97,145 +90,27 @@ function createCartId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-function getTodayInputDate() {
-  const now = new Date();
-  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60 * 1000);
-  return local.toISOString().slice(0, 10);
-}
-
-function timeToMinutes(value: string) {
-  const [hour, minute] = value.split(":").map(Number);
-  return (hour || 0) * 60 + (minute || 0);
-}
-
-function minutesToTime(total: number) {
-  const hour = Math.floor(total / 60)
-    .toString()
-    .padStart(2, "0");
-  const minute = (total % 60).toString().padStart(2, "0");
-  return `${hour}:${minute}`;
-}
-
-function buildTimeSlots(openTime: string, closeTime: string, step = 30) {
-  const slots: string[] = [];
-  const start = timeToMinutes(openTime);
-  const end = timeToMinutes(closeTime);
-
-  for (let current = start; current < end; current += step) {
-    slots.push(minutesToTime(current));
-  }
-
-  return slots;
-}
-
-function getScheduleForDate(dateValue: string, openingHours: OpeningHour[]) {
-  if (!dateValue) return null;
-
-  const date = new Date(`${dateValue}T12:00:00`);
-  const dayOfWeek = date.getDay();
-
-  return (
-    openingHours.find(
-      (item) => item.dayOfWeek === dayOfWeek && item.enabled
-    ) || null
-  );
-}
-
-function buildScheduleBanner(openingHours: OpeningHour[]) {
-  const monFri = openingHours.filter(
-    (item) => item.enabled && item.dayOfWeek >= 1 && item.dayOfWeek <= 5
-  );
-
-  const saturday = openingHours.find(
-    (item) => item.enabled && item.dayOfWeek === 6
-  );
-
-  const sunday = openingHours.find(
-    (item) => item.enabled && item.dayOfWeek === 0
-  );
-
-  const parts: string[] = [];
-
-  if (
-    monFri.length === 5 &&
-    monFri.every(
-      (item) =>
-        item.openTime === monFri[0].openTime &&
-        item.closeTime === monFri[0].closeTime
-    )
-  ) {
-    parts.push(
-      `Lunes a Viernes ${monFri[0].openTime} a ${monFri[0].closeTime}`
-    );
-  } else {
-    monFri.forEach((item) => {
-      const dayName =
-        item.dayOfWeek === 1
-          ? "Lunes"
-          : item.dayOfWeek === 2
-          ? "Martes"
-          : item.dayOfWeek === 3
-          ? "Miércoles"
-          : item.dayOfWeek === 4
-          ? "Jueves"
-          : "Viernes";
-
-      parts.push(`${dayName} ${item.openTime} a ${item.closeTime}`);
-    });
-  }
-
-  if (saturday) {
-    parts.push(`Sábado ${saturday.openTime} a ${saturday.closeTime}`);
-  }
-
-  if (sunday) {
-    parts.push(`Domingo ${sunday.openTime} a ${sunday.closeTime}`);
-  }
-
-  return parts.join(" · ");
-}
-
 export default function PedidoPage() {
-  const todayInputDate = useMemo(() => getTodayInputDate(), []);
-
   const [settings, setSettings] = useState<Settings>(defaultSettings);
   const [products, setProducts] = useState<Product[]>([]);
-  const [openingHours, setOpeningHours] = useState<OpeningHour[]>([]);
-
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | "all">(
-    "all"
-  );
-
-  const [scheduledDate, setScheduledDate] = useState(todayInputDate);
-  const [scheduledTime, setScheduledTime] = useState("");
-  const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | "all">("all");
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [selectedOptionsByGroup, setSelectedOptionsByGroup] = useState<
-    Record<number, number[]>
-  >({});
+  const [selectedOptionsByGroup, setSelectedOptionsByGroup] = useState<Record<number, number[]>>({});
 
   const [cart, setCart] = useState<CartItem[]>([]);
 
-  const [loggedCustomer, setLoggedCustomer] = useState<LoggedCustomer | null>(
-    null
-  );
-  const [authMode, setAuthMode] = useState<"login" | "register" | "guest">(
-    "login"
-  );
+  const [loggedCustomer, setLoggedCustomer] = useState<LoggedCustomer | null>(null);
+  const [authMode, setAuthMode] = useState<"login" | "register" | "guest">("login");
   const [authName, setAuthName] = useState("");
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
   const [guestName, setGuestName] = useState("");
   const [useWallet, setUseWallet] = useState(false);
 
-  const [fulfillmentType, setFulfillmentType] = useState<
-    "immediate" | "scheduled"
-  >("immediate");
-
-  const [paymentMethod, setPaymentMethod] = useState<
-    "debit_credit" | "food_benefit"
-  >("debit_credit");
+  const [fulfillmentType, setFulfillmentType] = useState<"immediate" | "scheduled">("immediate");
+  const [scheduledFor, setScheduledFor] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"debit_credit" | "food_benefit">("debit_credit");
 
   const [message, setMessage] = useState("");
   const [closedStoreModalVisible, setClosedStoreModalVisible] = useState(false);
@@ -245,12 +120,10 @@ export default function PedidoPage() {
 
   async function loadInitialData() {
     try {
-      const [settingsResponse, productsResponse, hoursResponse] =
-        await Promise.all([
-          fetch("/api/settings"),
-          fetch("/api/products"),
-          fetch("/api/settings/hours"),
-        ]);
+      const [settingsResponse, productsResponse] = await Promise.all([
+        fetch("/api/settings"),
+        fetch("/api/products"),
+      ]);
 
       if (settingsResponse.ok) {
         const settingsData = await settingsResponse.json();
@@ -261,11 +134,6 @@ export default function PedidoPage() {
         const productsData = await productsResponse.json();
         setProducts(Array.isArray(productsData) ? productsData : []);
       }
-
-      if (hoursResponse.ok) {
-        const hoursData = await hoursResponse.json();
-        setOpeningHours(Array.isArray(hoursData.hours) ? hoursData.hours : []);
-      }
     } catch (error) {
       console.error(error);
       setMessage("No se pudo cargar el catalogo.");
@@ -275,36 +143,6 @@ export default function PedidoPage() {
   useEffect(() => {
     loadInitialData();
   }, []);
-
-  const scheduleBanner = useMemo(() => {
-    return buildScheduleBanner(openingHours);
-  }, [openingHours]);
-
-  const selectedDaySchedule = useMemo(() => {
-    return getScheduleForDate(scheduledDate, openingHours);
-  }, [scheduledDate, openingHours]);
-
-  useEffect(() => {
-    if (fulfillmentType !== "scheduled") return;
-
-    if (!selectedDaySchedule) {
-      setAvailableTimeSlots([]);
-      setScheduledTime("");
-      return;
-    }
-
-    const slots = buildTimeSlots(
-      selectedDaySchedule.openTime,
-      selectedDaySchedule.closeTime,
-      30
-    );
-
-    setAvailableTimeSlots(slots);
-
-    if (!slots.includes(scheduledTime)) {
-      setScheduledTime(slots[0] || "");
-    }
-  }, [fulfillmentType, selectedDaySchedule, scheduledTime]);
 
   const activeProducts = useMemo(() => {
     return products
@@ -322,16 +160,12 @@ export default function PedidoPage() {
       }
     }
 
-    return Array.from(map.values()).sort((a, b) =>
-      a.name.localeCompare(b.name)
-    );
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [activeProducts]);
 
   const visibleProducts = useMemo(() => {
     if (selectedCategoryId === "all") return activeProducts;
-    return activeProducts.filter(
-      (product) => product.category?.id === selectedCategoryId
-    );
+    return activeProducts.filter((product) => product.category?.id === selectedCategoryId);
   }, [activeProducts, selectedCategoryId]);
 
   const activeModifierGroups = useMemo(() => {
@@ -364,18 +198,8 @@ export default function PedidoPage() {
 
   const totalToPay = Math.max(0, cartTotal - walletAmountToUse);
 
-  function switchToScheduled() {
-    setFulfillmentType("scheduled");
-
-    if (!scheduledDate) {
-      setScheduledDate(todayInputDate);
-    }
-  }
-
   function openProduct(product: Product) {
-    const groups = (product.modifierGroups || []).filter(
-      (group) => group.active !== false
-    );
+    const groups = (product.modifierGroups || []).filter((group) => group.active !== false);
 
     if (groups.length === 0) {
       addSimpleProduct(product);
@@ -454,9 +278,7 @@ export default function PedidoPage() {
       const selectedIds = selectedOptionsByGroup[group.id] || [];
 
       for (const optionId of selectedIds) {
-        const option = group.template.options.find(
-          (item) => item.id === optionId
-        );
+        const option = group.template.options.find((item) => item.id === optionId);
 
         if (option) {
           modifierOptionIds.push(option.id);
@@ -614,25 +436,9 @@ export default function PedidoPage() {
         return;
       }
 
-      let scheduledForValue: string | null = null;
-
-      if (fulfillmentType === "scheduled") {
-        if (!scheduledDate || !scheduledTime) {
-          setMessage("Selecciona fecha y hora para programar el pedido.");
-          return;
-        }
-
-        if (!selectedDaySchedule) {
-          setMessage("La tienda está cerrada ese día. Elige otra fecha.");
-          return;
-        }
-
-        if (!availableTimeSlots.includes(scheduledTime)) {
-          setMessage("Selecciona una hora disponible.");
-          return;
-        }
-
-        scheduledForValue = `${scheduledDate}T${scheduledTime}:00`;
+      if (fulfillmentType === "scheduled" && !scheduledFor) {
+        setMessage("Selecciona fecha y hora para programar el pedido.");
+        return;
       }
 
       const response = await fetch("/api/orders", {
@@ -648,9 +454,10 @@ export default function PedidoPage() {
           paymentMethod,
           orderSource: "online",
           fulfillmentType,
-          scheduledFor: scheduledForValue
-            ? new Date(scheduledForValue).toISOString()
-            : null,
+          scheduledFor:
+            fulfillmentType === "scheduled"
+              ? new Date(scheduledFor).toISOString()
+              : null,
           items: cart.map((item) => ({
             productId: item.productId,
             quantity: 1,
@@ -664,12 +471,9 @@ export default function PedidoPage() {
       if (!response.ok) {
         const errorText = String(data.error || "");
 
-        if (
-          errorText.includes("STORE_CLOSED_FOR_IMMEDIATE_ORDER") ||
-          errorText.includes("STORE_CLOSED_FOR_SCHEDULED_ORDER")
-        ) {
+        if (errorText.includes("STORE_CLOSED_FOR_IMMEDIATE_ORDER")) {
           setMessage("");
-          switchToScheduled();
+          setFulfillmentType("scheduled");
           setClosedStoreModalVisible(true);
           return;
         }
@@ -681,8 +485,7 @@ export default function PedidoPage() {
       setCart([]);
       setGuestName(loggedCustomer?.name || "");
       setFulfillmentType("immediate");
-      setScheduledDate(todayInputDate);
-      setScheduledTime("");
+      setScheduledFor("");
       setPaymentMethod("debit_credit");
       setUseWallet(false);
 
@@ -712,7 +515,7 @@ export default function PedidoPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f5f6f8] text-zinc-950">
+        <main className="min-h-screen bg-[#f5f6f8] text-zinc-950">
       {closedStoreModalVisible && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 px-5">
           <div className="w-full max-w-xl rounded-[2rem] bg-white p-7 text-center shadow-2xl">
@@ -725,14 +528,14 @@ export default function PedidoPage() {
             </h2>
 
             <p className="mt-3 text-base font-bold text-zinc-500">
-              En este momento no estamos tomando pedidos inmediatos. Puedes
-              programar tu pedido para más tarde.
+              En este momento no estamos tomando pedidos inmediatos.
+              Puedes programar tu pedido para mas tarde.
             </p>
 
             <button
               type="button"
               onClick={() => {
-                switchToScheduled();
+                setFulfillmentType("scheduled");
                 setClosedStoreModalVisible(false);
                 setMessage("");
               }}
@@ -746,12 +549,11 @@ export default function PedidoPage() {
               onClick={() => setClosedStoreModalVisible(false)}
               className="mt-3 w-full rounded-2xl border border-zinc-200 bg-white py-4 text-sm font-black text-zinc-700"
             >
-              Seguir viendo catálogo
+              Seguir viendo catalogo
             </button>
           </div>
         </div>
       )}
-
       <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4">
           <div className="flex items-center gap-3">
@@ -790,17 +592,6 @@ export default function PedidoPage() {
             </p>
           </div>
         </div>
-
-        {scheduleBanner && (
-          <div className="border-t border-emerald-100 bg-emerald-50 px-4 py-3 text-center">
-            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-emerald-700">
-              Horario de atención
-            </p>
-            <p className="mt-1 text-sm font-bold text-zinc-800">
-              {scheduleBanner}
-            </p>
-          </div>
-        )}
       </header>
 
       <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[1fr_410px]">
@@ -808,7 +599,7 @@ export default function PedidoPage() {
           <div className="mb-5">
             <h2 className="text-3xl font-black">Elige tus productos</h2>
             <p className="mt-1 text-sm font-bold text-zinc-500">
-              Compra online usando el mismo catálogo del local.
+              Compra online usando el mismo catalogo del local.
             </p>
           </div>
 
@@ -822,9 +613,7 @@ export default function PedidoPage() {
               }`}
               style={{
                 background:
-                  selectedCategoryId === "all"
-                    ? settings.primaryColor
-                    : undefined,
+                  selectedCategoryId === "all" ? settings.primaryColor : undefined,
               }}
             >
               Todo
@@ -1052,9 +841,7 @@ export default function PedidoPage() {
 
                     <button
                       type="button"
-                      onClick={
-                        authMode === "login" ? loginCustomer : registerCustomer
-                      }
+                      onClick={authMode === "login" ? loginCustomer : registerCustomer}
                       disabled={loadingAuth}
                       className="mt-4 w-full rounded-2xl py-3 text-sm font-black text-white disabled:bg-zinc-300"
                       style={{
@@ -1098,7 +885,7 @@ export default function PedidoPage() {
 
           {cart.length === 0 ? (
             <p className="mt-4 rounded-2xl bg-zinc-50 p-4 text-sm font-bold text-zinc-500">
-              Aún no agregas productos.
+              Aun no agregas productos.
             </p>
           ) : (
             <div className="mt-4 space-y-3">
@@ -1114,10 +901,7 @@ export default function PedidoPage() {
                       {item.modifiersText.length > 0 && (
                         <div className="mt-2 space-y-1">
                           {item.modifiersText.map((text) => (
-                            <p
-                              key={text}
-                              className="text-xs font-bold text-zinc-500"
-                            >
+                            <p key={text} className="text-xs font-bold text-zinc-500">
                               {text}
                             </p>
                           ))}
@@ -1166,7 +950,7 @@ export default function PedidoPage() {
 
               <button
                 type="button"
-                onClick={switchToScheduled}
+                onClick={() => setFulfillmentType("scheduled")}
                 className={`rounded-2xl border px-3 py-3 text-sm font-black ${
                   fulfillmentType === "scheduled"
                     ? "text-white"
@@ -1184,57 +968,17 @@ export default function PedidoPage() {
             </div>
 
             {fulfillmentType === "scheduled" && (
-              <div className="mt-4 space-y-4">
-                <label className="block">
-                  <span className="text-xs font-black uppercase text-zinc-500">
-                    Fecha
-                  </span>
-
-                  <input
-                    type="date"
-                    min={todayInputDate}
-                    value={scheduledDate}
-                    onChange={(event) => setScheduledDate(event.target.value)}
-                    className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="text-xs font-black uppercase text-zinc-500">
-                    Hora disponible
-                  </span>
-
-                  <select
-                    value={scheduledTime}
-                    onChange={(event) => setScheduledTime(event.target.value)}
-                    disabled={!availableTimeSlots.length}
-                    className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none disabled:bg-zinc-100"
-                  >
-                    {!availableTimeSlots.length ? (
-                      <option value="">No hay horarios disponibles</option>
-                    ) : (
-                      availableTimeSlots.map((slot) => (
-                        <option key={slot} value={slot}>
-                          {slot}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                </label>
-
-                {scheduledDate && !selectedDaySchedule && (
-                  <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
-                    Tienda cerrada ese día. Elige otra fecha.
-                  </div>
-                )}
-
-                {selectedDaySchedule && (
-                  <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
-                    Horario disponible: {selectedDaySchedule.openTime} a{" "}
-                    {selectedDaySchedule.closeTime}
-                  </div>
-                )}
-              </div>
+              <label className="mt-4 block">
+                <span className="text-xs font-black uppercase text-zinc-500">
+                  Fecha y hora
+                </span>
+                <input
+                  type="datetime-local"
+                  value={scheduledFor}
+                  onChange={(event) => setScheduledFor(event.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
+                />
+              </label>
             )}
 
             <label className="mt-4 block">
@@ -1250,8 +994,8 @@ export default function PedidoPage() {
                 }
                 className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
               >
-                <option value="debit_credit">Débito / Crédito</option>
-                <option value="food_benefit">Beneficio alimentación</option>
+                <option value="debit_credit">Debito / Credito</option>
+                <option value="food_benefit">Beneficio alimentacion</option>
               </select>
             </label>
           </div>
@@ -1446,3 +1190,4 @@ export default function PedidoPage() {
     </main>
   );
 }
+

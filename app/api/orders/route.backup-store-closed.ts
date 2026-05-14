@@ -2,67 +2,6 @@
 import { prisma } from "@/lib/prisma";
 
 const allowedStatuses = ["pending", "ready", "cancelled"];
-const storeTimeZone = "America/Santiago";
-
-function getChileDayOfWeek(date: Date) {
-  const weekday = new Intl.DateTimeFormat("en-US", {
-    timeZone: storeTimeZone,
-    weekday: "short",
-  }).format(date);
-
-  const map: Record<string, number> = {
-    Sun: 0,
-    Mon: 1,
-    Tue: 2,
-    Wed: 3,
-    Thu: 4,
-    Fri: 5,
-    Sat: 6,
-  };
-
-  return map[weekday] ?? 0;
-}
-
-function getChileMinutes(date: Date) {
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: storeTimeZone,
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(date);
-
-  const hour = Number(parts.find((part) => part.type === "hour")?.value || 0);
-  const minute = Number(parts.find((part) => part.type === "minute")?.value || 0);
-
-  return hour * 60 + minute;
-}
-
-function timeToMinutes(time: string) {
-  const [hour, minute] = time.split(":").map(Number);
-  return (hour || 0) * 60 + (minute || 0);
-}
-
-async function isStoreOpenNow() {
-  const now = new Date();
-  const dayOfWeek = getChileDayOfWeek(now);
-  const currentMinutes = getChileMinutes(now);
-
-  const schedule = await prisma.storeOpeningHour.findUnique({
-    where: {
-      businessSettingsId_dayOfWeek: {
-        businessSettingsId: 1,
-        dayOfWeek,
-      },
-    },
-  });
-
-  if (!schedule || !schedule.enabled) return false;
-
-  const openMinutes = timeToMinutes(schedule.openTime);
-  const closeMinutes = timeToMinutes(schedule.closeTime);
-
-  return currentMinutes >= openMinutes && currentMinutes < closeMinutes;
-}
 
 function normalizePaymentMethod(value: unknown) {
   if (value === "debit_credit") return "debit_credit";
@@ -189,76 +128,6 @@ async function calculateCashback(params: {
   return { cashbackEarned, expiresAt };
 }
 
-
-function getScheduledChileDayOfWeek(date: Date) {
-  const weekday = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Santiago",
-    weekday: "short",
-  }).format(date);
-
-  const map: Record<string, number> = {
-    Sun: 0,
-    Mon: 1,
-    Tue: 2,
-    Wed: 3,
-    Thu: 4,
-    Fri: 5,
-    Sat: 6,
-  };
-
-  return map[weekday] ?? 0;
-}
-
-function getScheduledChileMinutes(date: Date) {
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "America/Santiago",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(date);
-
-  const hour = Number(parts.find((part) => part.type === "hour")?.value || 0);
-  const minute = Number(parts.find((part) => part.type === "minute")?.value || 0);
-
-  return hour * 60 + minute;
-}
-
-function scheduleTimeToMinutes(time: string) {
-  const [hour, minute] = time.split(":").map(Number);
-  return (hour || 0) * 60 + (minute || 0);
-}
-
-async function validateScheduledOrderTime(date: Date) {
-  const dayOfWeek = getScheduledChileDayOfWeek(date);
-  const scheduledMinutes = getScheduledChileMinutes(date);
-
-  const schedule = await prisma.storeOpeningHour.findUnique({
-    where: {
-      businessSettingsId_dayOfWeek: {
-        businessSettingsId: 1,
-        dayOfWeek,
-      },
-    },
-  });
-
-  if (!schedule || !schedule.enabled) {
-    return {
-      ok: false,
-      openTime: null,
-      closeTime: null,
-    };
-  }
-
-  const openMinutes = scheduleTimeToMinutes(schedule.openTime);
-  const closeMinutes = scheduleTimeToMinutes(schedule.closeTime);
-
-  return {
-    ok: scheduledMinutes >= openMinutes && scheduledMinutes < closeMinutes,
-    openTime: schedule.openTime,
-    closeTime: schedule.closeTime,
-  };
-}
-
 export async function GET() {
   try {
     const orders = await prisma.order.findMany({
@@ -348,39 +217,6 @@ export async function POST(request: Request) {
       );
     }
 
-
-    if (fulfillmentType !== "scheduled") {
-      const storeIsOpen = await isStoreOpenNow();
-
-      if (!storeIsOpen) {
-        return NextResponse.json(
-          {
-            error:
-              "STORE_CLOSED_FOR_IMMEDIATE_ORDER: Tienda cerrada, solo puedes hacer pedidos programados.",
-          },
-          { status: 400 }
-        );
-      }
-    }
-
-    if (fulfillmentType === "scheduled" && scheduledFor) {
-      const scheduledValidation = await validateScheduledOrderTime(scheduledFor);
-
-      if (!scheduledValidation.ok) {
-        const hoursText =
-          scheduledValidation.openTime && scheduledValidation.closeTime
-            ? `Horario disponible: ${scheduledValidation.openTime} a ${scheduledValidation.closeTime}.`
-            : "La tienda no abre ese dia.";
-
-        return NextResponse.json(
-          {
-            error:
-              `STORE_CLOSED_FOR_SCHEDULED_ORDER: La tienda esta cerrada en ese horario. ${hoursText}`,
-          },
-          { status: 400 }
-        );
-      }
-    }
     const customer = customerId
       ? await prisma.customer.findUnique({
           where: {
@@ -667,5 +503,3 @@ export async function PATCH(request: Request) {
     );
   }
 }
-
-

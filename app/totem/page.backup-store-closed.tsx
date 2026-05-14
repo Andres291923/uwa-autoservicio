@@ -73,16 +73,6 @@ type TotemStep = "catalog" | "summary" | "customer" | "payment";
 
 type PaymentMethod = "debit_credit" | "food_benefit";
 
-type StoreStatus = {
-  isOpen: boolean;
-  message: string;
-  currentTime?: string;
-  schedule?: {
-    openTime?: string;
-    closeTime?: string;
-  } | null;
-};
-
 type BusinessSettings = {
   id: number;
   businessName: string;
@@ -157,27 +147,9 @@ export default function TotemPage() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<PaymentMethod | null>(null);
   const [tipSelected, setTipSelected] = useState(false);
-  const [storeStatus, setStoreStatus] = useState<StoreStatus | null>(null);
-  const [closedModalVisible, setClosedModalVisible] = useState(false);
 
   const loggedCustomerName = "";
 
-
-  async function loadStoreStatus() {
-    try {
-      const response = await fetch("/api/store-status", {
-        cache: "no-store",
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setStoreStatus(data);
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  }
   async function loadSettings() {
     try {
       const response = await fetch("/api/settings");
@@ -410,11 +382,6 @@ export default function TotemPage() {
   function goToSummary() {
     if (cart.length === 0) return;
 
-    if (storeStatus && !storeStatus.isOpen) {
-      setClosedModalVisible(true);
-      return;
-    }
-
     setSelectedProduct(null);
     setStep("summary");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -513,13 +480,6 @@ export default function TotemPage() {
   useEffect(() => {
     loadSettings();
     loadProducts();
-    loadStoreStatus();
-
-    const interval = window.setInterval(() => {
-      loadStoreStatus();
-    }, 60000);
-
-    return () => window.clearInterval(interval);
   }, []);
 
   return (
@@ -580,38 +540,6 @@ export default function TotemPage() {
         </div>
       )}
 
-
-      {closedModalVisible && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 px-5">
-          <div className="w-full max-w-xl rounded-[2rem] bg-white p-7 text-center shadow-2xl">
-            <p className="text-xs font-black uppercase tracking-[0.25em] text-red-500">
-              Tienda cerrada
-            </p>
-
-            <h2 className="mt-3 text-3xl font-black">
-              No puedes hacer pedidos inmediatos en este horario.
-            </h2>
-
-            <p className="mt-3 text-base font-bold text-zinc-500">
-              Puedes seguir viendo el catalogo, pero la compra queda bloqueada hasta que el local este abierto.
-            </p>
-
-            {storeStatus?.schedule && (
-              <p className="mt-4 rounded-2xl bg-zinc-100 p-4 text-sm font-black text-zinc-700">
-                Horario de hoy: {storeStatus.schedule.openTime} a {storeStatus.schedule.closeTime}
-              </p>
-            )}
-
-            <button
-              type="button"
-              onClick={() => setClosedModalVisible(false)}
-              className="mt-6 w-full rounded-2xl bg-[#10B557] py-4 text-lg font-black text-white"
-            >
-              Entendido
-            </button>
-          </div>
-        </div>
-      )}
       {selectedProduct ? (
         <section className="p-3 pb-32">
           <div className="mx-auto max-w-5xl rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm">
@@ -1380,7 +1308,5 @@ export default function TotemPage() {
     </main>
   );
 }
-
-
 
 
