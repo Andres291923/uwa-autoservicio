@@ -89,22 +89,18 @@ model ProductModifierGroup {
 }
 
 model Order {
-  id                 Int     @id @default(autoincrement())
-  orderNumber        Int
-  status             String  @default("pending")
-  total              Int     @default(0)
-  customerName       String?
-  customerComment    String?
-  customerId         Int?
-  walletAmountUsed   Int     @default(0)
-  cashbackEarned     Int     @default(0)
-  tipAmount          Int     @default(0)
-  subtotalAmount     Int     @default(0)
-  discountAmount     Int     @default(0)
-  discountPercent    Int     @default(0)
-  discountCouponCode String?
-  totemCode          String?
-  paymentMethod      String  @default("unknown")
+  id               Int     @id @default(autoincrement())
+  orderNumber      Int
+  status           String  @default("pending")
+  total            Int     @default(0)
+  customerName     String?
+  customerComment  String?
+  customerId       Int?
+  walletAmountUsed Int     @default(0)
+  cashbackEarned   Int     @default(0)
+  tipAmount        Int     @default(0)
+  totemCode        String?
+  paymentMethod    String  @default("unknown")
 
   orderSource     String      @default("totem")
   fulfillmentType String      @default("immediate")
@@ -238,14 +234,4 @@ model StoreOpeningHour {
   cashbackRuleId Int?
 
   @@unique([businessSettingsId, dayOfWeek])
-}
-
-model DiscountCoupon {
-  id        Int      @id @default(autoincrement())
-  name      String
-  code      String   @unique
-  percent   Int      @default(10)
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }

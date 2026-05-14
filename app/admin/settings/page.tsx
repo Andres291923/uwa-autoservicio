@@ -179,6 +179,13 @@ export default function SettingsPage() {
           </a>
 
           <a
+            href="/admin/settings/coupons"
+            className="rounded-2xl bg-[#10B557] px-5 py-3 text-sm font-black text-white shadow-sm"
+          >
+            Cupones online
+          </a>
+
+          <a
             href="/admin/settings/hours"
             className="rounded-2xl bg-[#10B557] px-5 py-3 text-sm font-black text-white shadow-sm"
           >
@@ -542,6 +549,7 @@ export default function SettingsPage() {
     </main>
   );
 }
+
 
 
 

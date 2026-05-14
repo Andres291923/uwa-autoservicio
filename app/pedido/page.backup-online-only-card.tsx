@@ -71,13 +71,6 @@ type LoggedCustomer = {
   walletBalance: number;
 };
 
-type AppliedCoupon = {
-  id: number;
-  name: string;
-  code: string;
-  percent: number;
-};
-
 type OpeningHour = {
   dayOfWeek: number;
   enabled: boolean;
@@ -242,18 +235,15 @@ export default function PedidoPage() {
     "immediate" | "scheduled"
   >("immediate");
 
-  const [paymentMethod, setPaymentMethod] = useState<"debit_credit">("debit_credit");
+  const [paymentMethod, setPaymentMethod] = useState<
+    "debit_credit" | "food_benefit"
+  >("debit_credit");
 
   const [message, setMessage] = useState("");
   const [closedStoreModalVisible, setClosedStoreModalVisible] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const [loadingOrder, setLoadingOrder] = useState(false);
   const [loadingAuth, setLoadingAuth] = useState(false);
-
-  const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
-  const [couponMessage, setCouponMessage] = useState("");
-  const [validatingCoupon, setValidatingCoupon] = useState(false);
 
   async function loadInitialData() {
     try {
@@ -369,18 +359,12 @@ export default function PedidoPage() {
     return cart.reduce((sum, item) => sum + item.total, 0);
   }, [cart]);
 
-  const couponDiscountAmount = appliedCoupon
-    ? Math.min(cartTotal, Math.round(cartTotal * (appliedCoupon.percent / 100)))
-    : 0;
-
-  const subtotalAfterDiscount = Math.max(0, cartTotal - couponDiscountAmount);
-
   const walletAmountToUse = useMemo(() => {
     if (!loggedCustomer || !useWallet) return 0;
-    return Math.min(loggedCustomer.walletBalance, subtotalAfterDiscount);
-  }, [loggedCustomer, useWallet, subtotalAfterDiscount]);
+    return Math.min(loggedCustomer.walletBalance, cartTotal);
+  }, [loggedCustomer, useWallet, cartTotal]);
 
-  const totalToPay = Math.max(0, subtotalAfterDiscount - walletAmountToUse);
+  const totalToPay = Math.max(0, cartTotal - walletAmountToUse);
 
   function switchToScheduled() {
     setFulfillmentType("scheduled");
@@ -619,65 +603,6 @@ export default function PedidoPage() {
     setAuthMessage("");
   }
 
-  async function applyCoupon() {
-    try {
-      setCouponMessage("");
-
-      if (cart.length === 0) {
-        setCouponMessage("Agrega productos antes de usar un cupón.");
-        return;
-      }
-
-      const cleanCode = couponCode.trim().toUpperCase().replace(/\s+/g, "");
-
-      if (!cleanCode) {
-        setCouponMessage("Ingresa un cupón.");
-        return;
-      }
-
-      setValidatingCoupon(true);
-
-      const response = await fetch("/api/coupons/validate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          code: cleanCode,
-          subtotal: cartTotal,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setAppliedCoupon(null);
-        setCouponMessage(data.error || "Cupón inválido.");
-        return;
-      }
-
-      setAppliedCoupon({
-        id: data.id,
-        name: data.name,
-        code: data.code,
-        percent: data.percent,
-      });
-      setCouponCode(data.code);
-      setCouponMessage(`Cupón aplicado: ${data.name}`);
-    } catch (error) {
-      console.error(error);
-      setCouponMessage("Error al validar el cupón.");
-    } finally {
-      setValidatingCoupon(false);
-    }
-  }
-
-  function clearCoupon() {
-    setAppliedCoupon(null);
-    setCouponCode("");
-    setCouponMessage("");
-  }
-
   function buildOnlineOrderCustomerComment() {
     return cart
       .filter((item) => item.customerComment.trim())
@@ -734,7 +659,6 @@ export default function PedidoPage() {
           customerId: loggedCustomer?.id || null,
           customerName: finalCustomerName,
           customerComment,
-          discountCouponCode: appliedCoupon?.code || null,
           walletAmountUsed: walletAmountToUse,
           totemCode: "online",
           paymentMethod,
@@ -777,7 +701,6 @@ export default function PedidoPage() {
       setScheduledTime("");
       setPaymentMethod("debit_credit");
       setUseWallet(false);
-      clearCoupon();
 
       if (loggedCustomer) {
         await refreshCustomerWallet(loggedCustomer.id);
@@ -1347,69 +1270,18 @@ export default function PedidoPage() {
               </span>
               <select
                 value={paymentMethod}
-                onChange={() => setPaymentMethod("debit_credit")}
+                onChange={(event) =>
+                  setPaymentMethod(
+                    event.target.value as "debit_credit" | "food_benefit"
+                  )
+                }
                 className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
               >
                 <option value="debit_credit">Débito / Crédito</option>
+                <option value="food_benefit">Beneficio alimentación</option>
               </select>
             </label>
           </div>
-
-          <section className="mt-5 rounded-3xl border border-emerald-100 bg-emerald-50 p-4">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
-                Cupón de descuento
-              </p>
-              <p className="mt-1 text-xs font-bold text-zinc-600">
-                Solo disponible para pagos online con débito o crédito.
-              </p>
-            </div>
-
-            <div className="mt-3 flex gap-2">
-              <input
-                value={couponCode}
-                onChange={(event) => {
-                  setCouponCode(event.target.value.toUpperCase());
-                  if (appliedCoupon) {
-                    setAppliedCoupon(null);
-                  }
-                }}
-                placeholder="Ej: UWA10"
-                className="min-w-0 flex-1 rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm font-black uppercase outline-none focus:border-[#10B557]"
-              />
-
-              {appliedCoupon ? (
-                <button
-                  type="button"
-                  onClick={clearCoupon}
-                  className="rounded-2xl bg-zinc-950 px-4 py-3 text-sm font-black text-white"
-                >
-                  Quitar
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={applyCoupon}
-                  disabled={validatingCoupon || cart.length === 0}
-                  className="rounded-2xl bg-[#10B557] px-4 py-3 text-sm font-black text-white disabled:bg-zinc-300"
-                >
-                  {validatingCoupon ? "Validando..." : "Aplicar"}
-                </button>
-              )}
-            </div>
-
-            {couponMessage && (
-              <p
-                className={`mt-3 rounded-2xl p-3 text-xs font-black ${
-                  appliedCoupon
-                    ? "bg-white text-emerald-700"
-                    : "bg-red-50 text-red-600"
-                }`}
-              >
-                {couponMessage}
-              </p>
-            )}
-          </section>
 
           {message && (
             <p className="mt-4 rounded-2xl bg-zinc-100 p-4 text-sm font-black">
@@ -1422,17 +1294,6 @@ export default function PedidoPage() {
               <p className="text-sm font-black text-zinc-500">Subtotal</p>
               <p className="text-lg font-black">{formatPrice(cartTotal)}</p>
             </div>
-
-            {couponDiscountAmount > 0 && (
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-black text-zinc-500">
-                  Descuento {appliedCoupon?.code}
-                </p>
-                <p className="text-lg font-black text-red-600">
-                  - {formatPrice(couponDiscountAmount)}
-                </p>
-              </div>
-            )}
 
             {walletAmountToUse > 0 && (
               <div className="flex items-center justify-between">
@@ -1634,4 +1495,3 @@ export default function PedidoPage() {
     </main>
   );
 }
-

@@ -81,13 +81,6 @@ function normalizeFulfillmentType(value: unknown) {
   return "immediate";
 }
 
-function normalizeCouponCode(value: unknown) {
-  return String(value || "")
-    .trim()
-    .toUpperCase()
-    .replace(/\s+/g, "");
-}
-
 function parseIds(value: string | null | undefined) {
   if (!value || value === "all") return [];
 
@@ -325,9 +318,6 @@ export async function POST(request: Request) {
     const orderSource = normalizeOrderSource(body.orderSource);
     const fulfillmentType = normalizeFulfillmentType(body.fulfillmentType);
     const scheduledFor = body.scheduledFor ? new Date(body.scheduledFor) : null;
-    const requestedDiscountCouponCode = normalizeCouponCode(
-      body.discountCouponCode || body.couponCode
-    );
 
     const requestedWalletAmount = Math.max(
       0,
@@ -505,44 +495,18 @@ export async function POST(request: Request) {
       });
     }
 
-    const subtotalAmount = orderTotal;
-    let discountAmount = 0;
-    let discountPercent = 0;
-    let discountCouponCode: string | null = null;
-
-    if (orderSource === "online" && requestedDiscountCouponCode) {
-      const coupon = await prisma.discountCoupon.findUnique({
-        where: {
-          code: requestedDiscountCouponCode,
-        },
-      });
-
-      if (!coupon || !coupon.active) {
-        return NextResponse.json(
-          { error: "Cupón inválido o inactivo." },
-          { status: 400 }
-        );
-      }
-
-      discountPercent = Math.max(1, Math.min(100, coupon.percent));
-      discountAmount = Math.round(subtotalAmount * (discountPercent / 100));
-      discountCouponCode = coupon.code;
-    }
-
-    const totalAfterDiscount = Math.max(0, subtotalAmount - discountAmount);
-
     const walletBalance = customer
       ? calculateBalance(customer.walletTransactions)
       : 0;
 
     const walletAmountUsed = customer
-      ? Math.min(requestedWalletAmount, walletBalance, totalAfterDiscount)
+      ? Math.min(requestedWalletAmount, walletBalance, orderTotal)
       : 0;
 
     const { cashbackEarned, expiresAt } = await calculateCashback({
       customerId,
       paymentMethod,
-      orderTotal: totalAfterDiscount,
+      orderTotal,
       walletAmountUsed,
       itemsMeta,
     });
@@ -551,11 +515,7 @@ export async function POST(request: Request) {
       const orderData: any = {
         orderNumber,
         status: "pending",
-        total: totalAfterDiscount,
-        subtotalAmount,
-        discountAmount,
-        discountPercent,
-        discountCouponCode,
+        total: orderTotal,
         customerName,
         customerComment,
         walletAmountUsed,
@@ -712,6 +672,4 @@ export async function PATCH(request: Request) {
     );
   }
 }
-
-
 
