@@ -161,8 +161,7 @@ model BusinessSettings {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  orders       Order[]
-  openingHours StoreOpeningHour[]
+  orders Order[]
 }
 
 model Customer {
@@ -176,7 +175,6 @@ model Customer {
 
   orders Order[]
 
-  openingHours       StoreOpeningHour[]
   walletTransactions WalletTransaction[]
 }
 
@@ -211,26 +209,5 @@ model CashbackRule {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
-  orders       Order[]
-  openingHours StoreOpeningHour[]
-}
-
-model StoreOpeningHour {
-  id                 Int              @id @default(autoincrement())
-  businessSettingsId Int
-  businessSettings   BusinessSettings @relation(fields: [businessSettingsId], references: [id], onDelete: Cascade)
-
-  dayOfWeek Int
-  enabled   Boolean @default(true)
-  openTime  String  @default("10:00")
-  closeTime String  @default("18:00")
-
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  customer       Customer?     @relation(fields: [customerId], references: [id])
-  customerId     Int?
-  cashbackRule   CashbackRule? @relation(fields: [cashbackRuleId], references: [id])
-  cashbackRuleId Int?
-
-  @@unique([businessSettingsId, dayOfWeek])
+  orders Order[]
 }

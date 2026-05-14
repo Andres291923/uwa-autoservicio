@@ -179,13 +179,6 @@ export default function SettingsPage() {
           </a>
 
           <a
-            href="/admin/settings/hours"
-            className="rounded-2xl bg-[#10B557] px-5 py-3 text-sm font-black text-white shadow-sm"
-          >
-            Horario tienda
-          </a>
-
-          <a
             href="/totem"
             className="rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-black shadow-sm"
           >
@@ -542,6 +535,5 @@ export default function SettingsPage() {
     </main>
   );
 }
-
 
 

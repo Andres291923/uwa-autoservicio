@@ -189,11 +189,6 @@ export async function POST(request: Request) {
       Math.round(Number(body.walletAmountUsed || 0))
     );
 
-    const tipAmount = Math.max(
-      0,
-      Math.round(Number(body.tipAmount || 0))
-    );
-
     const items = Array.isArray(body.items) ? body.items : [];
 
     if (items.length === 0) {
@@ -351,7 +346,6 @@ export async function POST(request: Request) {
         customerName,
         walletAmountUsed,
         cashbackEarned,
-        tipAmount,
         totemCode,
         paymentMethod,
         orderSource,

@@ -9,8 +9,6 @@ const defaultSettings = {
   primaryColor: "#10B557",
   kioskSubtitle: "Autoservicio",
   kioskTitle: "Elige tus productos",
-  tipsEnabled: false,
-  tipPercent: 10,
 };
 
 function isAdmin(request: Request) {
@@ -58,8 +56,6 @@ export async function POST(request: Request) {
     const primaryColor = String(body.primaryColor || "#10B557").trim();
     const kioskSubtitle = String(body.kioskSubtitle || "Autoservicio").trim();
     const kioskTitle = String(body.kioskTitle || "Elige tus productos").trim();
-    const tipsEnabled = Boolean(body.tipsEnabled);
-    const tipPercent = Math.max(0, Math.round(Number(body.tipPercent || 10)));
 
     const settings = await prisma.businessSettings.upsert({
       where: {
@@ -72,8 +68,6 @@ export async function POST(request: Request) {
         primaryColor,
         kioskSubtitle,
         kioskTitle,
-        tipsEnabled,
-        tipPercent,
       },
       create: {
         id: 1,
@@ -83,8 +77,6 @@ export async function POST(request: Request) {
         primaryColor,
         kioskSubtitle,
         kioskTitle,
-        tipsEnabled,
-        tipPercent,
       },
     });
 
@@ -98,4 +90,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

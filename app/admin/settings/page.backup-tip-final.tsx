@@ -10,8 +10,6 @@ type BusinessSettings = {
   primaryColor: string;
   kioskSubtitle: string;
   kioskTitle: string;
-  tipsEnabled: boolean;
-  tipPercent: number;
 };
 
 const emptySettings: BusinessSettings = {
@@ -22,8 +20,6 @@ const emptySettings: BusinessSettings = {
   primaryColor: "#10B557",
   kioskSubtitle: "Autoservicio",
   kioskTitle: "Elige tus productos",
-  tipsEnabled: false,
-  tipPercent: 10,
 };
 
 export default function SettingsPage() {
@@ -176,13 +172,6 @@ export default function SettingsPage() {
             className="rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-black shadow-sm"
           >
             Ver reposo
-          </a>
-
-          <a
-            href="/admin/settings/hours"
-            className="rounded-2xl bg-[#10B557] px-5 py-3 text-sm font-black text-white shadow-sm"
-          >
-            Horario tienda
           </a>
 
           <a
@@ -391,70 +380,6 @@ export default function SettingsPage() {
                   placeholder="Ej: Elige tus productos"
                 />
               </label>
-              <div className="mt-6 rounded-3xl border border-zinc-200 bg-zinc-50 p-5">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-[0.2em] text-[#10B557]">
-                      Propina en tótem
-                    </p>
-
-                    <h3 className="mt-1 text-xl font-black">
-                      Activar propina sugerida
-                    </h3>
-
-                    <p className="mt-1 text-sm font-bold text-zinc-500">
-                      Si está desactivada, el cliente no verá opción de propina.
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setSettings({
-                        ...settings,
-                        tipsEnabled: !settings.tipsEnabled,
-                      })
-                    }
-                    className="rounded-2xl px-5 py-3 text-sm font-black text-white"
-                    style={{
-                      background: settings.tipsEnabled
-                        ? settings.primaryColor
-                        : "#18181b",
-                    }}
-                  >
-                    {settings.tipsEnabled ? "Activada" : "Desactivada"}
-                  </button>
-                </div>
-
-                {settings.tipsEnabled && (
-                  <label className="mt-5 block">
-                    <span className="text-xs font-black uppercase text-zinc-500">
-                      Porcentaje sugerido
-                    </span>
-
-                    <input
-                      type="number"
-                      min="0"
-                      value={settings.tipPercent}
-                      onChange={(event) =>
-                        setSettings({
-                          ...settings,
-                          tipPercent: Math.max(
-                            0,
-                            Math.round(Number(event.target.value || 0))
-                          ),
-                        })
-                      }
-                      className="mt-2 w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
-                      placeholder="10"
-                    />
-
-                    <p className="mt-2 text-xs font-bold text-zinc-500">
-                      Ejemplo: 10 significa 10% del total de la compra.
-                    </p>
-                  </label>
-                )}
-              </div>
             </div>
           </div>
 
@@ -542,6 +467,4 @@ export default function SettingsPage() {
     </main>
   );
 }
-
-
 

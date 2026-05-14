@@ -97,15 +97,14 @@ model Order {
   customerId       Int?
   walletAmountUsed Int     @default(0)
   cashbackEarned   Int     @default(0)
-  tipAmount        Int     @default(0)
   totemCode        String?
   paymentMethod    String  @default("unknown")
 
-  orderSource     String      @default("totem")
-  fulfillmentType String      @default("immediate")
+  orderSource     String    @default("totem")
+  fulfillmentType String    @default("immediate")
   scheduledFor    DateTime?
-  items           OrderItem[]
-  customer        Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  items    OrderItem[]
+  customer Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @default(now()) @updatedAt
@@ -156,13 +155,10 @@ model BusinessSettings {
   kioskSubtitle     String  @default("Autoservicio")
   kioskTitle        String  @default("Elige tus productos")
 
-  tipsEnabled Boolean  @default(false)
-  tipPercent  Int      @default(10)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  orders       Order[]
-  openingHours StoreOpeningHour[]
+  orders Order[]
 }
 
 model Customer {
@@ -176,7 +172,6 @@ model Customer {
 
   orders Order[]
 
-  openingHours       StoreOpeningHour[]
   walletTransactions WalletTransaction[]
 }
 
@@ -211,26 +206,6 @@ model CashbackRule {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
-  orders       Order[]
-  openingHours StoreOpeningHour[]
+  orders Order[]
 }
 
-model StoreOpeningHour {
-  id                 Int              @id @default(autoincrement())
-  businessSettingsId Int
-  businessSettings   BusinessSettings @relation(fields: [businessSettingsId], references: [id], onDelete: Cascade)
-
-  dayOfWeek Int
-  enabled   Boolean @default(true)
-  openTime  String  @default("10:00")
-  closeTime String  @default("18:00")
-
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  customer       Customer?     @relation(fields: [customerId], references: [id])
-  customerId     Int?
-  cashbackRule   CashbackRule? @relation(fields: [cashbackRuleId], references: [id])
-  cashbackRuleId Int?
-
-  @@unique([businessSettingsId, dayOfWeek])
-}

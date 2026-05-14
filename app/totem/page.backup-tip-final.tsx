@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -80,8 +80,6 @@ type BusinessSettings = {
   primaryColor: string;
   kioskSubtitle: string;
   kioskTitle: string;
-  tipsEnabled: boolean;
-  tipPercent: number;
 };
 
 const defaultSettings: BusinessSettings = {
@@ -91,8 +89,6 @@ const defaultSettings: BusinessSettings = {
   primaryColor: "#10B557",
   kioskSubtitle: "Autoservicio",
   kioskTitle: "Elige tus productos",
-  tipsEnabled: false,
-  tipPercent: 10,
 };
 
 function formatPrice(price: number) {
@@ -146,7 +142,6 @@ export default function TotemPage() {
   const [customerMessage, setCustomerMessage] = useState("");
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<PaymentMethod | null>(null);
-  const [tipSelected, setTipSelected] = useState(false);
 
   const loggedCustomerName = "";
 
@@ -253,13 +248,6 @@ export default function TotemPage() {
   );
 
   const cartQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
-
-  const tipPercent = Math.max(0, Number(settings.tipPercent || 10));
-  const tipAmount =
-    settings.tipsEnabled && tipSelected
-      ? Math.round(cartTotal * (tipPercent / 100))
-      : 0;
-  const finalTotal = cartTotal + tipAmount;
 
   function openProduct(product: Product) {
     setOrderMessage("");
@@ -375,7 +363,6 @@ export default function TotemPage() {
     setOrderMessage("");
     setCustomerMessage("");
     setSelectedPaymentMethod(null);
-    setTipSelected(false);
     setStep("catalog");
   }
 
@@ -440,7 +427,6 @@ export default function TotemPage() {
           customerName: finalCustomerName,
           totemCode: "totem-local",
           paymentMethod: selectedPaymentMethod,
-          tipAmount,
           orderSource: "totem",
           fulfillmentType: "immediate",
           items: cart.map((item) => ({
@@ -465,7 +451,6 @@ export default function TotemPage() {
       setSelectedOptionsByGroup({});
       setCustomerName("");
       setSelectedPaymentMethod(null);
-      setTipSelected(false);
       setStep("catalog");
       setOrderMessage(`Pedido #${data.orderNumber} enviado a cocina.`);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -549,7 +534,7 @@ export default function TotemPage() {
                   onClick={closeProductBuilder}
                   className="mb-3 rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm font-black"
                 >
-                 Volver
+                  ← Volver
                 </button>
 
                 <p
@@ -598,8 +583,8 @@ export default function TotemPage() {
 
                         <p className="mt-1 text-sm font-bold text-zinc-500">
                           Seleccionadas: {selectedIds.length}
-                          {max > 0 ? `/${max}` : ""} {"\u00B7"} Mínimo: {min}
-{group.required ? " · Obligatorio" : " · Opcional"}
+                          {max > 0 ? `/${max}` : ""} · Mínimo: {min}
+                          {group.required ? " · Obligatorio" : " · Opcional"}
                         </p>
                       </div>
 
@@ -670,7 +655,7 @@ export default function TotemPage() {
                                   : "#ffffff",
                               }}
                             >
-                              {selected ? "\u2713" : ""}
+                              {selected ? "✓" : ""}
                             </div>
                           </button>
                         );
@@ -785,55 +770,6 @@ export default function TotemPage() {
               </div>
             )}
 
-            {settings.tipsEnabled && (
-              <div className="mt-6 rounded-3xl border border-zinc-200 bg-zinc-50 p-5">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-[0.18em] text-zinc-400">
-                      Propina
-                    </p>
-
-                    <div className="mt-1 flex items-center gap-3">
-  <h3 className="text-2xl font-black">
-    ¿Desea agregar propina?
-  </h3>
-
-  <span className="text-4xl leading-none" aria-hidden="true">
-  {"\u{1F60D}"}
-</span>
-</div>
-
-                    <p className="mt-1 text-sm font-bold text-zinc-500">
-                      {tipPercent}% sugerido: {formatPrice(Math.round(cartTotal * (tipPercent / 100)))}
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setTipSelected((current) => !current)}
-                    className="rounded-2xl px-6 py-4 text-base font-black text-white shadow-sm"
-                    style={{
-                      background: tipSelected ? settings.primaryColor : "#18181b",
-                    }}
-                  >
-                    {tipSelected ? "Propina agregada" : `Agregar ${tipPercent}%`}
-                  </button>
-                </div>
-
-                {tipSelected && (
-                  <div className="mt-4 flex items-center justify-between rounded-2xl bg-white p-4">
-                    <p className="font-black text-zinc-500">
-                      Propina {tipPercent}%
-                    </p>
-
-                    <p className="text-2xl font-black text-[#10B557]">
-                      {formatPrice(tipAmount)}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
             <div className="mt-6 flex items-center justify-between border-t border-zinc-200 pt-5">
               <p className="text-2xl font-black">Total</p>
 
@@ -841,7 +777,7 @@ export default function TotemPage() {
                 className="text-4xl font-black"
                 style={{ color: settings.primaryColor }}
               >
-                {formatPrice(finalTotal)}
+                {formatPrice(cartTotal)}
               </p>
             </div>
 
@@ -878,7 +814,7 @@ export default function TotemPage() {
                 </p>
 
                 <p className="mt-1 text-3xl font-black">
-                  Hola, {loggedCustomerName} ðŸ‘‹
+                  Hola, {loggedCustomerName} 👋
                 </p>
               </div>
             ) : (
@@ -913,7 +849,7 @@ export default function TotemPage() {
                 className="text-4xl font-black"
                 style={{ color: settings.primaryColor }}
               >
-                {formatPrice(finalTotal)}
+                {formatPrice(cartTotal)}
               </p>
             </div>
 
@@ -997,7 +933,7 @@ export default function TotemPage() {
                       className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl text-2xl font-black text-white"
                       style={{ background: settings.primaryColor }}
                     >
-                      {"\u{1F4B3}"}
+                      💳
                     </div>
 
                     <h3 className="text-2xl font-black">Débito / Crédito</h3>
@@ -1021,7 +957,7 @@ export default function TotemPage() {
                       color: "#ffffff",
                     }}
                   >
-                    {selectedPaymentMethod === "debit_credit" ? "âœ“" : ""}
+                    {selectedPaymentMethod === "debit_credit" ? "✓" : ""}
                   </div>
                 </div>
               </button>
@@ -1051,7 +987,7 @@ export default function TotemPage() {
                       className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl text-2xl font-black text-white"
                       style={{ background: settings.primaryColor }}
                     >
-                      {"\u{1F37D}\uFE0F"}
+                      🍽️
                     </div>
 
                     <h3 className="text-2xl font-black">
@@ -1077,7 +1013,7 @@ export default function TotemPage() {
                       color: "#ffffff",
                     }}
                   >
-                    {selectedPaymentMethod === "food_benefit" ? "âœ“" : ""}
+                    {selectedPaymentMethod === "food_benefit" ? "✓" : ""}
                   </div>
                 </div>
               </button>
@@ -1096,7 +1032,7 @@ export default function TotemPage() {
                 className="text-4xl font-black"
                 style={{ color: settings.primaryColor }}
               >
-                {formatPrice(finalTotal)}
+                {formatPrice(cartTotal)}
               </p>
             </div>
 
@@ -1212,14 +1148,11 @@ export default function TotemPage() {
                             />
                           ) : (
                             <div className="flex h-full w-full flex-col items-center justify-center text-zinc-400">
-  <div className="text-3xl" aria-hidden="true">
-    {"\u{1F6D2}"}
-  </div>
-
-  <p className="mt-1 text-[10px] font-black uppercase">
-    Sin foto
-  </p>
-</div>
+                              <div className="text-2xl">🛒</div>
+                              <p className="mt-1 text-[10px] font-black uppercase">
+                                Sin foto
+                              </p>
+                            </div>
                           )}
                         </div>
 
@@ -1279,7 +1212,7 @@ export default function TotemPage() {
                   className="m-0 mt-1 text-[27px] font-black leading-none"
                   style={{ color: settings.primaryColor }}
                 >
-                  {formatPrice(finalTotal)}
+                  {formatPrice(cartTotal)}
                 </p>
 
                 {cartQuantity > 0 && (
@@ -1299,7 +1232,7 @@ export default function TotemPage() {
                   color: cart.length > 0 ? "white" : "#71717a",
                 }}
               >
-                Siguiente &gt;
+                Siguiente →
               </button>
             </div>
           </footer>
@@ -1308,5 +1241,3 @@ export default function TotemPage() {
     </main>
   );
 }
-
-
