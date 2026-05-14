@@ -102,10 +102,7 @@ export async function GET(request: Request) {
         orderNumber: order.orderNumber,
         createdAt: order.createdAt,
         customerName: order.customer?.name || order.customerName || "Sin nombre",
-        purchaseAmount: order.subtotalAmount || order.total,
-        discountAmount: order.discountAmount || 0,
-        discountPercent: order.discountPercent || 0,
-        discountCouponCode: order.discountCouponCode || "",
+        purchaseAmount: order.total,
         tipAmount,
         totalPaid,
         walletAmountUsed,
@@ -131,7 +128,6 @@ export async function GET(request: Request) {
       totalOrders: rows.length,
       totalPurchaseAmount: rows.reduce((sum, row) => sum + row.purchaseAmount, 0),
       totalTips: rows.reduce((sum, row) => sum + row.tipAmount, 0),
-      totalDiscounts: rows.reduce((sum, row) => sum + row.discountAmount, 0),
       totalPaid: rows.reduce((sum, row) => sum + row.totalPaid, 0),
       totalWalletUsed: rows.reduce((sum, row) => sum + row.walletAmountUsed, 0),
     };
@@ -149,5 +145,4 @@ export async function GET(request: Request) {
     );
   }
 }
-
 

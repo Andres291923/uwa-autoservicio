@@ -23,9 +23,6 @@ type OrderReportRow = {
   createdAt: string;
   customerName: string;
   purchaseAmount: number;
-  discountAmount: number;
-  discountPercent: number;
-  discountCouponCode: string;
   tipAmount: number;
   totalPaid: number;
   walletAmountUsed: number;
@@ -37,12 +34,8 @@ type OrderReportRow = {
 
 type ReportSummary = {
   totalOrders: number;
-  totalpurchaseAmount: number;
-  discountAmount: number;
-  discountPercent: number;
-  discountCouponCode: string;
+  totalPurchaseAmount: number;
   totalTips: number;
-  totalDiscounts: number;
   totalPaid: number;
   totalWalletUsed: number;
 };
@@ -80,7 +73,6 @@ export default function OrdersReportPage() {
     totalOrders: 0,
     totalPurchaseAmount: 0,
     totalTips: 0,
-    totalDiscounts: 0,
     totalPaid: 0,
     totalWalletUsed: 0,
   });
@@ -198,7 +190,7 @@ export default function OrdersReportPage() {
         </div>
       </section>
 
-      <section className="mb-6 grid gap-4 md:grid-cols-6">
+      <section className="mb-6 grid gap-4 md:grid-cols-5">
         <article className="rounded-3xl bg-[#10B557] p-5 text-white shadow-sm">
           <p className="text-xs font-black uppercase opacity-80">Pedidos</p>
           <p className="mt-2 text-4xl font-black">{summary.totalOrders}</p>
@@ -217,15 +209,6 @@ export default function OrdersReportPage() {
           <p className="text-xs font-black uppercase text-zinc-500">Propinas</p>
           <p className="mt-2 text-2xl font-black">
             {formatPrice(summary.totalTips)}
-          </p>
-        </article>
-
-        <article className="rounded-3xl bg-white p-5 shadow-sm">
-          <p className="text-xs font-black uppercase text-zinc-500">
-            Descuentos
-          </p>
-          <p className="mt-2 text-2xl font-black text-red-600">
-            {formatPrice(summary.totalDiscounts)}
           </p>
         </article>
 
@@ -256,7 +239,7 @@ export default function OrdersReportPage() {
 
       <section className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1250px] border-collapse text-left text-sm">
+          <table className="w-full min-w-[1100px] border-collapse text-left text-sm">
             <thead className="bg-zinc-50">
               <tr>
                 <th className="px-4 py-4 font-black">N° Pedido</th>
@@ -264,7 +247,6 @@ export default function OrdersReportPage() {
                 <th className="px-4 py-4 font-black">Comprador</th>
                 <th className="px-4 py-4 font-black">Valor compra</th>
                 <th className="px-4 py-4 font-black">Pagó con billetera</th>
-                <th className="px-4 py-4 font-black">Cupón</th>
                 <th className="px-4 py-4 font-black">Propina</th>
                 <th className="px-4 py-4 font-black">Total venta</th>
                 <th className="px-4 py-4 font-black">Medio de pago</th>
@@ -276,7 +258,7 @@ export default function OrdersReportPage() {
               {rows.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={10}
+                    colSpan={9}
                     className="px-4 py-10 text-center font-bold text-zinc-500"
                   >
                     No hay pedidos para los filtros seleccionados.
@@ -317,26 +299,6 @@ export default function OrdersReportPage() {
                           {formatPrice(row.walletAmountUsed)}
                         </td>
 
-                        <td className="px-4 py-4">
-                          {row.discountCouponCode ? (
-                            <div>
-                              <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-black uppercase text-red-600">
-                                {row.discountCouponCode}
-                              </span>
-
-                              <p className="mt-1 text-xs font-black text-red-600">
-                                {formatPrice(row.discountAmount)} ({row.discountPercent}%)
-                              </p>
-                            </div>
-                          ) : (
-                            <span className="text-xs font-black text-zinc-400">
-                              Sin cupón
-                            </span>
-                          )}
-                        </td>
-
-                        
-
                         <td className="px-4 py-4 font-bold">
                           {formatPrice(row.tipAmount)}
                         </td>
@@ -358,7 +320,7 @@ export default function OrdersReportPage() {
 
                       {isOpen && (
                         <tr className="border-t border-zinc-100 bg-zinc-50">
-                          <td colSpan={10} className="px-4 py-5">
+                          <td colSpan={9} className="px-4 py-5">
                             <div className="rounded-3xl bg-white p-5 shadow-sm">
                               <div className="mb-4 flex items-center justify-between gap-4">
                                 <div>
@@ -442,8 +404,5 @@ export default function OrdersReportPage() {
     </main>
   );
 }
-
-
-
 
 
