@@ -179,6 +179,13 @@ export default function SettingsPage() {
           </a>
 
           <a
+            href="/admin/settings/users"
+            className="rounded-2xl bg-zinc-950 px-5 py-3 text-sm font-black text-white shadow-sm"
+          >
+            Usuarios y permisos
+          </a>
+
+          <a
             href="/admin/settings/coupons"
             className="rounded-2xl bg-[#10B557] px-5 py-3 text-sm font-black text-white shadow-sm"
           >
@@ -549,6 +556,7 @@ export default function SettingsPage() {
     </main>
   );
 }
+
 
 
 

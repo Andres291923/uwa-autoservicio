@@ -980,7 +980,7 @@ export default function PedidoPage() {
                 </p>
               </div>
 
-              <button
+              <button suppressHydrationWarning
                 type="button"
                 onClick={() => setWalletHistoryVisible(false)}
                 className="rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-black"
@@ -1077,7 +1077,7 @@ export default function PedidoPage() {
               programar tu pedido para más tarde.
             </p>
 
-            <button
+            <button suppressHydrationWarning
               type="button"
               onClick={() => {
                 switchToScheduled();
@@ -1089,7 +1089,7 @@ export default function PedidoPage() {
               Programar pedido
             </button>
 
-            <button
+            <button suppressHydrationWarning
               type="button"
               onClick={() => setClosedStoreModalVisible(false)}
               className="mt-3 w-full rounded-2xl border border-zinc-200 bg-white py-4 text-sm font-black text-zinc-700"
@@ -1161,7 +1161,7 @@ export default function PedidoPage() {
           </div>
 
           <div className="mb-5 flex gap-2 overflow-x-auto pb-2">
-            <button
+            <button suppressHydrationWarning
               onClick={() => setSelectedCategoryId("all")}
               className={`rounded-full px-4 py-3 text-sm font-black ${
                 selectedCategoryId === "all"
@@ -1179,7 +1179,7 @@ export default function PedidoPage() {
             </button>
 
             {categories.map((category) => (
-              <button
+              <button suppressHydrationWarning
                 key={category.id}
                 onClick={() => setSelectedCategoryId(category.id)}
                 className={`rounded-full px-4 py-3 text-sm font-black ${
@@ -1201,7 +1201,7 @@ export default function PedidoPage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             {visibleProducts.map((product) => (
-              <button
+              <button suppressHydrationWarning
                 key={product.id}
                 onClick={() => openProduct(product)}
                 className="overflow-hidden rounded-2xl bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
@@ -1283,7 +1283,7 @@ export default function PedidoPage() {
 
                   {loggedCustomer.walletBalance > 0 && cartTotal > 0 && (
                     <label className="mt-3 flex items-center gap-3 rounded-xl border border-zinc-200 p-3">
-                      <input
+                      <input suppressHydrationWarning
                         type="checkbox"
                         checked={useWallet}
                         onChange={(event) => setUseWallet(event.target.checked)}
@@ -1296,7 +1296,7 @@ export default function PedidoPage() {
                 </div>
 
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <button
+                  <button suppressHydrationWarning
                     type="button"
                     onClick={logoutCustomer}
                     className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-xs font-black"
@@ -1304,7 +1304,7 @@ export default function PedidoPage() {
                     Salir de la cuenta
                   </button>
 
-                  <button
+                  <button suppressHydrationWarning
                     type="button"
                     onClick={openWalletHistory}
                     className="rounded-xl bg-zinc-950 px-4 py-2 text-xs font-black text-white"
@@ -1312,7 +1312,7 @@ export default function PedidoPage() {
                     Ver historial
                   </button>
 
-                  <button
+                  <button suppressHydrationWarning
                     type="button"
                     onClick={openOrderHistory}
                     className="rounded-xl bg-[#10B557] px-4 py-2 text-xs font-black text-white"
@@ -1324,7 +1324,7 @@ export default function PedidoPage() {
             ) : (
               <div>
                 <div className="grid grid-cols-3 gap-2">
-                  <button
+                  <button suppressHydrationWarning
                     type="button"
                     onClick={() => setAuthMode("login")}
                     className={`rounded-xl px-3 py-2 text-xs font-black ${
@@ -1340,7 +1340,7 @@ export default function PedidoPage() {
                     Ingresar
                   </button>
 
-                  <button
+                  <button suppressHydrationWarning
                     type="button"
                     onClick={() => setAuthMode("register")}
                     className={`rounded-xl px-3 py-2 text-xs font-black ${
@@ -1358,7 +1358,7 @@ export default function PedidoPage() {
                     Crear cuenta
                   </button>
 
-                  <button
+                  <button suppressHydrationWarning
                     type="button"
                     onClick={() => setAuthMode("guest")}
                     className={`rounded-xl px-3 py-2 text-xs font-black ${
@@ -1380,7 +1380,7 @@ export default function PedidoPage() {
                     <span className="text-xs font-black uppercase text-zinc-500">
                       Nombre
                     </span>
-                    <input
+                    <input suppressHydrationWarning
                       value={authName}
                       onChange={(event) => setAuthName(event.target.value)}
                       className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
@@ -1395,7 +1395,7 @@ export default function PedidoPage() {
                       <span className="text-xs font-black uppercase text-zinc-500">
                         Correo
                       </span>
-                      <input
+                      <input suppressHydrationWarning
                         value={authEmail}
                         onChange={(event) => setAuthEmail(event.target.value)}
                         className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
@@ -1407,7 +1407,7 @@ export default function PedidoPage() {
                       <span className="text-xs font-black uppercase text-zinc-500">
                         Clave
                       </span>
-                      <input
+                      <input suppressHydrationWarning
                         type="password"
                         value={authPassword}
                         onChange={(event) => setAuthPassword(event.target.value)}
@@ -1416,7 +1416,7 @@ export default function PedidoPage() {
                       />
                     </label>
 
-                    <button
+                    <button suppressHydrationWarning
                       type="button"
                       onClick={
                         authMode === "login" ? loginCustomer : registerCustomer
@@ -1441,7 +1441,7 @@ export default function PedidoPage() {
                     <span className="text-xs font-black uppercase text-zinc-500">
                       Nombre para el pedido
                     </span>
-                    <input
+                    <input suppressHydrationWarning
                       value={guestName}
                       onChange={(event) => setGuestName(event.target.value)}
                       className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
@@ -1502,7 +1502,7 @@ export default function PedidoPage() {
                       )}
                     </div>
 
-                    <button
+                    <button suppressHydrationWarning
                       onClick={() => removeCartItem(item.id)}
                       className="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-red-600"
                     >
@@ -1523,7 +1523,7 @@ export default function PedidoPage() {
 
           <div className="mt-5 border-t border-zinc-200 pt-5">
             <div className="grid grid-cols-2 gap-2">
-              <button
+              <button suppressHydrationWarning
                 type="button"
                 onClick={() => setFulfillmentType("immediate")}
                 className={`rounded-2xl border px-3 py-3 text-sm font-black ${
@@ -1541,7 +1541,7 @@ export default function PedidoPage() {
                 Retiro ahora
               </button>
 
-              <button
+              <button suppressHydrationWarning
                 type="button"
                 onClick={switchToScheduled}
                 className={`rounded-2xl border px-3 py-3 text-sm font-black ${
@@ -1567,7 +1567,7 @@ export default function PedidoPage() {
                     Fecha
                   </span>
 
-                  <input
+                  <input suppressHydrationWarning
                     type="date"
                     min={todayInputDate}
                     value={scheduledDate}
@@ -1581,7 +1581,7 @@ export default function PedidoPage() {
                     Hora disponible
                   </span>
 
-                  <select
+                  <select suppressHydrationWarning
                     value={scheduledTime}
                     onChange={(event) => setScheduledTime(event.target.value)}
                     disabled={!availableTimeSlots.length}
@@ -1618,7 +1618,7 @@ export default function PedidoPage() {
               <span className="text-xs font-black uppercase text-zinc-500">
                 Medio de pago
               </span>
-              <select
+              <select suppressHydrationWarning
                 value={paymentMethod}
                 onChange={() => setPaymentMethod("debit_credit")}
                 className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
@@ -1639,7 +1639,7 @@ export default function PedidoPage() {
             </div>
 
             <div className="mt-3 flex gap-2">
-              <input
+              <input suppressHydrationWarning
                 value={couponCode}
                 onChange={(event) => {
                   setCouponCode(event.target.value.toUpperCase());
@@ -1652,7 +1652,7 @@ export default function PedidoPage() {
               />
 
               {appliedCoupon ? (
-                <button
+                <button suppressHydrationWarning
                   type="button"
                   onClick={clearCoupon}
                   className="rounded-2xl bg-zinc-950 px-4 py-3 text-sm font-black text-white"
@@ -1660,7 +1660,7 @@ export default function PedidoPage() {
                   Quitar
                 </button>
               ) : (
-                <button
+                <button suppressHydrationWarning
                   type="button"
                   onClick={applyCoupon}
                   disabled={validatingCoupon || cart.length === 0}
@@ -1729,7 +1729,7 @@ export default function PedidoPage() {
             </div>
           </div>
 
-          <button
+          <button suppressHydrationWarning
             onClick={createOnlineOrder}
             disabled={loadingOrder || cart.length === 0}
             className="mt-4 w-full rounded-2xl py-4 text-lg font-black text-white disabled:bg-zinc-300"
@@ -1763,7 +1763,7 @@ export default function PedidoPage() {
                 </p>
               </div>
 
-              <button
+              <button suppressHydrationWarning
                 type="button"
                 onClick={() => setOrderHistoryVisible(false)}
                 className="rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-black"
@@ -1956,7 +1956,7 @@ export default function PedidoPage() {
                 </p>
               </div>
 
-              <button
+              <button suppressHydrationWarning
                 onClick={() => setSelectedProduct(null)}
                 className="rounded-2xl border border-zinc-200 px-4 py-3 text-sm font-black"
               >
@@ -1996,7 +1996,7 @@ export default function PedidoPage() {
                         const isSelected = selected.includes(option.id);
 
                         return (
-                          <button
+                          <button suppressHydrationWarning
                             key={option.id}
                             type="button"
                             onClick={() => toggleOption(group, option.id)}
@@ -2062,7 +2062,7 @@ export default function PedidoPage() {
                   Comentario para cocina
                 </span>
 
-                <textarea
+                <textarea suppressHydrationWarning
                   value={selectedProductComment}
                   onChange={(event) =>
                     setSelectedProductComment(event.target.value.slice(0, 180))
@@ -2078,7 +2078,7 @@ export default function PedidoPage() {
               </label>
             </div>
 
-            <button
+            <button suppressHydrationWarning
               onClick={addConfiguredProduct}
               disabled={!canAddSelectedProduct()}
               className="mt-5 w-full rounded-2xl py-4 text-lg font-black text-white disabled:bg-zinc-300"
@@ -2096,6 +2096,7 @@ export default function PedidoPage() {
     </main>
   );
 }
+
 
 
 
