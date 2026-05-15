@@ -83,43 +83,6 @@ type WalletHistoryTransaction = {
   origin: string;
 };
 
-type CustomerOrderHistoryModifier = {
-  id: number;
-  groupName: string;
-  optionName: string;
-  price: number;
-};
-
-type CustomerOrderHistoryItem = {
-  id: number;
-  quantity: number;
-  unitPrice: number;
-  total: number;
-  productName: string;
-  modifiers: CustomerOrderHistoryModifier[];
-};
-
-type CustomerOrderHistory = {
-  id: number;
-  orderNumber: number;
-  status: string;
-  total: number;
-  subtotalAmount: number;
-  discountAmount: number;
-  discountPercent: number;
-  discountCouponCode: string;
-  tipAmount: number;
-  walletAmountUsed: number;
-  cashbackEarned: number;
-  paymentMethod: string;
-  orderSource: string;
-  fulfillmentType: string;
-  scheduledFor: string | null;
-  customerComment: string;
-  createdAt: string;
-  items: CustomerOrderHistoryItem[];
-};
-
 type AppliedCoupon = {
   id: number;
   name: string;
@@ -158,28 +121,6 @@ function formatDateTime(value: string) {
     hour: "2-digit",
     minute: "2-digit",
   });
-}
-
-function formatOrderStatus(value: string) {
-  if (value === "ready") return "Listo";
-  if (value === "cancelled") return "Cancelado";
-  return "Pendiente";
-}
-
-function formatOrderSource(value: string) {
-  if (value === "online") return "Online";
-  return "Tótem";
-}
-
-function formatFulfillment(value: string) {
-  if (value === "scheduled") return "Programado";
-  return "Retiro ahora";
-}
-
-function formatPaymentMethod(value: string) {
-  if (value === "food_benefit") return "Beneficio alimentación";
-  if (value === "debit_credit") return "Débito / Crédito";
-  return value || "No informado";
 }
 
 function createCartId() {
@@ -333,9 +274,6 @@ export default function PedidoPage() {
   const [walletHistoryVisible, setWalletHistoryVisible] = useState(false);
   const [walletHistoryLoading, setWalletHistoryLoading] = useState(false);
   const [walletHistoryTransactions, setWalletHistoryTransactions] = useState<WalletHistoryTransaction[]>([]);
-  const [orderHistoryVisible, setOrderHistoryVisible] = useState(false);
-  const [orderHistoryLoading, setOrderHistoryLoading] = useState(false);
-  const [orderHistoryOrders, setOrderHistoryOrders] = useState<CustomerOrderHistory[]>([]);
 
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
@@ -732,39 +670,6 @@ export default function PedidoPage() {
       setWalletHistoryTransactions([]);
     } finally {
       setWalletHistoryLoading(false);
-    }
-  }
-
-  async function openOrderHistory() {
-    if (!loggedCustomer) return;
-
-    try {
-      setOrderHistoryLoading(true);
-      setOrderHistoryVisible(true);
-
-      const response = await fetch("/api/customer-auth/order-history", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          customerId: loggedCustomer.id,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setOrderHistoryOrders([]);
-        return;
-      }
-
-      setOrderHistoryOrders(Array.isArray(data.orders) ? data.orders : []);
-    } catch (error) {
-      console.error(error);
-      setOrderHistoryOrders([]);
-    } finally {
-      setOrderHistoryLoading(false);
     }
   }
 
@@ -1311,14 +1216,6 @@ export default function PedidoPage() {
                   >
                     Ver historial
                   </button>
-
-                  <button
-                    type="button"
-                    onClick={openOrderHistory}
-                    className="rounded-xl bg-[#10B557] px-4 py-2 text-xs font-black text-white"
-                  >
-                    Mis pedidos
-                  </button>
                 </div>
               </div>
             ) : (
@@ -1745,195 +1642,6 @@ export default function PedidoPage() {
         </aside>
       </div>
 
-      {orderHistoryVisible && loggedCustomer && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 px-4">
-          <div className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-[2rem] bg-white p-6 shadow-2xl">
-            <div className="mb-5 flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.25em] text-[#10B557]">
-                  Historial de pedidos
-                </p>
-
-                <h2 className="mt-2 text-3xl font-black">
-                  {loggedCustomer.name}
-                </h2>
-
-                <p className="mt-1 text-sm font-bold text-zinc-500">
-                  {loggedCustomer.email}
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setOrderHistoryVisible(false)}
-                className="rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-black"
-              >
-                Cerrar
-              </button>
-            </div>
-
-            {orderHistoryLoading ? (
-              <div className="rounded-3xl bg-zinc-50 p-8 text-center font-black text-zinc-500">
-                Cargando pedidos...
-              </div>
-            ) : orderHistoryOrders.length === 0 ? (
-              <div className="rounded-3xl bg-zinc-50 p-8 text-center">
-                <p className="text-xl font-black">Aún no tienes pedidos.</p>
-                <p className="mt-1 text-sm font-bold text-zinc-500">
-                  Cuando compres con tu cuenta, aparecerán aquí.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {orderHistoryOrders.map((order) => (
-                  <article
-                    key={order.id}
-                    className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm"
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div>
-                        <p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400">
-                          Pedido
-                        </p>
-
-                        <h3 className="mt-1 text-3xl font-black text-[#10B557]">
-                          #{String(order.orderNumber).padStart(3, "0")}
-                        </h3>
-
-                        <p className="mt-1 text-sm font-bold text-zinc-500">
-                          {formatDateTime(order.createdAt)}
-                        </p>
-                      </div>
-
-                      <div className="flex flex-wrap gap-2">
-                        <span className="rounded-full bg-yellow-100 px-3 py-2 text-xs font-black text-yellow-700">
-                          {formatOrderStatus(order.status)}
-                        </span>
-
-                        <span className="rounded-full bg-blue-100 px-3 py-2 text-xs font-black text-blue-700">
-                          {formatOrderSource(order.orderSource)}
-                        </span>
-
-                        <span className="rounded-full bg-purple-100 px-3 py-2 text-xs font-black text-purple-700">
-                          {formatFulfillment(order.fulfillmentType)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {order.scheduledFor && (
-                      <p className="mt-3 rounded-2xl bg-purple-50 p-3 text-sm font-black text-purple-700">
-                        Programado para: {formatDateTime(order.scheduledFor)}
-                      </p>
-                    )}
-
-                    <div className="mt-5 grid gap-3 md:grid-cols-4">
-                      <div className="rounded-2xl bg-zinc-50 p-4">
-                        <p className="text-xs font-black uppercase text-zinc-500">
-                          Total pagado
-                        </p>
-                        <p className="mt-1 text-2xl font-black text-[#10B557]">
-                          {formatPrice(order.total)}
-                        </p>
-                      </div>
-
-                      <div className="rounded-2xl bg-zinc-50 p-4">
-                        <p className="text-xs font-black uppercase text-zinc-500">
-                          Billetera
-                        </p>
-                        <p className="mt-1 text-2xl font-black">
-                          {formatPrice(order.walletAmountUsed)}
-                        </p>
-                      </div>
-
-                      <div className="rounded-2xl bg-zinc-50 p-4">
-                        <p className="text-xs font-black uppercase text-zinc-500">
-                          Cashback
-                        </p>
-                        <p className="mt-1 text-2xl font-black text-[#10B557]">
-                          {formatPrice(order.cashbackEarned)}
-                        </p>
-                      </div>
-
-                      <div className="rounded-2xl bg-zinc-50 p-4">
-                        <p className="text-xs font-black uppercase text-zinc-500">
-                          Pago
-                        </p>
-                        <p className="mt-1 text-sm font-black">
-                          {formatPaymentMethod(order.paymentMethod)}
-                        </p>
-                      </div>
-                    </div>
-
-                    {(order.discountCouponCode || order.discountAmount > 0 || order.tipAmount > 0) && (
-                      <div className="mt-3 grid gap-3 md:grid-cols-2">
-                        <div className="rounded-2xl bg-red-50 p-4">
-                          <p className="text-xs font-black uppercase text-red-600">
-                            Cupón
-                          </p>
-                          <p className="mt-1 text-sm font-black text-red-600">
-                            {order.discountCouponCode
-                              ? `${order.discountCouponCode} · ${formatPrice(order.discountAmount)} (${order.discountPercent}%)`
-                              : "Sin cupón"}
-                          </p>
-                        </div>
-
-                        <div className="rounded-2xl bg-zinc-50 p-4">
-                          <p className="text-xs font-black uppercase text-zinc-500">
-                            Propina
-                          </p>
-                          <p className="mt-1 text-sm font-black">
-                            {formatPrice(order.tipAmount)}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {order.customerComment && (
-                      <div className="mt-3 rounded-2xl bg-yellow-50 p-4">
-                        <p className="text-xs font-black uppercase text-yellow-700">
-                          Comentario cocina
-                        </p>
-                        <p className="mt-1 text-sm font-bold text-zinc-700">
-                          {order.customerComment}
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="mt-5 rounded-3xl border border-zinc-200">
-                      {order.items.map((item) => (
-                        <div key={item.id} className="border-b border-zinc-100 p-4 last:border-b-0">
-                          <div className="flex items-center justify-between gap-3">
-                            <p className="text-lg font-black">
-                              {item.quantity}x {item.productName}
-                            </p>
-
-                            <p className="text-lg font-black text-[#10B557]">
-                              {formatPrice(item.total)}
-                            </p>
-                          </div>
-
-                          {item.modifiers.length > 0 && (
-                            <div className="mt-3 flex flex-wrap gap-2">
-                              {item.modifiers.map((modifier) => (
-                                <span
-                                  key={modifier.id}
-                                  className="rounded-full bg-zinc-100 px-3 py-2 text-xs font-black text-zinc-600"
-                                >
-                                  {modifier.groupName}: {modifier.optionName}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
       {selectedProduct && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 md:items-center">
           <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl bg-white p-5 shadow-xl">
@@ -2096,7 +1804,6 @@ export default function PedidoPage() {
     </main>
   );
 }
-
 
 
 

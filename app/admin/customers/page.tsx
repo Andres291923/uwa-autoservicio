@@ -557,7 +557,7 @@ export default function CustomersPage() {
 
             <label className="mt-5 block">
               <span className="text-xs font-black uppercase text-zinc-500">Nombre</span>
-              <input
+              <input suppressHydrationWarning
                 value={customerName}
                 onChange={(event) => setCustomerName(event.target.value)}
                 placeholder="Ej: Andrés"
@@ -567,7 +567,7 @@ export default function CustomersPage() {
 
             <label className="mt-4 block">
               <span className="text-xs font-black uppercase text-zinc-500">Correo</span>
-              <input
+              <input suppressHydrationWarning
                 value={customerEmail}
                 onChange={(event) => setCustomerEmail(event.target.value)}
                 placeholder="cliente@email.com"
@@ -575,7 +575,7 @@ export default function CustomersPage() {
               />
             </label>
 
-            <button
+            <button suppressHydrationWarning
               disabled={loading}
               className="mt-5 w-full rounded-2xl bg-[#10B557] py-4 text-sm font-black text-white disabled:bg-zinc-300"
             >
@@ -633,7 +633,7 @@ export default function CustomersPage() {
                   <div className="mt-4 grid gap-4 md:grid-cols-2">
                     <label className="block">
                       <span className="text-xs font-black uppercase text-zinc-500">Tipo</span>
-                      <select
+                      <select suppressHydrationWarning
                         value={movementType}
                         onChange={(event) =>
                           setMovementType(event.target.value as "credit" | "debit")
@@ -647,7 +647,7 @@ export default function CustomersPage() {
 
                     <label className="block">
                       <span className="text-xs font-black uppercase text-zinc-500">Monto</span>
-                      <input
+                      <input suppressHydrationWarning
                         value={movementAmount}
                         onChange={(event) => setMovementAmount(event.target.value)}
                         type="number"
@@ -660,7 +660,7 @@ export default function CustomersPage() {
 
                   <label className="mt-4 block">
                     <span className="text-xs font-black uppercase text-zinc-500">Motivo</span>
-                    <input
+                    <input suppressHydrationWarning
                       value={movementReason}
                       onChange={(event) => setMovementReason(event.target.value)}
                       placeholder="Ej: Recarga manual, ajuste, devolución"
@@ -668,7 +668,7 @@ export default function CustomersPage() {
                     />
                   </label>
 
-                  <button
+                  <button suppressHydrationWarning
                     disabled={loading}
                     className="mt-5 w-full rounded-2xl bg-[#10B557] py-4 text-sm font-black text-white disabled:bg-zinc-300"
                   >
@@ -691,7 +691,7 @@ export default function CustomersPage() {
               </div>
 
               <div className="w-full max-w-md">
-                <input
+                <input suppressHydrationWarning
                   value={customerSearch}
                   onChange={(event) => setCustomerSearch(event.target.value)}
                   placeholder="Buscar por nombre o correo..."
@@ -768,7 +768,7 @@ export default function CustomersPage() {
                         <p className="font-black text-red-600">{formatPrice(breakdown.debits)}</p>
 
                         <div className="flex flex-wrap gap-2">
-                          <button
+                          <button suppressHydrationWarning
                             type="button"
                             onClick={() => setSelectedCustomerId(customer.id)}
                             className="rounded-xl bg-zinc-900 px-3 py-2 text-xs font-black text-white"
@@ -776,7 +776,7 @@ export default function CustomersPage() {
                             Billetera
                           </button>
 
-                          <button
+                          <button suppressHydrationWarning
                             type="button"
                             onClick={() => toggleCustomer(customer)}
                             className={`rounded-xl px-3 py-2 text-xs font-black text-white ${
@@ -807,7 +807,7 @@ export default function CustomersPage() {
                   </p>
                 </div>
 
-                <button
+                <button suppressHydrationWarning
                   type="button"
                   onClick={() => setSelectedCustomerId(null)}
                   className="rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm font-black"
@@ -882,7 +882,7 @@ export default function CustomersPage() {
             </h2>
 
             {ruleForm.id && (
-              <button
+              <button suppressHydrationWarning
                 type="button"
                 onClick={() => setRuleForm(emptyRuleForm)}
                 className="rounded-xl border border-zinc-300 px-3 py-2 text-xs font-black"
@@ -894,7 +894,7 @@ export default function CustomersPage() {
 
           <label className="mt-5 block">
             <span className="text-xs font-black uppercase text-zinc-500">Nombre regla</span>
-            <input
+            <input suppressHydrationWarning
               value={ruleForm.name}
               onChange={(event) =>
                 setRuleForm({ ...ruleForm, name: event.target.value })
@@ -906,7 +906,7 @@ export default function CustomersPage() {
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <label className="block">
               <span className="text-xs font-black uppercase text-zinc-500">Porcentaje %</span>
-              <input
+              <input suppressHydrationWarning
                 value={ruleForm.cashbackPercent}
                 onChange={(event) =>
                   setRuleForm({ ...ruleForm, cashbackPercent: event.target.value })
@@ -918,7 +918,7 @@ export default function CustomersPage() {
 
             <label className="block">
               <span className="text-xs font-black uppercase text-zinc-500">Compra mínima</span>
-              <input
+              <input suppressHydrationWarning
                 value={ruleForm.minPurchase}
                 onChange={(event) =>
                   setRuleForm({ ...ruleForm, minPurchase: event.target.value })
@@ -934,7 +934,7 @@ export default function CustomersPage() {
               <span className="text-xs font-black uppercase text-zinc-500">
                 Máximo cashback por compra
               </span>
-              <input
+              <input suppressHydrationWarning
                 value={ruleForm.maxCashback}
                 onChange={(event) =>
                   setRuleForm({ ...ruleForm, maxCashback: event.target.value })
@@ -947,7 +947,7 @@ export default function CustomersPage() {
 
             <label className="block">
               <span className="text-xs font-black uppercase text-zinc-500">Vigencia saldo días</span>
-              <input
+              <input suppressHydrationWarning
                 value={ruleForm.validityDays}
                 onChange={(event) =>
                   setRuleForm({ ...ruleForm, validityDays: event.target.value })
@@ -961,7 +961,7 @@ export default function CustomersPage() {
 
           <label className="mt-4 block">
             <span className="text-xs font-black uppercase text-zinc-500">Medios de pago permitidos</span>
-            <select
+            <select suppressHydrationWarning
               value={ruleForm.allowedPaymentMethods}
               onChange={(event) =>
                 setRuleForm({ ...ruleForm, allowedPaymentMethods: event.target.value })
@@ -977,7 +977,7 @@ export default function CustomersPage() {
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <label className="block">
               <span className="text-xs font-black uppercase text-zinc-500">Categorías incluidas</span>
-              <input
+              <input suppressHydrationWarning
                 value={ruleForm.includedCategoryIds}
                 onChange={(event) =>
                   setRuleForm({ ...ruleForm, includedCategoryIds: event.target.value })
@@ -989,7 +989,7 @@ export default function CustomersPage() {
 
             <label className="block">
               <span className="text-xs font-black uppercase text-zinc-500">Productos excluidos</span>
-              <input
+              <input suppressHydrationWarning
                 value={ruleForm.excludedProductIds}
                 onChange={(event) =>
                   setRuleForm({ ...ruleForm, excludedProductIds: event.target.value })
@@ -1002,7 +1002,7 @@ export default function CustomersPage() {
 
           <label className="mt-4 block">
             <span className="text-xs font-black uppercase text-zinc-500">Texto comercial</span>
-            <input
+            <input suppressHydrationWarning
               value={ruleForm.commercialText}
               onChange={(event) =>
                 setRuleForm({ ...ruleForm, commercialText: event.target.value })
@@ -1014,7 +1014,7 @@ export default function CustomersPage() {
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <label className="block">
               <span className="text-xs font-black uppercase text-zinc-500">Fecha inicio</span>
-              <input
+              <input suppressHydrationWarning
                 value={ruleForm.startDate}
                 onChange={(event) =>
                   setRuleForm({ ...ruleForm, startDate: event.target.value })
@@ -1026,7 +1026,7 @@ export default function CustomersPage() {
 
             <label className="block">
               <span className="text-xs font-black uppercase text-zinc-500">Fecha término</span>
-              <input
+              <input suppressHydrationWarning
                 value={ruleForm.endDate}
                 onChange={(event) =>
                   setRuleForm({ ...ruleForm, endDate: event.target.value })
@@ -1038,7 +1038,7 @@ export default function CustomersPage() {
           </div>
 
           <label className="mt-4 flex items-center gap-3 rounded-2xl border border-zinc-200 p-4">
-            <input
+            <input suppressHydrationWarning
               type="checkbox"
               checked={ruleForm.active}
               onChange={(event) =>
@@ -1048,7 +1048,7 @@ export default function CustomersPage() {
             <span className="text-sm font-black">Regla activa</span>
           </label>
 
-          <button
+          <button suppressHydrationWarning
             disabled={loading}
             className="mt-5 w-full rounded-2xl bg-[#10B557] py-4 text-sm font-black text-white disabled:bg-zinc-300"
           >
@@ -1091,7 +1091,7 @@ export default function CustomersPage() {
                   </p>
 
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <button
+                    <button suppressHydrationWarning
                       type="button"
                       onClick={() => editRule(rule)}
                       className="rounded-xl bg-zinc-900 px-4 py-2 text-xs font-black text-white"
@@ -1099,7 +1099,7 @@ export default function CustomersPage() {
                       Editar
                     </button>
 
-                    <button
+                    <button suppressHydrationWarning
                       type="button"
                       onClick={() => deleteRule(rule)}
                       className="rounded-xl bg-red-500 px-4 py-2 text-xs font-black text-white"
@@ -1116,3 +1116,4 @@ export default function CustomersPage() {
     </main>
   );
 }
+
