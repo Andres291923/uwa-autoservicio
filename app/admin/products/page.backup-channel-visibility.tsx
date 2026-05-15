@@ -46,7 +46,6 @@ type ProductModifierGroup = {
   required: boolean;
   order: number;
   active: boolean;
-  channelVisibility?: string;
   template: ModifierTemplate;
 };
 
@@ -67,11 +66,6 @@ function formatPrice(price: number) {
   }).format(price);
 }
 
-function formatChannelVisibility(value?: string) {
-  if (value === "online") return "Solo online";
-  if (value === "totem") return "Solo tótem";
-  return "Todos";
-}
 function createEmptyModifierOption(): ModifierOptionInput {
   return {
     localId: Date.now() + Math.floor(Math.random() * 1000),
@@ -126,7 +120,6 @@ export default function AdminPage() {
   const [modifierRequired, setModifierRequired] = useState(false);
   const [modifierOrder, setModifierOrder] = useState("0");
   const [modifierActive, setModifierActive] = useState(true);
-  const [modifierChannelVisibility, setModifierChannelVisibility] = useState("all");
   const [modifierOptions, setModifierOptions] = useState<
     ModifierOptionInput[]
   >([createEmptyModifierOption()]);
@@ -279,7 +272,6 @@ const [loadingGlobalModifier, setLoadingGlobalModifier] = useState(false);
     setModifierRequired(false);
     setModifierOrder("0");
     setModifierActive(true);
-    setModifierChannelVisibility("all");
     setModifierOptions([createEmptyModifierOption()]);
     setImportTemplateId("");
   }
@@ -293,7 +285,6 @@ const [loadingGlobalModifier, setLoadingGlobalModifier] = useState(false);
     setModifierRequired(group.required);
     setModifierOrder(String(group.order));
     setModifierActive(group.active);
-    setModifierChannelVisibility(group.channelVisibility || "all");
     setModifierMessage("Editando reglas del modificador seleccionado.");
   }
 
@@ -471,7 +462,6 @@ const [loadingGlobalModifier, setLoadingGlobalModifier] = useState(false);
             required: modifierRequired,
             order: Number(modifierOrder),
             active: modifierActive,
-            channelVisibility: modifierChannelVisibility,
           }),
         });
 
@@ -499,7 +489,6 @@ const [loadingGlobalModifier, setLoadingGlobalModifier] = useState(false);
               max: Number(modifierMax),
               required: modifierRequired,
               order: Number(modifierOrder),
-              channelVisibility: modifierChannelVisibility,
             }
           : {
               productId: selectedProductForModifiers.id,
@@ -508,7 +497,6 @@ const [loadingGlobalModifier, setLoadingGlobalModifier] = useState(false);
               max: Number(modifierMax),
               required: modifierRequired,
               order: Number(modifierOrder),
-              channelVisibility: modifierChannelVisibility,
               options: modifierOptions.map((option) => ({
                 name: option.name,
                 price: Number(option.price),
@@ -1807,7 +1795,7 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
                 </div>
               )}
 
-              <div className="mt-5 grid gap-4 md:grid-cols-6">
+              <div className="mt-5 grid gap-4 md:grid-cols-5">
                 <label className="block">
                   <span className="text-xs font-black uppercase text-zinc-500">
                     Mínimo
@@ -1842,23 +1830,6 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
                     type="number"
                     className="mt-2 w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
                   />
-                </label>
-
-                <label className="block">
-                  <span className="text-xs font-black uppercase text-zinc-500">
-                    Disponibilidad canal
-                  </span>
-                  <select
-                    value={modifierChannelVisibility}
-                    onChange={(event) =>
-                      setModifierChannelVisibility(event.target.value)
-                    }
-                    className="mt-2 w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
-                  >
-                    <option value="all">Todos</option>
-                    <option value="totem">Solo tótem</option>
-                    <option value="online">Solo online</option>
-                  </select>
                 </label>
 
                 <label className="mt-6 flex items-center gap-3 rounded-xl border border-zinc-200 bg-white p-3">
@@ -1938,7 +1909,6 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
                           <p className="mt-1 text-sm text-zinc-500">
                             Mín: {group.min} / Máx: {group.max} /{" "}
                             {group.required ? "Obligatorio" : "Opcional"}
-                            {" · "}Canal: {formatChannelVisibility(group.channelVisibility)}
                           </p>
                         </div>
 
@@ -2097,4 +2067,3 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
     </main>
   );
 }
-

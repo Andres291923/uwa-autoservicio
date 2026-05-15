@@ -1,11 +1,5 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
-function normalizeChannelVisibility(value: unknown) {
-  if (value === "online") return "online";
-  if (value === "totem") return "totem";
-  return "all";
-}
 
 type ModifierOptionInput = {
   name?: string;
@@ -57,7 +51,6 @@ export async function POST(request: Request) {
     const max = Number(body.max || 1);
     const required = Boolean(body.required);
     const order = Number(body.order || 0);
-    const channelVisibility = normalizeChannelVisibility(body.channelVisibility);
 
     if (!productId) {
       return NextResponse.json(
@@ -68,7 +61,7 @@ export async function POST(request: Request) {
 
     if (max < min) {
       return NextResponse.json(
-        { error: "La cantidad mÃ¡xima no puede ser menor que la mÃ­nima." },
+        { error: "La cantidad máxima no puede ser menor que la mínima." },
         { status: 400 }
       );
     }
@@ -85,7 +78,7 @@ export async function POST(request: Request) {
 
       if (existing) {
         return NextResponse.json(
-          { error: "Este modificador ya estÃ¡ importado en el producto." },
+          { error: "Este modificador ya está importado en el producto." },
           { status: 400 }
         );
       }
@@ -99,7 +92,6 @@ export async function POST(request: Request) {
           required,
           order,
           active: true,
-          channelVisibility,
         },
         include: {
           template: {
@@ -136,7 +128,7 @@ export async function POST(request: Request) {
 
     if (options.length === 0) {
       return NextResponse.json(
-        { error: "Debes agregar al menos una opciÃ³n." },
+        { error: "Debes agregar al menos una opción." },
         { status: 400 }
       );
     }
@@ -162,7 +154,6 @@ export async function POST(request: Request) {
           required,
           order,
           active: true,
-          channelVisibility,
         },
         include: {
           template: {
@@ -196,7 +187,6 @@ export async function PUT(request: Request) {
     const max = Number(body.max || 1);
     const required = Boolean(body.required);
     const order = Number(body.order || 0);
-    const channelVisibility = normalizeChannelVisibility(body.channelVisibility);
     const active = Boolean(body.active);
 
     if (!id) {
@@ -208,7 +198,7 @@ export async function PUT(request: Request) {
 
     if (max < min) {
       return NextResponse.json(
-        { error: "La cantidad mÃ¡xima no puede ser menor que la mÃ­nima." },
+        { error: "La cantidad máxima no puede ser menor que la mínima." },
         { status: 400 }
       );
     }
@@ -223,7 +213,6 @@ export async function PUT(request: Request) {
         required,
         order,
         active,
-        channelVisibility,
       },
       include: {
         template: {

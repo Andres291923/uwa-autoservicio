@@ -43,6 +43,14 @@ type CashbackRule = {
   endDate: string | null;
 };
 
+type WalletBreakdown = {
+  balance: number;
+  manualRecharge: number;
+  cashback: number;
+  debits: number;
+  credits: number;
+};
+
 function formatPrice(value: number) {
   return new Intl.NumberFormat("es-CL", {
     style: "currency",
@@ -53,7 +61,63 @@ function formatPrice(value: number) {
 
 function formatDate(value: string | null) {
   if (!value) return "Sin fecha";
-  return new Date(value).toLocaleString("es-CL");
+  return new Date(value).toLocaleString("es-CL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function isCashbackTransaction(transaction: WalletTransaction) {
+  const reason = String(transaction.reason || "").toLowerCase();
+  return reason.includes("cashback");
+}
+
+function getWalletBreakdown(customer: Customer): WalletBreakdown {
+  const transactions = customer.walletTransactions || [];
+
+  const credits = transactions
+    .filter((transaction) => transaction.type === "credit")
+    .reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0);
+
+  const debits = transactions
+    .filter((transaction) => transaction.type === "debit")
+    .reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0);
+
+  const cashback = transactions
+    .filter(
+      (transaction) =>
+        transaction.type === "credit" && isCashbackTransaction(transaction)
+    )
+    .reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0);
+
+  const manualRecharge = transactions
+    .filter(
+      (transaction) =>
+        transaction.type === "credit" && !isCashbackTransaction(transaction)
+    )
+    .reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0);
+
+  const balance =
+    typeof customer.walletBalance === "number"
+      ? customer.walletBalance
+      : credits - debits;
+
+  return {
+    balance,
+    manualRecharge,
+    cashback,
+    debits,
+    credits,
+  };
+}
+
+function getTransactionLabel(transaction: WalletTransaction) {
+  if (transaction.type === "debit") return "Uso / descuento";
+  if (isCashbackTransaction(transaction)) return "Cashback";
+  return "Recarga manual";
 }
 
 const emptyRuleForm = {
@@ -83,10 +147,11 @@ export default function CustomersPage() {
 
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
+  const [customerSearch, setCustomerSearch] = useState("");
 
   const [movementType, setMovementType] = useState<"credit" | "debit">("credit");
   const [movementAmount, setMovementAmount] = useState("");
-  const [movementReason, setMovementReason] = useState("");
+  const [movementReason, setMovementReason] = useState("Recarga manual");
 
   const [ruleForm, setRuleForm] = useState(emptyRuleForm);
 
@@ -98,14 +163,61 @@ export default function CustomersPage() {
     return customers.find((customer) => customer.id === selectedCustomerId) || null;
   }, [customers, selectedCustomerId]);
 
+  const filteredCustomers = useMemo(() => {
+    const search = customerSearch.trim().toLowerCase();
+
+    return customers
+      .filter((customer) => {
+        if (!search) return true;
+
+        return (
+          customer.name.toLowerCase().includes(search) ||
+          customer.email.toLowerCase().includes(search)
+        );
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [customers, customerSearch]);
+
+  const totals = useMemo(() => {
+    return customers.reduce(
+      (acc, customer) => {
+        const breakdown = getWalletBreakdown(customer);
+
+        acc.balance += breakdown.balance;
+        acc.manualRecharge += breakdown.manualRecharge;
+        acc.cashback += breakdown.cashback;
+        acc.debits += breakdown.debits;
+
+        if (breakdown.cashback > 0) acc.customersWithCashback += 1;
+
+        return acc;
+      },
+      {
+        balance: 0,
+        manualRecharge: 0,
+        cashback: 0,
+        debits: 0,
+        customersWithCashback: 0,
+      }
+    );
+  }, [customers]);
+
+  const selectedBreakdown = selectedCustomer
+    ? getWalletBreakdown(selectedCustomer)
+    : null;
+
   async function loadCustomers() {
-    const response = await fetch("/api/customers");
+    const response = await fetch("/api/customers", {
+      cache: "no-store",
+    });
     const data = await response.json();
     setCustomers(Array.isArray(data) ? data : []);
   }
 
   async function loadRules() {
-    const response = await fetch("/api/cashback-rules");
+    const response = await fetch("/api/cashback-rules", {
+      cache: "no-store",
+    });
     const data = await response.json();
     setRules(Array.isArray(data) ? data : []);
   }
@@ -211,6 +323,17 @@ export default function CustomersPage() {
       setLoading(true);
       setMessage("");
 
+      const amount = Math.round(Number(movementAmount || 0));
+
+      if (amount <= 0) {
+        setMessage("Ingresa un monto mayor a cero.");
+        return;
+      }
+
+      const reason =
+        movementReason.trim() ||
+        (movementType === "credit" ? "Recarga manual" : "Descuento manual");
+
       const response = await fetch("/api/wallet-transactions", {
         method: "POST",
         headers: {
@@ -219,8 +342,8 @@ export default function CustomersPage() {
         body: JSON.stringify({
           customerId: selectedCustomer.id,
           type: movementType,
-          amount: Number(movementAmount),
-          reason: movementReason,
+          amount,
+          reason,
         }),
       });
 
@@ -232,7 +355,7 @@ export default function CustomersPage() {
       }
 
       setMovementAmount("");
-      setMovementReason("");
+      setMovementReason(movementType === "credit" ? "Recarga manual" : "Descuento manual");
       setMessage("Movimiento registrado correctamente.");
       await loadCustomers();
     } catch (error) {
@@ -353,24 +476,26 @@ export default function CustomersPage() {
     loadAll();
   }, []);
 
+  useEffect(() => {
+    setMovementReason(movementType === "credit" ? "Recarga manual" : "Descuento manual");
+  }, [movementType]);
+
   return (
-    <main className="min-h-screen text-zinc-950">
+    <main className="min-h-screen bg-[#f5f6f8] px-4 py-6 text-zinc-950 md:px-6">
       <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.25em] text-[#10B557]">
             Clientes & Billetera
           </p>
-          <h1 className="mt-1 text-4xl font-black">
-            Billetera y Cashback
-          </h1>
+          <h1 className="mt-1 text-4xl font-black">Billetera y Cashback</h1>
           <p className="mt-1 text-sm font-bold text-zinc-500">
-            Administra clientes, saldo, movimientos y reglas configurables de cashback.
+            Clientes en lista, saldo disponible, recargas manuales, cashback e historial.
           </p>
         </div>
 
         <a
           href="/admin"
-          className="rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm font-black"
+          className="rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm font-black shadow-sm"
         >
           Volver al admin
         </a>
@@ -382,7 +507,7 @@ export default function CustomersPage() {
         </p>
       )}
 
-      <section className="mb-6 grid gap-4 md:grid-cols-4">
+      <section className="mb-6 grid gap-4 md:grid-cols-5">
         <div className="rounded-3xl bg-[#10B557] p-5 text-white shadow-sm">
           <p className="text-xs font-black uppercase opacity-80">Clientes</p>
           <h2 className="mt-2 text-4xl font-black">{customers.length}</h2>
@@ -390,37 +515,35 @@ export default function CustomersPage() {
         </div>
 
         <div className="rounded-3xl bg-[#10B557] p-5 text-white shadow-sm">
-          <p className="text-xs font-black uppercase opacity-80">
-            Saldo total
-          </p>
-          <h2 className="mt-2 text-4xl font-black">
-            {formatPrice(
-              customers.reduce((sum, customer) => sum + customer.walletBalance, 0)
-            )}
-          </h2>
+          <p className="text-xs font-black uppercase opacity-80">Saldo total</p>
+          <h2 className="mt-2 text-4xl font-black">{formatPrice(totals.balance)}</h2>
           <p className="mt-1 text-sm font-bold">En billeteras</p>
         </div>
 
         <div className="rounded-3xl bg-white p-5 shadow-sm">
-          <p className="text-xs font-black uppercase text-zinc-500">
-            Reglas cashback
-          </p>
-          <h2 className="mt-2 text-4xl font-black">{rules.length}</h2>
+          <p className="text-xs font-black uppercase text-zinc-500">Recarga manual</p>
+          <h2 className="mt-2 text-3xl font-black text-[#10B557]">
+            {formatPrice(totals.manualRecharge)}
+          </h2>
+          <p className="mt-1 text-sm font-bold text-zinc-500">Créditos manuales</p>
+        </div>
+
+        <div className="rounded-3xl bg-white p-5 shadow-sm">
+          <p className="text-xs font-black uppercase text-zinc-500">Cashback</p>
+          <h2 className="mt-2 text-3xl font-black text-[#10B557]">
+            {formatPrice(totals.cashback)}
+          </h2>
           <p className="mt-1 text-sm font-bold text-zinc-500">
-            Configurables
+            {totals.customersWithCashback} clientes con cashback
           </p>
         </div>
 
         <div className="rounded-3xl bg-white p-5 shadow-sm">
-          <p className="text-xs font-black uppercase text-zinc-500">
-            Reglas activas
-          </p>
-          <h2 className="mt-2 text-4xl font-black">
-            {rules.filter((rule) => rule.active).length}
+          <p className="text-xs font-black uppercase text-zinc-500">Usado</p>
+          <h2 className="mt-2 text-3xl font-black text-red-600">
+            {formatPrice(totals.debits)}
           </h2>
-          <p className="mt-1 text-sm font-bold text-zinc-500">
-            En uso
-          </p>
+          <p className="mt-1 text-sm font-bold text-zinc-500">Saldo descontado</p>
         </div>
       </section>
 
@@ -433,9 +556,7 @@ export default function CustomersPage() {
             <h2 className="text-2xl font-black">Crear cliente</h2>
 
             <label className="mt-5 block">
-              <span className="text-xs font-black uppercase text-zinc-500">
-                Nombre
-              </span>
+              <span className="text-xs font-black uppercase text-zinc-500">Nombre</span>
               <input
                 value={customerName}
                 onChange={(event) => setCustomerName(event.target.value)}
@@ -445,9 +566,7 @@ export default function CustomersPage() {
             </label>
 
             <label className="mt-4 block">
-              <span className="text-xs font-black uppercase text-zinc-500">
-                Correo
-              </span>
+              <span className="text-xs font-black uppercase text-zinc-500">Correo</span>
               <input
                 value={customerEmail}
                 onChange={(event) => setCustomerEmail(event.target.value)}
@@ -464,421 +583,272 @@ export default function CustomersPage() {
             </button>
           </form>
 
-          <form
-            onSubmit={saveRule}
-            className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm"
-          >
-            <div className="flex items-center justify-between gap-4">
-              <h2 className="text-2xl font-black">
-                {ruleForm.id ? "Editar regla" : "Crear regla cashback"}
-              </h2>
+          <section className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
+            <h2 className="text-2xl font-black">Gestión de billetera</h2>
 
-              {ruleForm.id && (
-                <button
-                  type="button"
-                  onClick={() => setRuleForm(emptyRuleForm)}
-                  className="rounded-xl border border-zinc-300 px-3 py-2 text-xs font-black"
-                >
-                  Nueva
-                </button>
-              )}
-            </div>
+            {!selectedCustomer ? (
+              <p className="mt-4 rounded-2xl bg-zinc-50 p-4 text-sm font-bold text-zinc-500">
+                Selecciona un cliente de la lista para agregar o quitar saldo.
+              </p>
+            ) : (
+              <>
+                <div className="mt-4 rounded-3xl bg-zinc-950 p-5 text-white">
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-[#10B557]">
+                    Cliente seleccionado
+                  </p>
+                  <h3 className="mt-2 text-2xl font-black">{selectedCustomer.name}</h3>
+                  <p className="mt-1 text-sm font-bold text-zinc-300">{selectedCustomer.email}</p>
+                  <p className="mt-4 text-xs font-black uppercase text-zinc-400">Saldo actual</p>
+                  <p className="mt-1 text-4xl font-black text-[#10B557]">
+                    {formatPrice(selectedBreakdown?.balance || 0)}
+                  </p>
+                </div>
 
-            <label className="mt-5 block">
-              <span className="text-xs font-black uppercase text-zinc-500">
-                Nombre regla
-              </span>
-              <input
-                value={ruleForm.name}
-                onChange={(event) =>
-                  setRuleForm({ ...ruleForm, name: event.target.value })
-                }
-                className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
-              />
-            </label>
+                <div className="mt-4 grid gap-3 md:grid-cols-3">
+                  <div className="rounded-2xl bg-zinc-50 p-4">
+                    <p className="text-xs font-black uppercase text-zinc-500">Recarga</p>
+                    <p className="mt-1 text-2xl font-black text-[#10B557]">
+                      {formatPrice(selectedBreakdown?.manualRecharge || 0)}
+                    </p>
+                  </div>
 
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <label className="block">
-                <span className="text-xs font-black uppercase text-zinc-500">
-                  Porcentaje %
-                </span>
-                <input
-                  value={ruleForm.cashbackPercent}
-                  onChange={(event) =>
-                    setRuleForm({
-                      ...ruleForm,
-                      cashbackPercent: event.target.value,
-                    })
-                  }
-                  type="number"
-                  className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
-                />
-              </label>
+                  <div className="rounded-2xl bg-zinc-50 p-4">
+                    <p className="text-xs font-black uppercase text-zinc-500">Cashback</p>
+                    <p className="mt-1 text-2xl font-black text-[#10B557]">
+                      {formatPrice(selectedBreakdown?.cashback || 0)}
+                    </p>
+                  </div>
 
-              <label className="block">
-                <span className="text-xs font-black uppercase text-zinc-500">
-                  Compra mínima
-                </span>
-                <input
-                  value={ruleForm.minPurchase}
-                  onChange={(event) =>
-                    setRuleForm({
-                      ...ruleForm,
-                      minPurchase: event.target.value,
-                    })
-                  }
-                  type="number"
-                  className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
-                />
-              </label>
-            </div>
+                  <div className="rounded-2xl bg-zinc-50 p-4">
+                    <p className="text-xs font-black uppercase text-zinc-500">Usado</p>
+                    <p className="mt-1 text-2xl font-black text-red-600">
+                      {formatPrice(selectedBreakdown?.debits || 0)}
+                    </p>
+                  </div>
+                </div>
 
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <label className="block">
-                <span className="text-xs font-black uppercase text-zinc-500">
-                  Máximo cashback por compra
-                </span>
-                <input
-                  value={ruleForm.maxCashback}
-                  onChange={(event) =>
-                    setRuleForm({
-                      ...ruleForm,
-                      maxCashback: event.target.value,
-                    })
-                  }
-                  type="number"
-                  className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
-                />
-                <p className="mt-1 text-xs font-bold text-zinc-400">
-                  0 significa sin límite.
-                </p>
-              </label>
+                <form onSubmit={createMovement} className="mt-5 rounded-3xl bg-zinc-50 p-4">
+                  <h3 className="text-lg font-black">Movimiento manual</h3>
 
-              <label className="block">
-                <span className="text-xs font-black uppercase text-zinc-500">
-                  Vigencia saldo días
-                </span>
-                <input
-                  value={ruleForm.validityDays}
-                  onChange={(event) =>
-                    setRuleForm({
-                      ...ruleForm,
-                      validityDays: event.target.value,
-                    })
-                  }
-                  type="number"
-                  className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
-                />
-                <p className="mt-1 text-xs font-bold text-zinc-400">
-                  0 significa sin vencimiento.
-                </p>
-              </label>
-            </div>
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <label className="block">
+                      <span className="text-xs font-black uppercase text-zinc-500">Tipo</span>
+                      <select
+                        value={movementType}
+                        onChange={(event) =>
+                          setMovementType(event.target.value as "credit" | "debit")
+                        }
+                        className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
+                      >
+                        <option value="credit">Agregar saldo</option>
+                        <option value="debit">Quitar saldo</option>
+                      </select>
+                    </label>
 
-            <label className="mt-4 block">
-              <span className="text-xs font-black uppercase text-zinc-500">
-                Medios de pago permitidos
-              </span>
-              <select
-                value={ruleForm.allowedPaymentMethods}
-                onChange={(event) =>
-                  setRuleForm({
-                    ...ruleForm,
-                    allowedPaymentMethods: event.target.value,
-                  })
-                }
-                className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
-              >
-                <option value="all">Todos</option>
-                <option value="debit_credit">Solo Débito / Crédito</option>
-                <option value="food_benefit">Solo Beneficio alimentación</option>
-              </select>
-            </label>
+                    <label className="block">
+                      <span className="text-xs font-black uppercase text-zinc-500">Monto</span>
+                      <input
+                        value={movementAmount}
+                        onChange={(event) => setMovementAmount(event.target.value)}
+                        type="number"
+                        min="1"
+                        placeholder="Ej: 5000"
+                        className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
+                      />
+                    </label>
+                  </div>
 
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <label className="block">
-                <span className="text-xs font-black uppercase text-zinc-500">
-                  Categorías incluidas
-                </span>
-                <input
-                  value={ruleForm.includedCategoryIds}
-                  onChange={(event) =>
-                    setRuleForm({
-                      ...ruleForm,
-                      includedCategoryIds: event.target.value,
-                    })
-                  }
-                  placeholder="all o IDs separados por coma"
-                  className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
-                />
-              </label>
+                  <label className="mt-4 block">
+                    <span className="text-xs font-black uppercase text-zinc-500">Motivo</span>
+                    <input
+                      value={movementReason}
+                      onChange={(event) => setMovementReason(event.target.value)}
+                      placeholder="Ej: Recarga manual, ajuste, devolución"
+                      className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
+                    />
+                  </label>
 
-              <label className="block">
-                <span className="text-xs font-black uppercase text-zinc-500">
-                  Productos excluidos
-                </span>
-                <input
-                  value={ruleForm.excludedProductIds}
-                  onChange={(event) =>
-                    setRuleForm({
-                      ...ruleForm,
-                      excludedProductIds: event.target.value,
-                    })
-                  }
-                  placeholder="IDs separados por coma"
-                  className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
-                />
-              </label>
-            </div>
-
-            <label className="mt-4 block">
-              <span className="text-xs font-black uppercase text-zinc-500">
-                Texto comercial
-              </span>
-              <input
-                value={ruleForm.commercialText}
-                onChange={(event) =>
-                  setRuleForm({
-                    ...ruleForm,
-                    commercialText: event.target.value,
-                  })
-                }
-                className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
-              />
-            </label>
-
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <label className="block">
-                <span className="text-xs font-black uppercase text-zinc-500">
-                  Fecha inicio
-                </span>
-                <input
-                  value={ruleForm.startDate}
-                  onChange={(event) =>
-                    setRuleForm({
-                      ...ruleForm,
-                      startDate: event.target.value,
-                    })
-                  }
-                  type="date"
-                  className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
-                />
-              </label>
-
-              <label className="block">
-                <span className="text-xs font-black uppercase text-zinc-500">
-                  Fecha término
-                </span>
-                <input
-                  value={ruleForm.endDate}
-                  onChange={(event) =>
-                    setRuleForm({
-                      ...ruleForm,
-                      endDate: event.target.value,
-                    })
-                  }
-                  type="date"
-                  className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
-                />
-              </label>
-            </div>
-
-            <label className="mt-4 flex items-center gap-3 rounded-2xl border border-zinc-200 p-4">
-              <input
-                type="checkbox"
-                checked={ruleForm.active}
-                onChange={(event) =>
-                  setRuleForm({
-                    ...ruleForm,
-                    active: event.target.checked,
-                  })
-                }
-              />
-              <span className="text-sm font-black">Regla activa</span>
-            </label>
-
-            <button
-              disabled={loading}
-              className="mt-5 w-full rounded-2xl bg-[#10B557] py-4 text-sm font-black text-white disabled:bg-zinc-300"
-            >
-              {ruleForm.id ? "Actualizar regla" : "Guardar regla"}
-            </button>
-          </form>
+                  <button
+                    disabled={loading}
+                    className="mt-5 w-full rounded-2xl bg-[#10B557] py-4 text-sm font-black text-white disabled:bg-zinc-300"
+                  >
+                    {movementType === "credit" ? "Agregar saldo" : "Quitar saldo"}
+                  </button>
+                </form>
+              </>
+            )}
+          </section>
         </div>
 
         <div className="space-y-6">
           <section className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <h2 className="text-2xl font-black">Clientes</h2>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black">Clientes</h2>
+                <p className="mt-1 text-sm font-bold text-zinc-500">
+                  Lista vertical con saldo, recargas y cashback por cliente.
+                </p>
+              </div>
 
-            <div className="mt-5 grid gap-3 md:grid-cols-2">
-              {customers.map((customer) => (
-                <article
-                  key={customer.id}
-                  className={`rounded-2xl border p-4 ${
-                    selectedCustomerId === customer.id
-                      ? "border-[#10B557] bg-green-50"
-                      : "border-zinc-200 bg-white"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-lg font-black">{customer.name}</h3>
-                      <p className="text-sm font-bold text-zinc-500">
-                        {customer.email}
-                      </p>
-                    </div>
+              <div className="w-full max-w-md">
+                <input
+                  value={customerSearch}
+                  onChange={(event) => setCustomerSearch(event.target.value)}
+                  placeholder="Buscar por nombre o correo..."
+                  className="w-full rounded-2xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
+                />
+              </div>
+            </div>
 
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-black ${
-                        customer.active
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {customer.active ? "Activo" : "Inactivo"}
-                    </span>
-                  </div>
+            <div className="mt-5 overflow-hidden rounded-3xl border border-zinc-200">
+              <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr_170px] gap-3 bg-zinc-100 px-4 py-3 text-xs font-black uppercase text-zinc-500">
+                <span>Cliente</span>
+                <span>Saldo</span>
+                <span>Recarga</span>
+                <span>Cashback</span>
+                <span>Usado</span>
+                <span>Acciones</span>
+              </div>
 
-                  <p className="mt-4 text-3xl font-black text-[#10B557]">
-                    {formatPrice(customer.walletBalance)}
-                  </p>
+              {filteredCustomers.length === 0 ? (
+                <div className="bg-white p-8 text-center font-bold text-zinc-500">
+                  No encontramos clientes con ese nombre o correo.
+                </div>
+              ) : (
+                <div className="divide-y divide-zinc-200 bg-white">
+                  {filteredCustomers.map((customer) => {
+                    const breakdown = getWalletBreakdown(customer);
+                    const hasCashback = breakdown.cashback > 0;
+                    const isSelected = selectedCustomerId === customer.id;
 
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedCustomerId(customer.id)}
-                      className="rounded-xl bg-zinc-900 px-4 py-2 text-xs font-black text-white"
-                    >
-                      Ver billetera
-                    </button>
+                    return (
+                      <article
+                        key={customer.id}
+                        className={`grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr_170px] items-center gap-3 px-4 py-4 transition ${
+                          isSelected ? "bg-green-50" : "bg-white hover:bg-zinc-50"
+                        }`}
+                      >
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="truncate text-lg font-black">{customer.name}</h3>
+                            <span
+                              className={`rounded-full px-3 py-1 text-xs font-black ${
+                                customer.active
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-red-100 text-red-700"
+                              }`}
+                            >
+                              {customer.active ? "Activo" : "Inactivo"}
+                            </span>
+                            <span
+                              className={`rounded-full px-3 py-1 text-xs font-black ${
+                                hasCashback
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-zinc-100 text-zinc-500"
+                              }`}
+                            >
+                              {hasCashback ? "Tiene cashback" : "Sin cashback"}
+                            </span>
+                          </div>
+                          <p className="mt-1 truncate text-sm font-bold text-zinc-500">
+                            {customer.email}
+                          </p>
+                        </div>
 
-                    <button
-                      type="button"
-                      onClick={() => toggleCustomer(customer)}
-                      className={`rounded-xl px-4 py-2 text-xs font-black text-white ${
-                        customer.active ? "bg-red-500" : "bg-[#10B557]"
-                      }`}
-                    >
-                      {customer.active ? "Desactivar" : "Activar"}
-                    </button>
-                  </div>
-                </article>
-              ))}
+                        <p className="text-xl font-black text-[#10B557]">
+                          {formatPrice(breakdown.balance)}
+                        </p>
+
+                        <p className="font-black">{formatPrice(breakdown.manualRecharge)}</p>
+
+                        <p className="font-black text-[#10B557]">
+                          {formatPrice(breakdown.cashback)}
+                        </p>
+
+                        <p className="font-black text-red-600">{formatPrice(breakdown.debits)}</p>
+
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedCustomerId(customer.id)}
+                            className="rounded-xl bg-zinc-900 px-3 py-2 text-xs font-black text-white"
+                          >
+                            Billetera
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => toggleCustomer(customer)}
+                            className={`rounded-xl px-3 py-2 text-xs font-black text-white ${
+                              customer.active ? "bg-red-500" : "bg-[#10B557]"
+                            }`}
+                          >
+                            {customer.active ? "Desactivar" : "Activar"}
+                          </button>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </section>
 
           {selectedCustomer && (
             <section className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.2em] text-[#10B557]">
-                    Billetera
+                    Historial billetera
                   </p>
-                  <h2 className="mt-1 text-2xl font-black">
-                    {selectedCustomer.name}
-                  </h2>
+                  <h2 className="mt-1 text-2xl font-black">{selectedCustomer.name}</h2>
                   <p className="mt-1 text-sm font-bold text-zinc-500">
-                    Saldo actual
+                    {selectedCustomer.email}
                   </p>
-                  <p className="mt-1 text-4xl font-black text-[#10B557]">
-                    {formatPrice(selectedCustomer.walletBalance)}
-                  </p>
-                </div>
-              </div>
-
-              <form
-                onSubmit={createMovement}
-                className="mt-6 rounded-3xl bg-zinc-50 p-4"
-              >
-                <h3 className="text-lg font-black">Movimiento manual</h3>
-
-                <div className="mt-4 grid gap-4 md:grid-cols-[160px_160px_1fr]">
-                  <label className="block">
-                    <span className="text-xs font-black uppercase text-zinc-500">
-                      Tipo
-                    </span>
-                    <select
-                      value={movementType}
-                      onChange={(event) =>
-                        setMovementType(event.target.value as "credit" | "debit")
-                      }
-                      className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
-                    >
-                      <option value="credit">Abonar</option>
-                      <option value="debit">Descontar</option>
-                    </select>
-                  </label>
-
-                  <label className="block">
-                    <span className="text-xs font-black uppercase text-zinc-500">
-                      Monto
-                    </span>
-                    <input
-                      value={movementAmount}
-                      onChange={(event) => setMovementAmount(event.target.value)}
-                      type="number"
-                      className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
-                    />
-                  </label>
-
-                  <label className="block">
-                    <span className="text-xs font-black uppercase text-zinc-500">
-                      Motivo
-                    </span>
-                    <input
-                      value={movementReason}
-                      onChange={(event) => setMovementReason(event.target.value)}
-                      placeholder="Ej: Ajuste manual, premio, devolución"
-                      className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
-                    />
-                  </label>
                 </div>
 
                 <button
-                  disabled={loading}
-                  className="mt-5 w-full rounded-2xl bg-[#10B557] py-4 text-sm font-black text-white disabled:bg-zinc-300"
+                  type="button"
+                  onClick={() => setSelectedCustomerId(null)}
+                  className="rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm font-black"
                 >
-                  Guardar movimiento
+                  Cerrar
                 </button>
-              </form>
+              </div>
 
-              <div className="mt-6">
-                <h3 className="text-lg font-black">Historial</h3>
+              <div className="mt-5 overflow-hidden rounded-2xl border border-zinc-200">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-zinc-100">
+                    <tr>
+                      <th className="p-3 font-black">Fecha</th>
+                      <th className="p-3 font-black">Origen</th>
+                      <th className="p-3 font-black">Tipo</th>
+                      <th className="p-3 font-black">Monto</th>
+                      <th className="p-3 font-black">Motivo</th>
+                    </tr>
+                  </thead>
 
-                <div className="mt-4 overflow-hidden rounded-2xl border border-zinc-200">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-zinc-100">
+                  <tbody>
+                    {selectedCustomer.walletTransactions.length === 0 ? (
                       <tr>
-                        <th className="p-3 font-black">Fecha</th>
-                        <th className="p-3 font-black">Tipo</th>
-                        <th className="p-3 font-black">Monto</th>
-                        <th className="p-3 font-black">Motivo</th>
+                        <td colSpan={5} className="p-5 text-center font-bold text-zinc-500">
+                          Sin movimientos.
+                        </td>
                       </tr>
-                    </thead>
-
-                    <tbody>
-                      {selectedCustomer.walletTransactions.length === 0 ? (
-                        <tr>
-                          <td
-                            colSpan={4}
-                            className="p-5 text-center font-bold text-zinc-500"
-                          >
-                            Sin movimientos.
-                          </td>
-                        </tr>
-                      ) : (
-                        selectedCustomer.walletTransactions.map((transaction) => (
-                          <tr
-                            key={transaction.id}
-                            className="border-t border-zinc-200"
-                          >
-                            <td className="p-3">
-                              {formatDate(transaction.createdAt)}
-                            </td>
+                    ) : (
+                      selectedCustomer.walletTransactions
+                        .slice()
+                        .sort(
+                          (a, b) =>
+                            new Date(b.createdAt).getTime() -
+                            new Date(a.createdAt).getTime()
+                        )
+                        .map((transaction) => (
+                          <tr key={transaction.id} className="border-t border-zinc-200">
+                            <td className="p-3">{formatDate(transaction.createdAt)}</td>
+                            <td className="p-3 font-black">{getTransactionLabel(transaction)}</td>
                             <td className="p-3 font-black">
-                              {transaction.type === "credit"
-                                ? "Abono"
-                                : "Descuento"}
+                              {transaction.type === "credit" ? "Abono" : "Descuento"}
                             </td>
                             <td
                               className={`p-3 font-black ${
@@ -887,81 +857,261 @@ export default function CustomersPage() {
                                   : "text-red-600"
                               }`}
                             >
-                              {transaction.type === "credit" ? "+" : "-"}{" "}
-                              {formatPrice(transaction.amount)}
+                              {transaction.type === "credit" ? "+" : "-"} {formatPrice(transaction.amount)}
                             </td>
                             <td className="p-3">{transaction.reason}</td>
                           </tr>
                         ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </section>
           )}
-
-          <section className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <h2 className="text-2xl font-black">Reglas cashback creadas</h2>
-
-            <div className="mt-5 grid gap-3 md:grid-cols-2">
-              {rules.length === 0 ? (
-                <div className="rounded-2xl bg-zinc-50 p-5 text-center font-bold text-zinc-500">
-                  Aún no hay reglas.
-                </div>
-              ) : (
-                rules.map((rule) => (
-                  <article
-                    key={rule.id}
-                    className="rounded-2xl border border-zinc-200 p-4"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="text-lg font-black">{rule.name}</h3>
-                        <p className="mt-1 text-sm font-bold text-zinc-500">
-                          {rule.cashbackPercent}% · mínimo{" "}
-                          {formatPrice(rule.minPurchase)}
-                        </p>
-                      </div>
-
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-black ${
-                          rule.active
-                            ? "bg-green-100 text-green-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {rule.active ? "Activa" : "Inactiva"}
-                      </span>
-                    </div>
-
-                    <p className="mt-3 text-sm text-zinc-500">
-                      {rule.commercialText || "Sin texto comercial"}
-                    </p>
-
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => editRule(rule)}
-                        className="rounded-xl bg-zinc-900 px-4 py-2 text-xs font-black text-white"
-                      >
-                        Editar
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => deleteRule(rule)}
-                        className="rounded-xl bg-red-500 px-4 py-2 text-xs font-black text-white"
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </article>
-                ))
-              )}
-            </div>
-          </section>
         </div>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[420px_1fr]">
+        <form
+          onSubmit={saveRule}
+          className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm"
+        >
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="text-2xl font-black">
+              {ruleForm.id ? "Editar regla" : "Crear regla cashback"}
+            </h2>
+
+            {ruleForm.id && (
+              <button
+                type="button"
+                onClick={() => setRuleForm(emptyRuleForm)}
+                className="rounded-xl border border-zinc-300 px-3 py-2 text-xs font-black"
+              >
+                Nueva
+              </button>
+            )}
+          </div>
+
+          <label className="mt-5 block">
+            <span className="text-xs font-black uppercase text-zinc-500">Nombre regla</span>
+            <input
+              value={ruleForm.name}
+              onChange={(event) =>
+                setRuleForm({ ...ruleForm, name: event.target.value })
+              }
+              className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
+            />
+          </label>
+
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <label className="block">
+              <span className="text-xs font-black uppercase text-zinc-500">Porcentaje %</span>
+              <input
+                value={ruleForm.cashbackPercent}
+                onChange={(event) =>
+                  setRuleForm({ ...ruleForm, cashbackPercent: event.target.value })
+                }
+                type="number"
+                className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
+              />
+            </label>
+
+            <label className="block">
+              <span className="text-xs font-black uppercase text-zinc-500">Compra mínima</span>
+              <input
+                value={ruleForm.minPurchase}
+                onChange={(event) =>
+                  setRuleForm({ ...ruleForm, minPurchase: event.target.value })
+                }
+                type="number"
+                className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
+              />
+            </label>
+          </div>
+
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <label className="block">
+              <span className="text-xs font-black uppercase text-zinc-500">
+                Máximo cashback por compra
+              </span>
+              <input
+                value={ruleForm.maxCashback}
+                onChange={(event) =>
+                  setRuleForm({ ...ruleForm, maxCashback: event.target.value })
+                }
+                type="number"
+                className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
+              />
+              <p className="mt-1 text-xs font-bold text-zinc-400">0 significa sin límite.</p>
+            </label>
+
+            <label className="block">
+              <span className="text-xs font-black uppercase text-zinc-500">Vigencia saldo días</span>
+              <input
+                value={ruleForm.validityDays}
+                onChange={(event) =>
+                  setRuleForm({ ...ruleForm, validityDays: event.target.value })
+                }
+                type="number"
+                className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
+              />
+              <p className="mt-1 text-xs font-bold text-zinc-400">0 significa sin vencimiento.</p>
+            </label>
+          </div>
+
+          <label className="mt-4 block">
+            <span className="text-xs font-black uppercase text-zinc-500">Medios de pago permitidos</span>
+            <select
+              value={ruleForm.allowedPaymentMethods}
+              onChange={(event) =>
+                setRuleForm({ ...ruleForm, allowedPaymentMethods: event.target.value })
+              }
+              className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
+            >
+              <option value="all">Todos</option>
+              <option value="debit_credit">Solo Débito / Crédito</option>
+              <option value="food_benefit">Solo Beneficio alimentación</option>
+            </select>
+          </label>
+
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <label className="block">
+              <span className="text-xs font-black uppercase text-zinc-500">Categorías incluidas</span>
+              <input
+                value={ruleForm.includedCategoryIds}
+                onChange={(event) =>
+                  setRuleForm({ ...ruleForm, includedCategoryIds: event.target.value })
+                }
+                placeholder="all o IDs separados por coma"
+                className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
+              />
+            </label>
+
+            <label className="block">
+              <span className="text-xs font-black uppercase text-zinc-500">Productos excluidos</span>
+              <input
+                value={ruleForm.excludedProductIds}
+                onChange={(event) =>
+                  setRuleForm({ ...ruleForm, excludedProductIds: event.target.value })
+                }
+                placeholder="IDs separados por coma"
+                className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
+              />
+            </label>
+          </div>
+
+          <label className="mt-4 block">
+            <span className="text-xs font-black uppercase text-zinc-500">Texto comercial</span>
+            <input
+              value={ruleForm.commercialText}
+              onChange={(event) =>
+                setRuleForm({ ...ruleForm, commercialText: event.target.value })
+              }
+              className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
+            />
+          </label>
+
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <label className="block">
+              <span className="text-xs font-black uppercase text-zinc-500">Fecha inicio</span>
+              <input
+                value={ruleForm.startDate}
+                onChange={(event) =>
+                  setRuleForm({ ...ruleForm, startDate: event.target.value })
+                }
+                type="date"
+                className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
+              />
+            </label>
+
+            <label className="block">
+              <span className="text-xs font-black uppercase text-zinc-500">Fecha término</span>
+              <input
+                value={ruleForm.endDate}
+                onChange={(event) =>
+                  setRuleForm({ ...ruleForm, endDate: event.target.value })
+                }
+                type="date"
+                className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
+              />
+            </label>
+          </div>
+
+          <label className="mt-4 flex items-center gap-3 rounded-2xl border border-zinc-200 p-4">
+            <input
+              type="checkbox"
+              checked={ruleForm.active}
+              onChange={(event) =>
+                setRuleForm({ ...ruleForm, active: event.target.checked })
+              }
+            />
+            <span className="text-sm font-black">Regla activa</span>
+          </label>
+
+          <button
+            disabled={loading}
+            className="mt-5 w-full rounded-2xl bg-[#10B557] py-4 text-sm font-black text-white disabled:bg-zinc-300"
+          >
+            {ruleForm.id ? "Actualizar regla" : "Guardar regla"}
+          </button>
+        </form>
+
+        <section className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <h2 className="text-2xl font-black">Reglas cashback creadas</h2>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            {rules.length === 0 ? (
+              <div className="rounded-2xl bg-zinc-50 p-5 text-center font-bold text-zinc-500">
+                Aún no hay reglas.
+              </div>
+            ) : (
+              rules.map((rule) => (
+                <article key={rule.id} className="rounded-2xl border border-zinc-200 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-lg font-black">{rule.name}</h3>
+                      <p className="mt-1 text-sm font-bold text-zinc-500">
+                        {rule.cashbackPercent}% · mínimo {formatPrice(rule.minPurchase)}
+                      </p>
+                    </div>
+
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-black ${
+                        rule.active
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700"
+                      }`}
+                    >
+                      {rule.active ? "Activa" : "Inactiva"}
+                    </span>
+                  </div>
+
+                  <p className="mt-3 text-sm text-zinc-500">
+                    {rule.commercialText || "Sin texto comercial"}
+                  </p>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => editRule(rule)}
+                      className="rounded-xl bg-zinc-900 px-4 py-2 text-xs font-black text-white"
+                    >
+                      Editar
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => deleteRule(rule)}
+                      className="rounded-xl bg-red-500 px-4 py-2 text-xs font-black text-white"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
+        </section>
       </section>
     </main>
   );

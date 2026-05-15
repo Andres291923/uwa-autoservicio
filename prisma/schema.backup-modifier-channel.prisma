@@ -8,26 +8,24 @@ datasource db {
 }
 
 model Category {
-  id                Int       @id @default(autoincrement())
-  name              String
-  slug              String    @unique
-  order             Int       @default(0)
-  active            Boolean   @default(true)
-  channelVisibility String    @default("all")
-  products          Product[]
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @default(now()) @updatedAt
+  id        Int       @id @default(autoincrement())
+  name      String
+  slug      String    @unique
+  order     Int       @default(0)
+  active    Boolean   @default(true)
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
 }
 
 model Product {
-  id                Int     @id @default(autoincrement())
-  name              String
-  description       String?
-  price             Int
-  imageUrl          String?
-  active            Boolean @default(true)
-  channelVisibility String  @default("all")
-  order             Int     @default(0)
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String?
+  price       Int
+  imageUrl    String?
+  active      Boolean @default(true)
+  order       Int     @default(0)
 
   categoryId Int
   category   Category @relation(fields: [categoryId], references: [id])
@@ -45,22 +43,20 @@ model ModifierTemplate {
   order  Int     @default(0)
   active Boolean @default(true)
 
-  channelVisibility String                 @default("all")
-  options           ModifierOption[]
-  products          ProductModifierGroup[]
+  options  ModifierOption[]
+  products ProductModifierGroup[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 }
 
 model ModifierOption {
-  id                Int     @id @default(autoincrement())
-  name              String
-  price             Int     @default(0)
-  imageUrl          String?
-  active            Boolean @default(true)
-  channelVisibility String  @default("all")
-  order             Int     @default(0)
+  id       Int     @id @default(autoincrement())
+  name     String
+  price    Int     @default(0)
+  imageUrl String?
+  active   Boolean @default(true)
+  order    Int     @default(0)
 
   templateId Int
   template   ModifierTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
@@ -86,9 +82,8 @@ model ProductModifierGroup {
   order    Int     @default(0)
   active   Boolean @default(true)
 
-  channelVisibility String   @default("all")
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @default(now()) @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@unique([productId, templateId])
 }
@@ -176,14 +171,13 @@ model BusinessSettings {
 }
 
 model Customer {
-  id                Int      @id @default(autoincrement())
-  name              String
-  email             String   @unique
-  passwordHash      String?
-  active            Boolean  @default(true)
-  channelVisibility String   @default("all")
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  passwordHash String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   orders Order[]
 
@@ -247,12 +241,11 @@ model StoreOpeningHour {
 }
 
 model DiscountCoupon {
-  id                Int      @id @default(autoincrement())
-  name              String
-  code              String   @unique
-  percent           Int      @default(10)
-  active            Boolean  @default(true)
-  channelVisibility String   @default("all")
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  name      String
+  code      String   @unique
+  percent   Int      @default(10)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

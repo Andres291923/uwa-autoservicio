@@ -33,7 +33,6 @@ type ProductModifierGroup = {
   required: boolean;
   order: number;
   active: boolean;
-  channelVisibility?: string;
   template: ModifierTemplate;
 };
 
@@ -120,7 +119,6 @@ function getActiveModifierGroups(product: Product | null) {
 
   return product.modifierGroups
     .filter((group) => group.active && group.template.active)
-    .filter((group) => !group.channelVisibility || group.channelVisibility === "all" || group.channelVisibility === "totem")
     .map((group) => ({
       ...group,
       template: {
@@ -1431,7 +1429,6 @@ export default function TotemPage() {
     </main>
   );
 }
-
 
 
 

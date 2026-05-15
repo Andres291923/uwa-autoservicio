@@ -30,7 +30,6 @@ type ProductModifierGroup = {
   required: boolean;
   active: boolean;
   order: number;
-  channelVisibility?: string;
   template: ModifierTemplate;
 };
 
@@ -72,17 +71,6 @@ type LoggedCustomer = {
   walletBalance: number;
 };
 
-type WalletHistoryTransaction = {
-  id: number;
-  type: string;
-  amount: number;
-  reason: string;
-  orderId: number | null;
-  expiresAt: string | null;
-  createdAt: string;
-  origin: string;
-};
-
 type AppliedCoupon = {
   id: number;
   name: string;
@@ -111,16 +99,6 @@ function formatPrice(value: number) {
     currency: "CLP",
     maximumFractionDigits: 0,
   }).format(value || 0);
-}
-
-function formatDateTime(value: string) {
-  return new Date(value).toLocaleString("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }
 
 function createCartId() {
@@ -271,9 +249,6 @@ export default function PedidoPage() {
   const [authMessage, setAuthMessage] = useState("");
   const [loadingOrder, setLoadingOrder] = useState(false);
   const [loadingAuth, setLoadingAuth] = useState(false);
-  const [walletHistoryVisible, setWalletHistoryVisible] = useState(false);
-  const [walletHistoryLoading, setWalletHistoryLoading] = useState(false);
-  const [walletHistoryTransactions, setWalletHistoryTransactions] = useState<WalletHistoryTransaction[]>([]);
 
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
@@ -376,7 +351,6 @@ export default function PedidoPage() {
 
     return (selectedProduct.modifierGroups || [])
       .filter((group) => group.active !== false)
-      .filter((group) => !group.channelVisibility || group.channelVisibility === "all" || group.channelVisibility === "online")
       .filter((group) => group.template)
       .map((group) => ({
         ...group,
@@ -638,41 +612,6 @@ export default function PedidoPage() {
     }
   }
 
-  async function openWalletHistory() {
-    if (!loggedCustomer) return;
-
-    try {
-      setWalletHistoryLoading(true);
-      setWalletHistoryVisible(true);
-
-      const response = await fetch("/api/customer-auth/wallet-history", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          customerId: loggedCustomer.id,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setWalletHistoryTransactions([]);
-        return;
-      }
-
-      setWalletHistoryTransactions(
-        Array.isArray(data.transactions) ? data.transactions : []
-      );
-    } catch (error) {
-      console.error(error);
-      setWalletHistoryTransactions([]);
-    } finally {
-      setWalletHistoryLoading(false);
-    }
-  }
-
   function logoutCustomer() {
     setLoggedCustomer(null);
     setUseWallet(false);
@@ -867,105 +806,6 @@ export default function PedidoPage() {
 
   return (
     <main className="min-h-screen bg-[#f5f6f8] text-zinc-950">
-      {walletHistoryVisible && loggedCustomer && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 px-4">
-          <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-[2rem] bg-white p-6 shadow-2xl">
-            <div className="mb-5 flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.25em] text-[#10B557]">
-                  Historial billetera
-                </p>
-
-                <h2 className="mt-2 text-3xl font-black">
-                  {loggedCustomer.name}
-                </h2>
-
-                <p className="mt-1 text-sm font-bold text-zinc-500">
-                  {loggedCustomer.email}
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setWalletHistoryVisible(false)}
-                className="rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-black"
-              >
-                Cerrar
-              </button>
-            </div>
-
-            <div className="mb-5 rounded-3xl bg-zinc-50 p-4">
-              <p className="text-xs font-black uppercase text-zinc-500">
-                Saldo disponible
-              </p>
-              <p className="mt-1 text-4xl font-black text-[#10B557]">
-                {formatPrice(loggedCustomer.walletBalance)}
-              </p>
-            </div>
-
-            <div className="overflow-hidden rounded-3xl border border-zinc-200">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-zinc-100">
-                  <tr>
-                    <th className="p-4 font-black">Fecha</th>
-                    <th className="p-4 font-black">Origen</th>
-                    <th className="p-4 font-black">Tipo</th>
-                    <th className="p-4 font-black">Monto</th>
-                    <th className="p-4 font-black">Motivo</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {walletHistoryLoading ? (
-                    <tr>
-                      <td colSpan={5} className="p-6 text-center font-black text-zinc-500">
-                        Cargando historial...
-                      </td>
-                    </tr>
-                  ) : walletHistoryTransactions.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="p-6 text-center font-black text-zinc-500">
-                        Sin movimientos.
-                      </td>
-                    </tr>
-                  ) : (
-                    walletHistoryTransactions.map((transaction) => (
-                      <tr key={transaction.id} className="border-t border-zinc-200">
-                        <td className="p-4 font-bold">
-                          {formatDateTime(transaction.createdAt)}
-                        </td>
-
-                        <td className="p-4 font-black">
-                          {transaction.origin}
-                        </td>
-
-                        <td className="p-4 font-black">
-                          {transaction.type === "credit" ? "Abono" : "Descuento"}
-                        </td>
-
-                        <td
-                          className={`p-4 font-black ${
-                            transaction.type === "credit"
-                              ? "text-[#10B557]"
-                              : "text-red-600"
-                          }`}
-                        >
-                          {transaction.type === "credit" ? "+ " : "- "}
-                          {formatPrice(transaction.amount)}
-                        </td>
-
-                        <td className="p-4">
-                          {transaction.reason}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
       {closedStoreModalVisible && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 px-5">
           <div className="w-full max-w-xl rounded-[2rem] bg-white p-7 text-center shadow-2xl">
@@ -1200,23 +1040,13 @@ export default function PedidoPage() {
                   )}
                 </div>
 
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={logoutCustomer}
-                    className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-xs font-black"
-                  >
-                    Salir de la cuenta
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={openWalletHistory}
-                    className="rounded-xl bg-zinc-950 px-4 py-2 text-xs font-black text-white"
-                  >
-                    Ver historial
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={logoutCustomer}
+                  className="mt-3 rounded-xl border border-zinc-300 bg-white px-4 py-2 text-xs font-black"
+                >
+                  Salir de la cuenta
+                </button>
               </div>
             ) : (
               <div>
@@ -1804,6 +1634,4 @@ export default function PedidoPage() {
     </main>
   );
 }
-
-
 
