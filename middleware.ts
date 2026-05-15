@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 
 const PAGE_PERMISSIONS: { prefix: string; permissions: string[] }[] = [
+  { prefix: "/inventario", permissions: ["inventory"] },
   { prefix: "/admin/forbidden", permissions: [] },
   { prefix: "/admin/products", permissions: ["products"] },
   { prefix: "/admin/settings", permissions: ["settings"] },
@@ -12,6 +13,7 @@ const PAGE_PERMISSIONS: { prefix: string; permissions: string[] }[] = [
 ];
 
 const API_PERMISSIONS: { prefix: string; permissions: string[]; allowPublicGet?: boolean; allowPublicPost?: boolean }[] = [
+  { prefix: "/api/inventory", permissions: ["inventory"] },
   { prefix: "/api/admin-users", permissions: ["settings"] },
   { prefix: "/api/reports", permissions: ["reports"] },
   { prefix: "/api/customers", permissions: ["customers"] },
@@ -114,8 +116,10 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/admin/:path*",
+    "/inventario/:path*",
     "/cocina/:path*",
     "/api/admin-users/:path*",
+    "/api/inventory/:path*",
     "/api/reports/:path*",
     "/api/customers/:path*",
     "/api/wallet-transactions/:path*",
@@ -130,3 +134,4 @@ export const config = {
     "/api/coupons/:path*"
   ],
 };
+
