@@ -176,23 +176,19 @@ model BusinessSettings {
 }
 
 model Customer {
-  id                Int       @id @default(autoincrement())
+  id                Int      @id @default(autoincrement())
   name              String
-  email             String    @unique
+  email             String   @unique
   passwordHash      String?
-  pinHash           String?
-  pinAttempts       Int       @default(0)
-  pinLockedUntil    DateTime?
-  active            Boolean   @default(true)
-  channelVisibility String    @default("all")
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  active            Boolean  @default(true)
+  channelVisibility String   @default("all")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   orders Order[]
 
   openingHours       StoreOpeningHour[]
   walletTransactions WalletTransaction[]
-  totemSessions      TotemSession[]
 }
 
 model WalletTransaction {
@@ -299,21 +295,19 @@ model InventorySubcategory {
 }
 
 model InventoryItem {
-  id             Int      @id @default(autoincrement())
-  categoryId     Int
-  subcategoryId  Int?
-  name           String
-  unit           String   @default("")
-  wasteCostPerKg Int      @default(0)
-  order          Int      @default(0)
-  active         Boolean  @default(true)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id            Int      @id @default(autoincrement())
+  categoryId    Int
+  subcategoryId Int?
+  name          String
+  unit          String   @default("")
+  order         Int      @default(0)
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  category     InventoryCategory     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  subcategory  InventorySubcategory? @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
-  entries      InventoryEntry[]
-  wasteEntries InventoryWasteEntry[]
+  category    InventoryCategory     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  subcategory InventorySubcategory? @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
+  entries     InventoryEntry[]
 }
 
 model InventoryEntry {
@@ -328,31 +322,4 @@ model InventoryEntry {
   item InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
   @@unique([entryDate, itemId])
-}
-
-model TotemSession {
-  id         Int      @id @default(autoincrement())
-  code       String   @unique
-  status     String   @default("waiting")
-  customerId Int?
-  expiresAt  DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
-}
-
-model InventoryWasteEntry {
-  id            Int      @id @default(autoincrement())
-  entryDate     DateTime
-  itemId        Int?
-  productName   String   @default("")
-  quantityGrams Float    @default(0)
-  amount        Int      @default(0)
-  comment       String   @default("")
-  source        String   @default("manual")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  item InventoryItem? @relation(fields: [itemId], references: [id], onDelete: SetNull)
 }

@@ -38,9 +38,7 @@ function todayInput() {
 export default function InventoryEntryPage() {
   const [date, setDate] = useState(todayInput());
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
-  const [values, setValues] = useState<
-    Record<number, { quantity: string; comment: string }>
-  >({});
+  const [values, setValues] = useState<Record<number, { quantity: string; comment: string }>>({});
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -60,19 +58,14 @@ export default function InventoryEntryPage() {
         return;
       }
 
-      const loadedCategories = Array.isArray(data.categories)
-        ? data.categories
-        : [];
+      setCategories(Array.isArray(data.categories) ? data.categories : []);
 
-      setCategories(loadedCategories);
+      const nextValues: Record<number, { quantity: string; comment: string }> = {};
 
-      const nextValues: Record<number, { quantity: string; comment: string }> =
-        {};
-
-      for (const category of loadedCategories) {
+      for (const category of data.categories || []) {
         for (const item of category.items || []) {
           nextValues[item.id] = {
-            quantity: item.entry ? String(item.entry.quantity) : "",
+            quantity: item.entry ? String(item.entry.quantity) : "0",
             comment: item.entry?.comment || "",
           };
         }
@@ -87,16 +80,12 @@ export default function InventoryEntryPage() {
     }
   }
 
-  function updateValue(
-    itemId: number,
-    field: "quantity" | "comment",
-    value: string
-  ) {
+  function updateValue(itemId: number, field: "quantity" | "comment", value: string) {
     setValues((current) => ({
       ...current,
       [itemId]: {
-        quantity: current[itemId]?.quantity ?? "",
-        comment: current[itemId]?.comment ?? "",
+        quantity: current[itemId]?.quantity || "0",
+        comment: current[itemId]?.comment || "",
         [field]: value,
       },
     }));
@@ -133,7 +122,6 @@ export default function InventoryEntryPage() {
 
       setMessage("Inventario guardado correctamente.");
       await loadInventory(date);
-      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
       console.error(error);
       setMessage("Error al guardar inventario.");
@@ -154,26 +142,27 @@ export default function InventoryEntryPage() {
   return (
     <main className="min-h-screen bg-zinc-50 px-4 py-6 text-zinc-950">
       <section className="mx-auto max-w-5xl rounded-[2rem] bg-white p-6 shadow-sm">
-        <header className="relative mb-6 text-center">
+        <header className="mb-6 relative text-center">
           <a
             href="/admin/inventory"
             className="absolute left-0 top-0 rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-black text-zinc-800 shadow-sm"
           >
             Volver al menú
           </a>
-
           <p className="text-xs font-black uppercase tracking-[0.25em] text-[#10B557]">
             Inventario diario
           </p>
 
-          <h1 className="mt-2 text-4xl font-black">Cierre de turno</h1>
+          <h1 className="mt-2 text-4xl font-black">
+            Cierre de turno
+          </h1>
 
           <p className="mt-2 text-sm font-bold text-zinc-500">
-            Ingresa cuánto quedó de cada producto y agrega comentarios si corresponde.
+            Ingresa cuanto quedo de cada producto y agrega comentarios si corresponde.
           </p>
         </header>
 
-        <div className="mb-8">
+        <div className="mb-6 grid gap-4">
           <label>
             <span className="text-xs font-black uppercase text-zinc-500">
               Fecha
@@ -190,6 +179,8 @@ export default function InventoryEntryPage() {
               className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-black outline-none focus:border-[#10B557]"
             />
           </label>
+
+
         </div>
 
         {message && (
@@ -202,7 +193,7 @@ export default function InventoryEntryPage() {
           <div className="rounded-3xl bg-zinc-50 p-8 text-center">
             <p className="text-xl font-black">No hay productos creados.</p>
             <p className="mt-1 text-sm font-bold text-zinc-500">
-              Primero crea categorías y productos desde admin.
+              Primero crea categorias y productos desde admin.
             </p>
           </div>
         ) : (
@@ -224,8 +215,8 @@ export default function InventoryEntryPage() {
                           <h3 className="text-lg font-black">{item.name}</h3>
 
                           <p className="text-xs font-bold text-zinc-500">
-                            {item.subcategory?.name || "Sin subcategoría"}
-                            {item.unit ? ` · ${item.unit}` : ""}
+                            {item.subcategory?.name || "Sin subcategoria"}
+                            {item.unit ? ` Â· ${item.unit}` : ""}
                           </p>
                         </div>
                       </div>
@@ -240,11 +231,10 @@ export default function InventoryEntryPage() {
                             suppressHydrationWarning
                             type="number"
                             step="0.01"
-                            value={values[item.id]?.quantity ?? ""}
+                            value={values[item.id]?.quantity || "0"}
                             onChange={(event) =>
                               updateValue(item.id, "quantity", event.target.value)
                             }
-                            placeholder="Ej: 0.5"
                             className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-black outline-none focus:border-[#10B557]"
                           />
                         </label>
@@ -256,7 +246,7 @@ export default function InventoryEntryPage() {
 
                           <input
                             suppressHydrationWarning
-                            value={values[item.id]?.comment ?? ""}
+                            value={values[item.id]?.comment || ""}
                             onChange={(event) =>
                               updateValue(item.id, "comment", event.target.value)
                             }
@@ -272,18 +262,6 @@ export default function InventoryEntryPage() {
             ))}
           </div>
         )}
-
-        <div className="mt-10 rounded-[2rem] border border-zinc-200 bg-white p-4 shadow-2xl">
-          <button
-            suppressHydrationWarning
-            type="button"
-            onClick={saveInventory}
-            disabled={loading || totalItems === 0}
-            className="w-full rounded-2xl bg-[#10B557] px-8 py-5 text-xl font-black text-white disabled:bg-zinc-300"
-          >
-            {loading ? "Guardando inventario..." : "Guardar inventario"}
-          </button>
-        </div>
       </section>
     </main>
   );

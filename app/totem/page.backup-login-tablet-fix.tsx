@@ -170,7 +170,6 @@ export default function TotemPage() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<PaymentMethod | null>(null);
   const [tipSelected, setTipSelected] = useState(false);
-  const [useWalletBalance, setUseWalletBalance] = useState(false);
   const [storeStatus, setStoreStatus] = useState<StoreStatus | null>(null);
   const [closedModalVisible, setClosedModalVisible] = useState(false);
 
@@ -195,21 +194,12 @@ export default function TotemPage() {
     setTotemAuthPin("");
     setTotemAuthPinConfirm("");
     setTotemAuthPassword("");
-    setTotemAuthName("");
-    setTotemAuthEmail("");
-    setTotemAuthPin("");
-    setTotemAuthPinConfirm("");
     setTotemAuthVisible(true);
   }
 
   function closeTotemAuth() {
     setTotemAuthVisible(false);
     setTotemAuthMessage("");
-    setTotemAuthName("");
-    setTotemAuthEmail("");
-    setTotemAuthPassword("");
-    setTotemAuthPin("");
-    setTotemAuthPinConfirm("");
   }
 
   function resetIdentifiedCustomer() {
@@ -453,13 +443,6 @@ export default function TotemPage() {
       : 0;
   const finalTotal = cartTotal + tipAmount;
 
-  const walletBalance = identifiedCustomer?.walletBalance || 0;
-  const walletAmountToUse =
-    identifiedCustomer && useWalletBalance
-      ? Math.min(finalTotal, walletBalance)
-      : 0;
-  const amountToPay = Math.max(0, finalTotal - walletAmountToUse);
-
   function openProduct(product: Product) {
     setOrderMessage("");
 
@@ -579,7 +562,6 @@ export default function TotemPage() {
     setCustomerMessage("");
     setSelectedPaymentMethod(null);
     setTipSelected(false);
-    setUseWalletBalance(false);
     setIdentifiedCustomer(null);
     setStep("catalog");
   }
@@ -638,7 +620,7 @@ export default function TotemPage() {
       return;
     }
 
-    if (amountToPay > 0 && !selectedPaymentMethod) {
+    if (!selectedPaymentMethod) {
       setCustomerMessage("Debes seleccionar un medio de pago.");
       return;
     }
@@ -660,8 +642,7 @@ export default function TotemPage() {
           customerId: identifiedCustomer?.id || null,
           customerComment,
           totemCode: "totem-local",
-          paymentMethod: amountToPay === 0 ? "wallet" : selectedPaymentMethod,
-          walletAmountUsed: walletAmountToUse,
+          paymentMethod: selectedPaymentMethod,
           tipAmount,
           orderSource: "totem",
           fulfillmentType: "immediate",
@@ -688,7 +669,6 @@ export default function TotemPage() {
       setCustomerName("");
       setSelectedPaymentMethod(null);
       setTipSelected(false);
-    setUseWalletBalance(false);
     setIdentifiedCustomer(null);
     setStep("catalog");
       setOrderMessage(`Pedido #${data.orderNumber} enviado a cocina.`);
@@ -700,12 +680,6 @@ export default function TotemPage() {
       setConfirmingOrder(false);
     }
   }
-
-  useEffect(() => {
-    if (!identifiedCustomer || walletBalance <= 0 || finalTotal <= 0) {
-      setUseWalletBalance(false);
-    }
-  }, [identifiedCustomer, walletBalance, finalTotal]);
 
   useEffect(() => {
     loadSettings();
@@ -759,45 +733,15 @@ export default function TotemPage() {
               </h1>
             </div>
           </div>
-          {identifiedCustomer ? (
-            <div className="shrink-0">
-              <div className="flex h-[44px] min-w-[270px] items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 shadow-sm">
-                <div className="min-w-0 text-left">
-                  <p className="truncate text-[10px] font-medium uppercase tracking-[0.08em] text-emerald-700">
-                    Hola, {identifiedCustomer.name}
-                  </p>
 
-                  <p className="mt-0.5 text-[14px] font-semibold leading-none text-[#10B557]">
-                    {formatPrice(identifiedCustomer.walletBalance)}
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={resetIdentifiedCustomer}
-                  className="rounded-lg bg-white px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.04em] text-zinc-600 shadow-sm active:scale-[0.98]"
-                >
-                  Cerrar sesión
-                </button>
-              </div>
+          <button className="shrink-0 rounded-2xl border border-zinc-200 bg-white px-3 py-2 text-center shadow-sm">
+            <div className="mx-auto flex h-7 w-7 items-center justify-center rounded-xl bg-zinc-50 text-[11px] font-black">
+              QR
             </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => openTotemAuth("login")}
-              className="shrink-0 active:scale-[0.98]"
-            >
-              <div className="flex h-[44px] min-w-[245px] items-center justify-center gap-2 rounded-xl bg-[#10B557] px-4 text-white shadow-sm">
-                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-white/20 text-xs font-semibold">
-                  $
-                </span>
-
-                <span className="whitespace-nowrap text-[12px] font-medium uppercase tracking-[0.04em]">
-                  Ingresa y gana cashback
-                </span>
-              </div>
-            </button>
-          )}
+            <p className="mt-1 text-[8px] font-black uppercase text-zinc-500">
+              Identifícate
+            </p>
+          </button>
         </div>
       </header>
 
@@ -864,7 +808,7 @@ export default function TotemPage() {
                 Crear cuenta
               </button>
 
-                            <button
+              <button
                 type="button"
                 onClick={() => {
                   setTotemAuthMode("setup");
@@ -876,12 +820,7 @@ export default function TotemPage() {
                     : "bg-zinc-100 text-zinc-600"
                 }`}
               >
-                <span className="block text-[10px] leading-tight">
-                  Si ya tienes cuenta online
-                </span>
-                <span className="block text-xs font-black leading-tight">
-                  Activa PIN
-                </span>
+                Activar PIN
               </button>
             </div>
 
@@ -891,7 +830,7 @@ export default function TotemPage() {
                   Nombre
                 </span>
 
-                <input autoComplete="off" autoCorrect="off" spellCheck={false}
+                <input
                   value={totemAuthName}
                   onChange={(event) => setTotemAuthName(event.target.value)}
                   placeholder="Ej: Andres"
@@ -905,7 +844,7 @@ export default function TotemPage() {
                 Correo
               </span>
 
-              <input autoComplete="off" autoCorrect="off" spellCheck={false} name="totem-email-no-autofill"
+              <input
                 value={totemAuthEmail}
                 onChange={(event) => setTotemAuthEmail(event.target.value)}
                 placeholder="correo@email.com"
@@ -919,7 +858,7 @@ export default function TotemPage() {
                   Clave de pedido online
                 </span>
 
-                <input autoComplete="new-password" name="totem-password-no-autofill"
+                <input
                   type="password"
                   value={totemAuthPassword}
                   onChange={(event) => setTotemAuthPassword(event.target.value)}
@@ -934,7 +873,7 @@ export default function TotemPage() {
                 PIN rapido
               </span>
 
-              <input autoComplete="new-password" name="totem-pin-no-autofill"
+              <input
                 inputMode="numeric"
                 type="password"
                 value={totemAuthPin}
@@ -951,7 +890,7 @@ export default function TotemPage() {
                   Confirmar PIN
                 </span>
 
-                <input autoComplete="new-password" name="totem-pin-confirm-no-autofill"
+                <input
                   inputMode="numeric"
                   type="password"
                   value={totemAuthPinConfirm}
@@ -1341,13 +1280,13 @@ export default function TotemPage() {
             )}
 
             <div className="mt-6 flex items-center justify-between border-t border-zinc-200 pt-5">
-              <p className="text-2xl font-black">Total a pagar</p>
+              <p className="text-2xl font-black">Total</p>
 
               <p
                 className="text-4xl font-black"
                 style={{ color: settings.primaryColor }}
               >
-                {formatPrice(amountToPay)}
+                {formatPrice(finalTotal)}
               </p>
             </div>
 
@@ -1413,13 +1352,13 @@ export default function TotemPage() {
             )}
 
             <div className="mt-6 flex items-center justify-between rounded-3xl bg-zinc-100 p-5">
-              <p className="text-2xl font-black">Total a pagar</p>
+              <p className="text-2xl font-black">Total</p>
 
               <p
                 className="text-4xl font-black"
                 style={{ color: settings.primaryColor }}
               >
-                {formatPrice(amountToPay)}
+                {formatPrice(finalTotal)}
               </p>
             </div>
 
@@ -1476,74 +1415,6 @@ export default function TotemPage() {
                 {loggedCustomerName || customerName}
               </p>
             </div>
-
-                        {identifiedCustomer && walletBalance > 0 && (
-              <div className="mt-5 rounded-3xl border border-emerald-200 bg-emerald-50 p-5">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-[0.15em] text-emerald-700">
-                      Billetera
-                    </p>
-
-                    <h3 className="mt-1 text-2xl font-black">
-                      Usar saldo disponible
-                    </h3>
-
-                    <p className="mt-1 text-sm font-bold text-zinc-600">
-                      Saldo actual: {formatPrice(walletBalance)}
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setUseWalletBalance((current) => !current)}
-                    className="rounded-2xl px-5 py-4 text-sm font-black text-white"
-                    style={{
-                      background: useWalletBalance ? settings.primaryColor : "#18181b",
-                    }}
-                  >
-                    {useWalletBalance ? "Saldo aplicado" : "Usar saldo"}
-                  </button>
-                </div>
-
-                {useWalletBalance && (
-                  <div className="mt-4 grid gap-3 md:grid-cols-3">
-                    <div className="rounded-2xl bg-white p-4">
-                      <p className="text-xs font-black uppercase text-zinc-400">
-                        Compra
-                      </p>
-                      <p className="mt-1 text-xl font-black">
-                        {formatPrice(finalTotal)}
-                      </p>
-                    </div>
-
-                    <div className="rounded-2xl bg-white p-4">
-                      <p className="text-xs font-black uppercase text-zinc-400">
-                        Saldo usado
-                      </p>
-                      <p className="mt-1 text-xl font-black text-[#10B557]">
-                        - {formatPrice(walletAmountToUse)}
-                      </p>
-                    </div>
-
-                    <div className="rounded-2xl bg-white p-4">
-                      <p className="text-xs font-black uppercase text-zinc-400">
-                        Pagar restante
-                      </p>
-                      <p className="mt-1 text-xl font-black">
-                        {formatPrice(amountToPay)}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {useWalletBalance && amountToPay === 0 && (
-                  <p className="mt-4 rounded-2xl bg-white p-4 text-sm font-black text-emerald-700">
-                    El saldo cubre toda la compra. No necesitas seleccionar tarjeta.
-                  </p>
-                )}
-              </div>
-            )}
 
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               <button
@@ -1664,31 +1535,29 @@ export default function TotemPage() {
             )}
 
             <div className="mt-6 flex items-center justify-between rounded-3xl bg-zinc-100 p-5">
-              <p className="text-2xl font-black">Total a pagar</p>
+              <p className="text-2xl font-black">Total</p>
 
               <p
                 className="text-4xl font-black"
                 style={{ color: settings.primaryColor }}
               >
-                {formatPrice(amountToPay)}
+                {formatPrice(finalTotal)}
               </p>
             </div>
 
             <button
               onClick={confirmOrder}
-              disabled={(amountToPay > 0 && !selectedPaymentMethod) || confirmingOrder}
+              disabled={!selectedPaymentMethod || confirmingOrder}
               className="mt-5 w-full rounded-2xl py-5 text-xl font-black text-white disabled:bg-zinc-200 disabled:text-zinc-500"
               style={{
                 background:
-                  (amountToPay === 0 || selectedPaymentMethod) && !confirmingOrder
+                  selectedPaymentMethod && !confirmingOrder
                     ? settings.primaryColor
                     : undefined,
               }}
             >
               {confirmingOrder
                 ? "Confirmando pago..."
-                : amountToPay === 0
-                ? "Confirmar pago con billetera"
                 : "Confirmar pago y enviar a cocina"}
             </button>
 
@@ -1884,13 +1753,6 @@ export default function TotemPage() {
     </main>
   );
 }
-
-
-
-
-
-
-
 
 
 

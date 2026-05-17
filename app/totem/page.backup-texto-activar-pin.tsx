@@ -864,7 +864,7 @@ export default function TotemPage() {
                 Crear cuenta
               </button>
 
-                            <button
+              <button
                 type="button"
                 onClick={() => {
                   setTotemAuthMode("setup");
@@ -876,12 +876,7 @@ export default function TotemPage() {
                     : "bg-zinc-100 text-zinc-600"
                 }`}
               >
-                <span className="block text-[10px] leading-tight">
-                  Si ya tienes cuenta online
-                </span>
-                <span className="block text-xs font-black leading-tight">
-                  Activa PIN
-                </span>
+                Activar PIN
               </button>
             </div>
 
@@ -1884,7 +1879,6 @@ export default function TotemPage() {
     </main>
   );
 }
-
 
 
 

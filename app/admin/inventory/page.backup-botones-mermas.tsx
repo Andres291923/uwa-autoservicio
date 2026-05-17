@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 
@@ -258,35 +258,12 @@ export default function AdminInventoryPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-3">
-          <a
-            href="/inventario"
-            className="rounded-2xl bg-[#10B557] px-5 py-3 text-sm font-black text-white shadow-sm"
-          >
-            Registro inventario
-          </a>
-
-          <a
-            href="/admin/inventory/daily"
-            className="rounded-2xl bg-emerald-50 px-5 py-3 text-sm font-black text-emerald-700 shadow-sm"
-          >
-            Ver inventario diario
-          </a>
-
-          <a
-            href="/mermas"
-            className="rounded-2xl bg-zinc-950 px-5 py-3 text-sm font-black text-white shadow-sm"
-          >
-            Registrar mermas
-          </a>
-
-          <a
-            href="/admin/inventory/waste-costs"
-            className="rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-black text-zinc-800 shadow-sm"
-          >
-            Costos mermas
-          </a>
-        </div>
+        <a
+          href="/inventario"
+          className="rounded-2xl bg-[#10B557] px-5 py-3 text-sm font-black text-white"
+        >
+          Ir al registro operario
+        </a>
       </header>
 
       {message && (
@@ -522,7 +499,7 @@ export default function AdminInventoryPage() {
                   <div>
                     <h3 className="text-2xl font-black">{category.name}</h3>
                     <p className="text-sm font-bold text-zinc-500">
-                      {category.items.length} productos Â· {category.subcategories.length} subcategorias
+                      {category.items.length} productos · {category.subcategories.length} subcategorias
                     </p>
                   </div>
 
@@ -579,7 +556,7 @@ export default function AdminInventoryPage() {
                           <h4 className="font-black">{item.name}</h4>
                           <p className="text-xs font-bold text-zinc-500">
                             {item.subcategory?.name || "Sin subcategoria"}
-                            {item.unit ? ` Â· ${item.unit}` : ""}
+                            {item.unit ? ` · ${item.unit}` : ""}
                           </p>
                           <p className="mt-1 text-xs font-black">
                             {item.active ? "Activo" : "Inactivo"}
@@ -625,4 +602,3 @@ export default function AdminInventoryPage() {
     </main>
   );
 }
-

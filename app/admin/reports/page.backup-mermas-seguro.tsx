@@ -44,12 +44,6 @@ type SalesReport = {
   bowlDetails: ReportModifier[];
 };
 
-type WasteReport = {
-  totalWasteAmount: number;
-  totalWasteGrams: number;
-  totalEntries: number;
-};
-
 function formatPrice(value: number) {
   return new Intl.NumberFormat("es-CL", {
     style: "currency",
@@ -67,15 +61,10 @@ function todayDateInput() {
   return `${year}-${month}-${day}`;
 }
 
-function formatPercent(value: number) {
-  if (!Number.isFinite(value)) return "0%";
-  return `${value.toFixed(1).replace(".", ",")}%`;
-}
 export default function SalesReportsPage() {
   const [from, setFrom] = useState(todayDateInput());
   const [to, setTo] = useState(todayDateInput());
   const [report, setReport] = useState<SalesReport | null>(null);
-  const [wasteReport, setWasteReport] = useState<WasteReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -84,13 +73,8 @@ export default function SalesReportsPage() {
       setLoading(true);
       setMessage("");
 
-      const [response, wasteResponse] = await Promise.all([
-        fetch(`/api/reports/sales?from=${from}&to=${to}`),
-        fetch(`/api/reports/waste?from=${from}&to=${to}`),
-      ]);
-
+      const response = await fetch(`/api/reports/sales?from=${from}&to=${to}`);
       const data = await response.json();
-      const wasteData = await wasteResponse.json();
 
       if (!response.ok) {
         setMessage(data.error || "No se pudo cargar el reporte.");
@@ -99,7 +83,6 @@ export default function SalesReportsPage() {
       }
 
       setReport(data);
-      setWasteReport(wasteResponse.ok ? wasteData : null);
     } catch (error) {
       console.error(error);
       setMessage("Error al cargar reporte.");
@@ -178,7 +161,7 @@ export default function SalesReportsPage() {
 
       {report && (
         <>
-          <section className="mb-6 grid gap-4 md:grid-cols-5">
+          <section className="mb-6 grid gap-4 md:grid-cols-4">
             <div className="rounded-3xl bg-[#10B557] p-5 text-white shadow-sm">
               <p className="text-xs font-black uppercase opacity-80">Ventas</p>
               <h2 className="mt-2 text-4xl font-black">
@@ -218,25 +201,6 @@ export default function SalesReportsPage() {
               </h2>
               <p className="mt-1 text-sm font-bold text-zinc-500">
                 Promedio por venta
-              </p>
-            </div>
-            <div className="rounded-3xl bg-white p-5 shadow-sm">
-              <p className="text-xs font-black uppercase text-zinc-500">
-                Mermas
-              </p>
-
-              <h2 className="mt-2 text-4xl font-black text-red-600">
-                {formatPrice(wasteReport?.totalWasteAmount || 0)}
-              </h2>
-
-              <p className="mt-1 text-sm font-bold text-zinc-500">
-                {report.summary.totalRevenue > 0
-                  ? `${formatPercent(
-                      ((wasteReport?.totalWasteAmount || 0) /
-                        report.summary.totalRevenue) *
-                        100
-                    )} de las ventas`
-                  : "Pérdida del período"}
               </p>
             </div>
           </section>
@@ -432,4 +396,3 @@ export default function SalesReportsPage() {
     </main>
   );
 }
-
