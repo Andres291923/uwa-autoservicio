@@ -70,27 +70,6 @@ type LoggedCustomer = {
   email: string;
   active: boolean;
   walletBalance: number;
-  manualBalance?: number;
-  cashbackBalance?: number;
-  expiredCashback?: number;
-  cashbackCredits?: number;
-  nextCashbackExpiration?: string | null;
-  nextCashbackAmount?: number;
-};
-
-type WalletSummary = {
-  totalBalance: number;
-  manualBalance: number;
-  cashbackBalance: number;
-  expiredCashback: number;
-  cashbackCredits: number;
-  manualCredits: number;
-  nextCashbackExpiration: string | null;
-  nextCashbackAmount: number;
-  cashbackExpirations?: {
-    amount: number;
-    expiresAt: string | null;
-  }[];
 };
 
 type WalletHistoryTransaction = {
@@ -169,13 +148,6 @@ function formatPrice(value: number) {
     currency: "CLP",
     maximumFractionDigits: 0,
   }).format(value || 0);
-}
-
-function formatShortDate(value: string | null | undefined) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleDateString("es-CL");
 }
 
 function formatDateTime(value: string) {
@@ -338,8 +310,6 @@ export default function PedidoPage() {
   const [loggedCustomer, setLoggedCustomer] = useState<LoggedCustomer | null>(
     null
   );
-  const [walletSummary, setWalletSummary] = useState<WalletSummary | null>(null);
-  const [cashbackDetailVisible, setCashbackDetailVisible] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "register" | "guest">(
     "login"
   );
@@ -629,38 +599,6 @@ export default function PedidoPage() {
     setCart((current) => current.filter((item) => item.id !== id));
   }
 
-  async function loadWalletSummary(customerId: number) {
-    try {
-      const response = await fetch(
-        `/api/customer-wallet/summary?customerId=${customerId}`,
-        { cache: "no-store" }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) return;
-
-      setWalletSummary(data);
-
-      setLoggedCustomer((current) =>
-        current
-          ? {
-              ...current,
-              walletBalance: data.totalBalance,
-              manualBalance: data.manualBalance,
-              cashbackBalance: data.cashbackBalance,
-              expiredCashback: data.expiredCashback,
-              cashbackCredits: data.cashbackCredits,
-              nextCashbackExpiration: data.nextCashbackExpiration,
-              nextCashbackAmount: data.nextCashbackAmount,
-            }
-          : current
-      );
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
   async function refreshCustomerWallet(customerId: number) {
     try {
       const response = await fetch("/api/customer-auth/wallet", {
@@ -714,7 +652,6 @@ export default function PedidoPage() {
 
       setLoggedCustomer(data);
       setGuestName(data.name);
-      await loadWalletSummary(data.id);
       setAuthPassword("");
       setUseWallet(false);
       setAuthMessage("Cuenta ingresada correctamente.");
@@ -752,7 +689,6 @@ export default function PedidoPage() {
 
       setLoggedCustomer(data);
       setGuestName(data.name);
-      await loadWalletSummary(data.id);
       setAuthPassword("");
       setUseWallet(false);
       setAuthMessage("Cuenta creada correctamente.");
@@ -834,8 +770,6 @@ export default function PedidoPage() {
 
   function logoutCustomer() {
     setLoggedCustomer(null);
-    setWalletSummary(null);
-    setCashbackDetailVisible(false);
     setUseWallet(false);
     setAuthPassword("");
     setAuthMessage("");
@@ -1003,7 +937,6 @@ export default function PedidoPage() {
 
       if (loggedCustomer) {
         await refreshCustomerWallet(loggedCustomer.id);
-        await loadWalletSummary(loggedCustomer.id);
       }
 
       const cashbackText =
@@ -1347,86 +1280,6 @@ export default function PedidoPage() {
                   <p className="mt-1 text-3xl font-black text-[#10B557]">
                     {formatPrice(loggedCustomer.walletBalance)}
                   </p>
-                  <div className="mt-4 grid gap-2">
-                    <div className="rounded-2xl bg-zinc-50 p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-xs font-black uppercase text-zinc-500">
-                          Saldo recarga
-                        </span>
-                        <strong className="text-sm font-black">
-                          {formatPrice(walletSummary?.manualBalance ?? loggedCustomer.manualBalance ?? 0)}
-                        </strong>
-                      </div>
-                    </div>
-
-                    <div className="rounded-2xl bg-emerald-50 p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-xs font-black uppercase text-emerald-700">
-                          Cashback disponible
-                        </span>
-                        <strong className="text-sm font-black text-[#10B557]">
-                          {formatPrice(walletSummary?.cashbackBalance ?? loggedCustomer.cashbackBalance ?? 0)}
-                        </strong>
-                      </div>
-
-                      {(walletSummary?.nextCashbackExpiration || loggedCustomer.nextCashbackExpiration) ? (
-                        <p className="mt-1 text-xs font-bold text-emerald-700">
-                          Próximo vencimiento: {formatPrice(walletSummary?.nextCashbackAmount ?? loggedCustomer.nextCashbackAmount ?? 0)} vence el {formatShortDate(walletSummary?.nextCashbackExpiration || loggedCustomer.nextCashbackExpiration)}
-                        </p>
-                      ) : (
-                        <p className="mt-1 text-xs font-bold text-zinc-500">
-                          Sin cashback vigente por vencer.
-                        </p>
-                      )}
-
-                      {(walletSummary?.cashbackExpirations?.length || 0) > 0 && (
-                        <div className="mt-2">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setCashbackDetailVisible((current) => !current)
-                            }
-                            className="rounded-xl bg-white px-3 py-2 text-xs font-black text-emerald-700"
-                          >
-                            {cashbackDetailVisible ? "Ocultar detalle" : "Ver detalle cashback"}
-                          </button>
-
-                          {cashbackDetailVisible && (
-                            <div className="mt-2 space-y-2">
-                              {(walletSummary?.cashbackExpirations || []).map(
-                                (item, index) => (
-                                  <div
-                                    key={`${item.expiresAt || "sin-vencimiento"}-${index}`}
-                                    className="flex items-center justify-between rounded-xl bg-white px-3 py-2 text-xs font-black"
-                                  >
-                                    <span>{formatPrice(item.amount)}</span>
-                                    <span className="text-emerald-700">
-                                      {item.expiresAt
-                                        ? `Vence ${formatShortDate(item.expiresAt)}`
-                                        : "Sin vencimiento"}
-                                    </span>
-                                  </div>
-                                )
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {(walletSummary?.expiredCashback || loggedCustomer.expiredCashback || 0) > 0 && (
-                      <div className="rounded-2xl bg-red-50 p-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-xs font-black uppercase text-red-600">
-                            Cashback vencido
-                          </span>
-                          <strong className="text-sm font-black text-red-600">
-                            {formatPrice(walletSummary?.expiredCashback ?? loggedCustomer.expiredCashback ?? 0)}
-                          </strong>
-                        </div>
-                      </div>
-                    )}
-                  </div>
 
                   {loggedCustomer.walletBalance > 0 && cartTotal > 0 && (
                     <label className="mt-3 flex items-center gap-3 rounded-xl border border-zinc-200 p-3">
@@ -2243,9 +2096,6 @@ export default function PedidoPage() {
     </main>
   );
 }
-
-
-
 
 
 

@@ -1,6 +1,5 @@
 ﻿import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { calculateWalletBreakdown } from "@/lib/wallet";
 
 const allowedStatuses = ["pending", "ready", "cancelled"];
 const storeTimeZone = "America/Santiago";
@@ -533,7 +532,7 @@ export async function POST(request: Request) {
     const totalAfterDiscount = Math.max(0, subtotalAmount - discountAmount);
 
     const walletBalance = customer
-      ? calculateWalletBreakdown(customer.walletTransactions).totalBalance
+      ? calculateBalance(customer.walletTransactions)
       : 0;
 
     const walletAmountUsed = customer
@@ -616,7 +615,6 @@ export async function POST(request: Request) {
             type: "debit",
             amount: walletAmountUsed,
             reason: `Uso de saldo en pedido #${orderNumber}`,
-            source: "wallet_spend",
           },
         });
       }
@@ -631,8 +629,7 @@ export async function POST(request: Request) {
           type: "credit",
           amount: cashbackEarned,
           reason: `Cashback pedido #${orderNumber}`,
-            source: "cashback",
-            expiresAt,
+          expiresAt,
         };
 
         await tx.walletTransaction.create({
@@ -715,7 +712,6 @@ export async function PATCH(request: Request) {
     );
   }
 }
-
 
 
 

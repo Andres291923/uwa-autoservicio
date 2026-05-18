@@ -201,7 +201,6 @@ model WalletTransaction {
   type       String
   amount     Int
   reason     String
-  source     String    @default("manual")
   orderId    Int?
   expiresAt  DateTime?
   createdAt  DateTime  @default(now())

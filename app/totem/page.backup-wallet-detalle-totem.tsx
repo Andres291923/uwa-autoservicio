@@ -90,12 +90,6 @@ type IdentifiedTotemCustomer = {
   name: string;
   email: string;
   walletBalance: number;
-  manualBalance?: number;
-  cashbackBalance?: number;
-  expiredCashback?: number;
-  cashbackCredits?: number;
-  nextCashbackExpiration?: string | null;
-  nextCashbackAmount?: number;
 };
 
 type TotemAuthMode = "login" | "register" | "setup";
@@ -128,13 +122,6 @@ function formatPrice(price: number) {
     currency: "CLP",
     maximumFractionDigits: 0,
   }).format(price);
-}
-
-function formatShortDate(value: string | null | undefined) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleDateString("es-CL");
 }
 
 function getActiveModifierGroups(product: Product | null) {
@@ -234,36 +221,6 @@ export default function TotemPage() {
     return value.replace(/\D/g, "").slice(0, 4);
   }
 
-  async function setIdentifiedCustomerWithWallet(customer: IdentifiedTotemCustomer) {
-    try {
-      const response = await fetch(
-        `/api/customer-wallet/summary?customerId=${customer.id}`,
-        { cache: "no-store" }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setIdentifiedCustomer(customer);
-        return;
-      }
-
-      setIdentifiedCustomer({
-        ...customer,
-        walletBalance: data.totalBalance,
-        manualBalance: data.manualBalance,
-        cashbackBalance: data.cashbackBalance,
-        expiredCashback: data.expiredCashback,
-        cashbackCredits: data.cashbackCredits,
-        nextCashbackExpiration: data.nextCashbackExpiration,
-        nextCashbackAmount: data.nextCashbackAmount,
-      });
-    } catch (error) {
-      console.error(error);
-      setIdentifiedCustomer(customer);
-    }
-  }
-
   async function submitTotemAuth() {
     try {
       setTotemAuthLoading(true);
@@ -355,7 +312,7 @@ export default function TotemPage() {
         return;
       }
 
-      await setIdentifiedCustomerWithWallet(data.customer);
+      setIdentifiedCustomer(data.customer);
       setCustomerName(data.customer.name || "");
       setTotemAuthVisible(false);
       setTotemAuthMessage("");
@@ -497,10 +454,6 @@ export default function TotemPage() {
   const finalTotal = cartTotal + tipAmount;
 
   const walletBalance = identifiedCustomer?.walletBalance || 0;
-  const manualBalance = identifiedCustomer?.manualBalance || 0;
-  const cashbackBalance = identifiedCustomer?.cashbackBalance || 0;
-  const expiredCashback = identifiedCustomer?.expiredCashback || 0;
-  const nextCashbackExpiration = identifiedCustomer?.nextCashbackExpiration || null;
   const walletAmountToUse =
     identifiedCustomer && useWalletBalance
       ? Math.min(finalTotal, walletBalance)
@@ -1539,52 +1492,6 @@ export default function TotemPage() {
                     <p className="mt-1 text-sm font-bold text-zinc-600">
                       Saldo actual: {formatPrice(walletBalance)}
                     </p>
-                    <div className="mt-4 grid gap-2">
-                      <div className="rounded-2xl bg-white p-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-xs font-black uppercase text-zinc-500">
-                            Saldo recarga
-                          </span>
-                          <strong className="text-sm font-black">
-                            {formatPrice(manualBalance)}
-                          </strong>
-                        </div>
-                      </div>
-
-                      <div className="rounded-2xl bg-white p-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-xs font-black uppercase text-emerald-700">
-                            Cashback disponible
-                          </span>
-                          <strong className="text-sm font-black text-[#10B557]">
-                            {formatPrice(cashbackBalance)}
-                          </strong>
-                        </div>
-
-                        {nextCashbackExpiration ? (
-                          <p className="mt-1 text-xs font-bold text-emerald-700">
-                            Próximo vencimiento: {formatShortDate(nextCashbackExpiration)}
-                          </p>
-                        ) : (
-                          <p className="mt-1 text-xs font-bold text-zinc-500">
-                            Sin cashback vigente por vencer.
-                          </p>
-                        )}
-                      </div>
-
-                      {expiredCashback > 0 && (
-                        <div className="rounded-2xl bg-red-50 p-3">
-                          <div className="flex items-center justify-between gap-3">
-                            <span className="text-xs font-black uppercase text-red-600">
-                              Cashback vencido
-                            </span>
-                            <strong className="text-sm font-black text-red-600">
-                              {formatPrice(expiredCashback)}
-                            </strong>
-                          </div>
-                        </div>
-                      )}
-                    </div>
                   </div>
 
                   <button
@@ -1977,7 +1884,6 @@ export default function TotemPage() {
     </main>
   );
 }
-
 
 
 

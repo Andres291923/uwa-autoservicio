@@ -201,7 +201,6 @@ model WalletTransaction {
   type       String
   amount     Int
   reason     String
-  source     String    @default("manual")
   orderId    Int?
   expiresAt  DateTime?
   createdAt  DateTime  @default(now())
@@ -356,40 +355,4 @@ model InventoryWasteEntry {
   updatedAt     DateTime @updatedAt
 
   item InventoryItem? @relation(fields: [itemId], references: [id], onDelete: SetNull)
-}
-
-model PurchaseImport {
-  id           Int      @id @default(autoincrement())
-  fileName     String   @default("")
-  status       String   @default("completed")
-  totalRows    Int      @default(0)
-  importedRows Int      @default(0)
-  skippedRows  Int      @default(0)
-  createdAt    DateTime @default(now())
-
-  invoices PurchaseInvoice[]
-}
-
-model PurchaseInvoice {
-  id           Int      @id @default(autoincrement())
-  importId     Int?
-  issueDate    DateTime
-  supplierRut  String   @default("")
-  supplierName String   @default("")
-  documentType String   @default("")
-  folio        String   @default("")
-  netAmount    Int      @default(0)
-  exemptAmount Int      @default(0)
-  ivaAmount    Int      @default(0)
-  totalAmount  Int      @default(0)
-  category     String   @default("unclassified")
-  note         String   @default("")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  import PurchaseImport? @relation(fields: [importId], references: [id], onDelete: SetNull)
-
-  @@index([issueDate])
-  @@index([category])
-  @@index([supplierRut])
 }

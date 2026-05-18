@@ -1,4 +1,5 @@
 ﻿import crypto from "crypto";
+import { calculateWalletBalance } from "@/lib/wallet";
 
 export function normalizeCustomerEmail(value: unknown) {
   return String(value || "").trim().toLowerCase();
@@ -40,11 +41,5 @@ export function verifyTotemPin(pin: string, storedHash: string) {
   }
 }
 
-export function calculateWalletBalance(
-  transactions: { type: string; amount: number }[]
-) {
-  return transactions.reduce((sum, transaction) => {
-    if (transaction.type === "credit") return sum + transaction.amount;
-    return sum - transaction.amount;
-  }, 0);
-}
+export { calculateWalletBalance };
+

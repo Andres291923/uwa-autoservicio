@@ -92,8 +92,6 @@ export default function SalesReportsPage() {
   const [to, setTo] = useState(todayDateInput());
   const [report, setReport] = useState<SalesReport | null>(null);
   const [wasteReport, setWasteReport] = useState<WasteReport | null>(null);
-  const [cashbackReport, setCashbackReport] = useState<CashbackReport | null>(null);
-  const [cashbackModalVisible, setCashbackModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -142,7 +140,7 @@ export default function SalesReportsPage() {
             Reportes
           </p>
           <h1 className="mt-1 text-3xl font-black">Reporte de ventas</h1>
-          <p className="mt-3 text-sm font-bold text-zinc-500">
+          <p className="mt-1 text-sm font-bold text-zinc-500">
             Ventas por fecha, medio de pago, productos, categorías y detalle de modificadores.
           </p>
         </div>
@@ -199,58 +197,58 @@ export default function SalesReportsPage() {
 
       {report && (
         <>
-          <section className="mb-8 grid gap-5 md:grid-cols-3">
-            <div className="rounded-[2rem] bg-[#10B557] p-6 text-white shadow-sm min-h-[165px] flex flex-col justify-between">
+          <section className="mb-6 grid gap-4 md:grid-cols-6">
+            <div className="rounded-3xl bg-[#10B557] p-5 text-white shadow-sm">
               <p className="text-xs font-black uppercase opacity-80">Ventas</p>
-              <h2 className="mt-3 text-4xl font-black leading-none">
+              <h2 className="mt-2 text-4xl font-black">
                 {report.summary.totalSales}
               </h2>
-              <p className="mt-3 text-sm font-bold">Pedidos confirmados</p>
+              <p className="mt-1 text-sm font-bold">Pedidos confirmados</p>
             </div>
 
-            <div className="rounded-[2rem] bg-[#10B557] p-6 text-white shadow-sm min-h-[165px] flex flex-col justify-between">
+            <div className="rounded-3xl bg-[#10B557] p-5 text-white shadow-sm">
               <p className="text-xs font-black uppercase opacity-80">
                 Total vendido
               </p>
-              <h2 className="mt-3 text-4xl font-black leading-none">
+              <h2 className="mt-2 text-4xl font-black">
                 {formatPrice(report.summary.totalRevenue)}
               </h2>
-              <p className="mt-3 text-sm font-bold">Ingresos del período</p>
+              <p className="mt-1 text-sm font-bold">Ingresos del período</p>
             </div>
 
-            <div className="rounded-[2rem] bg-white p-6 shadow-sm min-h-[165px] flex flex-col justify-between">
+            <div className="rounded-3xl bg-white p-5 shadow-sm">
               <p className="text-xs font-black uppercase text-zinc-500">
                 Productos vendidos
               </p>
-              <h2 className="mt-3 text-4xl font-black leading-none">
+              <h2 className="mt-2 text-4xl font-black">
                 {report.summary.totalItems}
               </h2>
-              <p className="mt-3 text-sm font-bold text-zinc-500">
+              <p className="mt-1 text-sm font-bold text-zinc-500">
                 Unidades totales
               </p>
             </div>
 
-            <div className="rounded-[2rem] bg-white p-6 shadow-sm min-h-[165px] flex flex-col justify-between">
+            <div className="rounded-3xl bg-white p-5 shadow-sm">
               <p className="text-xs font-black uppercase text-zinc-500">
                 Ticket promedio
               </p>
-              <h2 className="mt-3 text-4xl font-black leading-none">
+              <h2 className="mt-2 text-4xl font-black">
                 {formatPrice(report.summary.averageTicket)}
               </h2>
-              <p className="mt-3 text-sm font-bold text-zinc-500">
+              <p className="mt-1 text-sm font-bold text-zinc-500">
                 Promedio por venta
               </p>
             </div>
-            <div className="rounded-[2rem] bg-white p-6 shadow-sm min-h-[165px] flex flex-col justify-between">
+            <div className="rounded-3xl bg-white p-5 shadow-sm">
               <p className="text-xs font-black uppercase text-zinc-500">
                 Mermas
               </p>
 
-              <h2 className="mt-3 text-4xl font-black leading-none text-red-600">
+              <h2 className="mt-2 text-4xl font-black text-red-600">
                 {formatPrice(wasteReport?.totalWasteAmount || 0)}
               </h2>
 
-              <p className="mt-3 text-sm font-bold text-zinc-500">
+              <p className="mt-1 text-sm font-bold text-zinc-500">
                 {report.summary.totalRevenue > 0
                   ? `${formatPercent(
                       ((wasteReport?.totalWasteAmount || 0) /
@@ -260,16 +258,16 @@ export default function SalesReportsPage() {
                   : "Pérdida del período"}
               </p>
             </div>
-            <div className="rounded-[2rem] bg-white p-6 shadow-sm min-h-[165px] flex flex-col justify-between">
+            <div className="rounded-3xl bg-white p-5 shadow-sm">
               <p className="text-xs font-black uppercase text-zinc-500">
                 Cashback generado
               </p>
 
-              <h2 className="mt-3 text-4xl font-black leading-none text-[#10B557]">
+              <h2 className="mt-2 text-4xl font-black text-[#10B557]">
                 {formatPrice(cashbackReport?.totalCashback || 0)}
               </h2>
 
-              <p className="mt-3 text-sm font-bold text-zinc-500">
+              <p className="mt-1 text-sm font-bold text-zinc-500">
                 {cashbackReport
                   ? `${cashbackReport.totalEvents} eventos · ${cashbackReport.uniqueCustomers} clientes`
                   : "Sin cashback"}
@@ -282,19 +280,6 @@ export default function SalesReportsPage() {
               )}
             </div>
           </section>
-
-          
-          {cashbackReport && cashbackReport.totalEvents > 0 && (
-            <div className="mb-6 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setCashbackModalVisible(true)}
-                className="rounded-2xl bg-[#10B557] px-5 py-3 text-sm font-black text-white shadow-sm"
-              >
-                Ver detalle de clientes cashback
-              </button>
-            </div>
-          )}
 
           <section className="mb-6 grid gap-6 lg:grid-cols-2">
             <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
@@ -365,7 +350,7 @@ export default function SalesReportsPage() {
 
           <section className="mb-6 rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
             <h2 className="text-xl font-black">Qué se vendió</h2>
-            <p className="mt-3 text-sm font-bold text-zinc-500">
+            <p className="mt-1 text-sm font-bold text-zinc-500">
               Detalle por producto: bowls, bebidas u otros productos activos.
             </p>
 
@@ -401,7 +386,7 @@ export default function SalesReportsPage() {
 
           <section className="mb-6 rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
             <h2 className="text-xl font-black">Detalle de bowls</h2>
-            <p className="mt-3 text-sm font-bold text-zinc-500">
+            <p className="mt-1 text-sm font-bold text-zinc-500">
               Cuántos bowls llevaron arroz, lechuga, zanahoria, repollo, salsas,
               agregados u otras opciones.
             </p>
@@ -449,7 +434,7 @@ export default function SalesReportsPage() {
 
           <section className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
             <h2 className="text-xl font-black">Todos los modificadores</h2>
-            <p className="mt-3 text-sm font-bold text-zinc-500">
+            <p className="mt-1 text-sm font-bold text-zinc-500">
               Vista completa de opciones seleccionadas en cualquier producto.
             </p>
 
@@ -484,124 +469,8 @@ export default function SalesReportsPage() {
           </section>
         </>
       )}
-      {cashbackModalVisible && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 px-5">
-          <div className="w-full max-w-4xl rounded-[2rem] bg-white p-6 shadow-2xl">
-            <div className="mb-5 flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.25em] text-[#10B557]">
-                  Cashback
-                </p>
-
-                <h2 className="mt-2 text-3xl font-black">
-                  Clientes con cashback
-                </h2>
-
-                <p className="mt-2 text-sm font-bold text-zinc-500">
-                  Revisa quiénes generaron cashback en el rango filtrado.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setCashbackModalVisible(false)}
-                className="rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-black"
-              >
-                Cerrar
-              </button>
-            </div>
-
-            <div className="mb-5 grid gap-4 md:grid-cols-3">
-              <div className="rounded-3xl bg-emerald-50 p-4">
-                <p className="text-xs font-black uppercase text-emerald-700">
-                  Cashback total
-                </p>
-                <p className="mt-1 text-3xl font-black text-[#10B557]">
-                  {formatPrice(cashbackReport?.totalCashback || 0)}
-                </p>
-              </div>
-
-              <div className="rounded-3xl bg-zinc-50 p-4">
-                <p className="text-xs font-black uppercase text-zinc-500">
-                  Eventos
-                </p>
-                <p className="mt-1 text-3xl font-black">
-                  {cashbackReport?.totalEvents || 0}
-                </p>
-              </div>
-
-              <div className="rounded-3xl bg-zinc-50 p-4">
-                <p className="text-xs font-black uppercase text-zinc-500">
-                  Clientes únicos
-                </p>
-                <p className="mt-1 text-3xl font-black">
-                  {cashbackReport?.uniqueCustomers || 0}
-                </p>
-              </div>
-            </div>
-
-            <div className="max-h-[60vh] overflow-auto rounded-3xl border border-zinc-200">
-              <table className="w-full text-left text-sm">
-                <thead className="sticky top-0 bg-zinc-100">
-                  <tr>
-                    <th className="p-4 font-black">Cliente</th>
-                    <th className="p-4 font-black">Correo</th>
-                    <th className="p-4 font-black">Veces</th>
-                    <th className="p-4 font-black">Cashback generado</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {!cashbackReport?.customers?.length ? (
-                    <tr>
-                      <td
-                        colSpan={4}
-                        className="p-8 text-center font-bold text-zinc-500"
-                      >
-                        Sin clientes con cashback en este período.
-                      </td>
-                    </tr>
-                  ) : (
-                    cashbackReport.customers.map((customer) => (
-                      <tr
-                        key={customer.customerId}
-                        className="border-t border-zinc-100"
-                      >
-                        <td className="p-4 font-black">{customer.name}</td>
-
-                        <td className="p-4 font-bold text-zinc-500">
-                          {customer.email || "-"}
-                        </td>
-
-                        <td className="p-4">
-                          <span
-                            className={`rounded-2xl px-3 py-2 text-xs font-black ${
-                              customer.count > 1
-                                ? "bg-red-50 text-red-600"
-                                : "bg-emerald-50 text-emerald-700"
-                            }`}
-                          >
-                            {customer.count} vez{customer.count === 1 ? "" : "es"}
-                          </span>
-                        </td>
-
-                        <td className="p-4 text-lg font-black text-[#10B557]">
-                          {formatPrice(customer.amount)}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 }
-
-
-
 
 
