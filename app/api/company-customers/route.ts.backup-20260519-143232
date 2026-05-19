@@ -31,16 +31,6 @@ function orderPaidTotal(order: any) {
   return Math.max(0, total - walletAmountUsed + tipAmount);
 }
 
-function nameVariants(name: string) {
-  return Array.from(
-    new Set([
-      name.trim(),
-      name.trim().toLowerCase(),
-      name.trim().toUpperCase(),
-    ].filter(Boolean))
-  );
-}
-
 export async function GET() {
   try {
     const companies = await prisma.companyCustomer.findMany({
@@ -55,13 +45,23 @@ export async function GET() {
       companies.map(async (company) => {
         const companyName = String(company.companyName || "").trim();
 
-        const orFilters: any[] = [{ companyCustomerId: company.id }];
+        const orFilters: any[] = [
+          { companyCustomerId: company.id },
+        ];
 
-        for (const variant of nameVariants(companyName)) {
+        if (companyName) {
           orFilters.push({
-            customerName: {
-              contains: variant,
-            },
+            AND: [
+              { orderSource: "company" },
+              { customerName: companyName },
+            ],
+          });
+
+          orFilters.push({
+            AND: [
+              { orderSource: "company" },
+              { customerName: { contains: companyName } },
+            ],
           });
         }
 

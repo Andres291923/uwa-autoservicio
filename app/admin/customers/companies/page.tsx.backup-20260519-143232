@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 type Company = {
   id: number;
@@ -47,8 +47,6 @@ type CompanyHistory = {
     email: string;
   };
   summary: {
-    rangeOrdersCount: number;
-    rangeTotal: number;
     ordersCount: number;
     weeklyOrdersCount: number;
     monthlyOrdersCount: number;
@@ -57,8 +55,6 @@ type CompanyHistory = {
     totalHistorical: number;
     averageTicket: number;
     lastOrder: any | null;
-    startDate: string;
-    endDate: string;
   };
   orders: {
     id: number;
@@ -121,22 +117,7 @@ function formatStatus(value: string) {
   return value || "-";
 }
 
-function chileInputDate(date: Date) {
-  const offset = date.getTimezoneOffset();
-  const local = new Date(date.getTime() - offset * 60 * 1000);
-  return local.toISOString().slice(0, 10);
-}
-
-function daysAgoInputDate(days: number) {
-  const date = new Date();
-  date.setDate(date.getDate() - days);
-  return chileInputDate(date);
-}
-
 export default function AdminCompanyCustomersPage() {
-  const today = useMemo(() => chileInputDate(new Date()), []);
-  const defaultStart = useMemo(() => daysAgoInputDate(30), []);
-
   const [companies, setCompanies] = useState<Company[]>([]);
   const [bank, setBank] = useState<BankSettings>({
     businessName: "",
@@ -151,9 +132,6 @@ export default function AdminCompanyCustomersPage() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [history, setHistory] = useState<CompanyHistory | null>(null);
-  const [selectedCompanyId, setSelectedCompanyId] = useState<number | null>(null);
-  const [historyStartDate, setHistoryStartDate] = useState(defaultStart);
-  const [historyEndDate, setHistoryEndDate] = useState(today);
 
   async function load() {
     setMessage("");
@@ -194,20 +172,15 @@ export default function AdminCompanyCustomersPage() {
     setMessage("Datos bancarios guardados correctamente.");
   }
 
-  async function loadCompanyHistory(companyId: number, startDate = historyStartDate, endDate = historyEndDate) {
+  async function openCompanyHistory(companyId: number) {
     try {
+      setHistoryOpen(true);
       setHistoryLoading(true);
       setHistory(null);
 
-      const params = new URLSearchParams();
-
-      if (startDate) params.set("startDate", startDate);
-      if (endDate) params.set("endDate", endDate);
-
-      const response = await fetch(
-        `/api/company-customers/${companyId}/history?${params.toString()}`,
-        { cache: "no-store" }
-      );
+      const response = await fetch(`/api/company-customers/${companyId}/history`, {
+        cache: "no-store",
+      });
 
       const data = await response.json();
 
@@ -222,42 +195,6 @@ export default function AdminCompanyCustomersPage() {
       setMessage("Error al cargar historial de compras.");
     } finally {
       setHistoryLoading(false);
-    }
-  }
-
-  async function openCompanyHistory(companyId: number) {
-    setSelectedCompanyId(companyId);
-    setHistoryOpen(true);
-    await loadCompanyHistory(companyId, historyStartDate, historyEndDate);
-  }
-
-  async function searchHistoryByDate() {
-    if (!selectedCompanyId) return;
-    await loadCompanyHistory(selectedCompanyId, historyStartDate, historyEndDate);
-  }
-
-  function setYesterdayRange() {
-    const date = new Date();
-    date.setDate(date.getDate() - 1);
-    const yesterday = chileInputDate(date);
-    setHistoryStartDate(yesterday);
-    setHistoryEndDate(yesterday);
-
-    if (selectedCompanyId) {
-      loadCompanyHistory(selectedCompanyId, yesterday, yesterday);
-    }
-  }
-
-  function setCurrentMonthRange() {
-    const now = new Date();
-    const firstDay = chileInputDate(new Date(now.getFullYear(), now.getMonth(), 1));
-    const lastDay = chileInputDate(now);
-
-    setHistoryStartDate(firstDay);
-    setHistoryEndDate(lastDay);
-
-    if (selectedCompanyId) {
-      loadCompanyHistory(selectedCompanyId, firstDay, lastDay);
     }
   }
 
@@ -350,7 +287,7 @@ export default function AdminCompanyCustomersPage() {
           <div>
             <h2 className="text-2xl font-black">Empresas registradas</h2>
             <p className="mt-1 text-sm font-bold text-zinc-500">
-              El historial se calcula usando pedidos reales del reporte.
+              El historial se calcula usando los pedidos reales del reporte.
             </p>
           </div>
 
@@ -454,7 +391,7 @@ export default function AdminCompanyCustomersPage() {
                 </h2>
 
                 <p className="mt-1 text-sm font-bold text-zinc-500">
-                  Consumo por rango de fechas, semanal, mensual y total histórico.
+                  Consumo semanal, mensual y detalle de pedidos.
                 </p>
               </div>
 
@@ -463,71 +400,12 @@ export default function AdminCompanyCustomersPage() {
                 onClick={() => {
                   setHistoryOpen(false);
                   setHistory(null);
-                  setSelectedCompanyId(null);
                 }}
                 className="rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-black"
               >
                 Cerrar
               </button>
             </div>
-
-            <section className="mb-6 rounded-3xl bg-zinc-50 p-5">
-              <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto_auto_auto]">
-                <label>
-                  <span className="text-xs font-black uppercase text-zinc-500">
-                    Desde
-                  </span>
-                  <input
-                    type="date"
-                    value={historyStartDate}
-                    onChange={(event) => setHistoryStartDate(event.target.value)}
-                    className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm font-black outline-none"
-                  />
-                </label>
-
-                <label>
-                  <span className="text-xs font-black uppercase text-zinc-500">
-                    Hasta
-                  </span>
-                  <input
-                    type="date"
-                    value={historyEndDate}
-                    onChange={(event) => setHistoryEndDate(event.target.value)}
-                    className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm font-black outline-none"
-                  />
-                </label>
-
-                <div className="flex items-end">
-                  <button
-                    type="button"
-                    onClick={searchHistoryByDate}
-                    className="w-full rounded-2xl bg-[#10B557] px-5 py-3 text-sm font-black text-white"
-                  >
-                    Buscar
-                  </button>
-                </div>
-
-                <div className="flex items-end">
-                  <button
-                    type="button"
-                    onClick={setYesterdayRange}
-                    className="w-full rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-black"
-                  >
-                    Ayer
-                  </button>
-                </div>
-
-                <div className="flex items-end">
-                  <button
-                    type="button"
-                    onClick={setCurrentMonthRange}
-                    className="w-full rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-black"
-                  >
-                    Este mes
-                  </button>
-                </div>
-              </div>
-            </section>
 
             {historyLoading ? (
               <div className="rounded-3xl bg-zinc-50 p-10 text-center font-black text-zinc-500">
@@ -536,18 +414,6 @@ export default function AdminCompanyCustomersPage() {
             ) : history ? (
               <>
                 <div className="mb-6 grid gap-4 md:grid-cols-5">
-                  <article className="rounded-3xl bg-zinc-950 p-5 text-white">
-                    <p className="text-xs font-black uppercase opacity-80">
-                      Rango seleccionado
-                    </p>
-                    <p className="mt-2 text-3xl font-black">
-                      {formatPrice(history.summary.rangeTotal)}
-                    </p>
-                    <p className="mt-1 text-xs font-bold opacity-80">
-                      {history.summary.rangeOrdersCount} pedidos
-                    </p>
-                  </article>
-
                   <article className="rounded-3xl bg-blue-50 p-5">
                     <p className="text-xs font-black uppercase text-blue-700">
                       Esta semana
@@ -589,6 +455,15 @@ export default function AdminCompanyCustomersPage() {
                       {formatPrice(history.summary.averageTicket)}
                     </p>
                   </article>
+
+                  <article className="rounded-3xl bg-zinc-100 p-5">
+                    <p className="text-xs font-black uppercase text-zinc-500">
+                      Pedidos totales
+                    </p>
+                    <p className="mt-2 text-3xl font-black text-zinc-950">
+                      {history.summary.ordersCount}
+                    </p>
+                  </article>
                 </div>
 
                 <div className="overflow-x-auto rounded-3xl border border-zinc-200">
@@ -609,7 +484,7 @@ export default function AdminCompanyCustomersPage() {
                       {history.orders.length === 0 ? (
                         <tr>
                           <td colSpan={7} className="p-8 text-center font-bold text-zinc-500">
-                            No hay pedidos de esta empresa en el rango seleccionado.
+                            Esta empresa todavía no tiene pedidos asociados.
                           </td>
                         </tr>
                       ) : (
