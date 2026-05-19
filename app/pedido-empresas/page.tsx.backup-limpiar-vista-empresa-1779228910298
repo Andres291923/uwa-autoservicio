@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
-import CompanyOrdersPublicModalButton from "./CompanyOrdersPublicModalButton";
 
 type Category = {
   id: number;
@@ -1418,7 +1417,7 @@ export default function PedidoPage() {
                     {formatPrice(loggedCustomer.walletBalance)}
                   </p>
                   <div className="mt-4 grid gap-2">
-                    <div className="hidden">
+                    <div className="rounded-2xl bg-zinc-50 p-3">
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-xs font-black uppercase text-zinc-500">
                           Saldo recarga
@@ -1521,12 +1520,21 @@ export default function PedidoPage() {
                     Salir de la cuenta
                   </button>
 
-                  <CompanyOrdersPublicModalButton
-                    companyId={loggedCustomer.id}
-                    companyName={loggedCustomer.name}
-                    companyEmail={loggedCustomer.email}
-                    walletBalance={loggedCustomer.walletBalance}
-                  />
+                  <button suppressHydrationWarning
+                    type="button"
+                    onClick={openWalletHistory}
+                    className="rounded-xl bg-zinc-950 px-4 py-2 text-xs font-black text-white"
+                  >
+                    Ver historial
+                  </button>
+
+                  <button suppressHydrationWarning
+                    type="button"
+                    onClick={openOrderHistory}
+                    className="rounded-xl bg-[#10B557] px-4 py-2 text-xs font-black text-white"
+                  >
+                    Mis pedidos
+                  </button>
                 </div>
               </div>
             ) : (

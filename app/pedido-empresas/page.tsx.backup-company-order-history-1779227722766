@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
-import CompanyOrdersPublicModalButton from "./CompanyOrdersPublicModalButton";
 
 type Category = {
   id: number;
@@ -649,19 +648,6 @@ export default function PedidoPage() {
     setCart((current) => current.filter((item) => item.id !== id));
   }
 
-  function updateCartItemWorkerName(id: string, workerName: string) {
-    setCart((current) =>
-      current.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              customerComment: workerName.slice(0, 80),
-            }
-          : item
-      )
-    );
-  }
-
   async function loadWalletSummary(customerId: number) {
     try {
       const response = await fetch(
@@ -852,7 +838,7 @@ export default function PedidoPage() {
       setOrderHistoryLoading(true);
       setOrderHistoryVisible(true);
 
-      const response = await fetch("/api/company-auth/order-history", {
+      const response = await fetch("/api/customer-auth/order-history", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -948,10 +934,8 @@ export default function PedidoPage() {
 
   function buildOnlineOrderCustomerComment() {
     return cart
-      .map((item) => {
-        const workerName = item.customerComment.trim() || "Sin nombre";
-        return `${item.productName}: ${workerName}`;
-      })
+      .filter((item) => item.customerComment.trim())
+      .map((item) => `${item.productName}: ${item.customerComment.trim()}`)
       .join(" | ");
   }
 
@@ -962,15 +946,6 @@ export default function PedidoPage() {
 
       if (cart.length === 0) {
         setMessage("Agrega productos al pedido.");
-        return;
-      }
-
-      const missingWorkerName = cart.some(
-        (item) => !item.customerComment.trim()
-      );
-
-      if (missingWorkerName) {
-        setMessage("Debes ingresar el nombre del trabajador en cada bowl.");
         return;
       }
 
@@ -1418,7 +1393,7 @@ export default function PedidoPage() {
                     {formatPrice(loggedCustomer.walletBalance)}
                   </p>
                   <div className="mt-4 grid gap-2">
-                    <div className="hidden">
+                    <div className="rounded-2xl bg-zinc-50 p-3">
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-xs font-black uppercase text-zinc-500">
                           Saldo recarga
@@ -1521,12 +1496,21 @@ export default function PedidoPage() {
                     Salir de la cuenta
                   </button>
 
-                  <CompanyOrdersPublicModalButton
-                    companyId={loggedCustomer.id}
-                    companyName={loggedCustomer.name}
-                    companyEmail={loggedCustomer.email}
-                    walletBalance={loggedCustomer.walletBalance}
-                  />
+                  <button suppressHydrationWarning
+                    type="button"
+                    onClick={openWalletHistory}
+                    className="rounded-xl bg-zinc-950 px-4 py-2 text-xs font-black text-white"
+                  >
+                    Ver historial
+                  </button>
+
+                  <button suppressHydrationWarning
+                    type="button"
+                    onClick={openOrderHistory}
+                    className="rounded-xl bg-[#10B557] px-4 py-2 text-xs font-black text-white"
+                  >
+                    Mis pedidos
+                  </button>
                 </div>
               </div>
             ) : (
@@ -1767,23 +1751,7 @@ export default function PedidoPage() {
                     >
                       Quitar
                     </button>
-                  </div>                      <label className="mt-3 block">
-                        <span className="text-xs font-black uppercase text-zinc-500">
-                          Nombre trabajador
-                        </span>
-
-                        <input
-                          suppressHydrationWarning
-                          value={item.customerComment || ""}
-                          onChange={(event) =>
-                            updateCartItemWorkerName(item.id, event.target.value)
-                          }
-                          placeholder="Ej: Juan Perez"
-                          className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-black outline-none focus:border-[#10B557]"
-                        />
-                      </label>
-
-
+                  </div>
 
                   <p
                     className="mt-3 text-xl font-black"
@@ -2003,9 +1971,9 @@ export default function PedidoPage() {
               </div>
             ) : orderHistoryOrders.length === 0 ? (
               <div className="rounded-3xl bg-zinc-50 p-8 text-center">
-                <p className="text-xl font-black">Aun no tienes pedidos empresa.</p>
+                <p className="text-xl font-black">Aún no tienes pedidos.</p>
                 <p className="mt-1 text-sm font-bold text-zinc-500">
-                  Cuando esta empresa realice pedidos, apareceran aqui.
+                  Cuando compres con tu cuenta, aparecerán aquí.
                 </p>
               </div>
             ) : (

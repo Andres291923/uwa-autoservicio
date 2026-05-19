@@ -1,0 +1,455 @@
+"use client";
+
+import { useMemo, useState } from "react";
+
+type Props = {
+  companyId: number;
+  companyName: string;
+  companyEmail: string;
+  walletBalance: number;
+};
+
+type DashboardData = {
+  company: {
+    id: number;
+    companyName: string;
+    email: string;
+    rut: string;
+    contactName: string;
+  };
+  summary: {
+    rangeTotal: number;
+    rangeOrdersCount: number;
+    weeklyTotal: number;
+    weeklyOrdersCount: number;
+    monthlyTotal: number;
+    monthlyOrdersCount: number;
+    totalHistorical: number;
+    ordersCount: number;
+    averageTicket: number;
+  };
+  orders: {
+    id: number;
+    orderNumber: number;
+    createdAt: string;
+    scheduledFor: string | null;
+    status: string;
+    paymentMethod: string;
+    totalPaid: number;
+    items: {
+      id: number;
+      quantity: number;
+      productName: string;
+      total: number;
+      modifiers: {
+        id: number;
+        groupName: string;
+        optionName: string;
+        price: number;
+      }[];
+    }[];
+  }[];
+};
+
+function formatPrice(value: number) {
+  return new Intl.NumberFormat("es-CL", {
+    style: "currency",
+    currency: "CLP",
+    maximumFractionDigits: 0,
+  }).format(value || 0);
+}
+
+function formatDate(value: string | null) {
+  if (!value) return "-";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return "-";
+
+  return date.toLocaleString("es-CL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function chileInputDate(date: Date) {
+  const offset = date.getTimezoneOffset();
+  const local = new Date(date.getTime() - offset * 60 * 1000);
+  return local.toISOString().slice(0, 10);
+}
+
+function daysAgoInputDate(days: number) {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return chileInputDate(date);
+}
+
+function paymentLabel(value: string) {
+  if (value === "bank_transfer") return "Transferencia";
+  if (value === "debit_credit") return "Tarjeta";
+  if (value === "food_benefit") return "Beneficio alimentacion";
+  if (value === "unknown") return "Sin definir";
+  return value || "Sin definir";
+}
+
+function statusLabel(value: string) {
+  if (value === "pending") return "Pendiente";
+  if (value === "ready") return "Listo";
+  if (value === "completed") return "Completado";
+  if (value === "cancelled" || value === "canceled") return "Cancelado";
+  return value || "-";
+}
+
+export default function CompanyOrdersPublicModalButton({
+  companyId,
+  companyName,
+  companyEmail,
+  walletBalance,
+}: Props) {
+  const today = useMemo(() => chileInputDate(new Date()), []);
+  const defaultStart = useMemo(() => daysAgoInputDate(30), []);
+
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [message, setMessage] = useState("");
+  const [startDate, setStartDate] = useState(defaultStart);
+  const [endDate, setEndDate] = useState(today);
+
+  async function loadDashboard(start = startDate, end = endDate) {
+    try {
+      setLoading(true);
+      setMessage("");
+
+      const response = await fetch("/api/company-auth/orders-dashboard", {
+        method: "POST",
+        cache: "no-store",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          companyCustomerId: companyId,
+          startDate: start,
+          endDate: end,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setData(null);
+        setMessage(result.error || "No se pudo cargar el reporte.");
+        return;
+      }
+
+      setData(result);
+    } catch (error) {
+      console.error(error);
+      setData(null);
+      setMessage("Error al cargar el reporte.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function openModal() {
+    setOpen(true);
+    await loadDashboard(startDate, endDate);
+  }
+
+  async function setYesterdayRange() {
+    const date = new Date();
+    date.setDate(date.getDate() - 1);
+
+    const yesterday = chileInputDate(date);
+
+    setStartDate(yesterday);
+    setEndDate(yesterday);
+
+    await loadDashboard(yesterday, yesterday);
+  }
+
+  async function setCurrentMonthRange() {
+    const now = new Date();
+    const firstDay = chileInputDate(new Date(now.getFullYear(), now.getMonth(), 1));
+    const lastDay = chileInputDate(now);
+
+    setStartDate(firstDay);
+    setEndDate(lastDay);
+
+    await loadDashboard(firstDay, lastDay);
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        suppressHydrationWarning
+        onClick={openModal}
+        className="rounded-xl bg-[#10B557] px-4 py-2 text-xs font-black text-white"
+      >
+        Mis pedidos
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 px-4">
+          <div className="max-h-[92vh] w-full max-w-6xl overflow-y-auto rounded-[2rem] bg-white p-6 shadow-2xl">
+            <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.25em] text-[#10B557]">
+                  Mis pedidos empresa
+                </p>
+
+                <h2 className="mt-2 text-4xl font-black">
+                  {companyName}
+                </h2>
+
+                <p className="mt-1 text-sm font-bold text-zinc-500">
+                  {companyEmail}
+                </p>
+
+                <p className="mt-3 text-sm font-bold text-zinc-500">
+                  Este reporte muestra tus compras, saldo disponible y detalle de pedidos.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  setData(null);
+                  setMessage("");
+                }}
+                className="rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-black"
+              >
+                Cerrar
+              </button>
+            </div>
+
+            <section className="mb-6 rounded-3xl bg-zinc-50 p-5">
+              <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto_auto_auto]">
+                <label>
+                  <span className="text-xs font-black uppercase text-zinc-500">
+                    Desde
+                  </span>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(event) => setStartDate(event.target.value)}
+                    className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm font-black outline-none"
+                  />
+                </label>
+
+                <label>
+                  <span className="text-xs font-black uppercase text-zinc-500">
+                    Hasta
+                  </span>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(event) => setEndDate(event.target.value)}
+                    className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm font-black outline-none"
+                  />
+                </label>
+
+                <div className="flex items-end">
+                  <button
+                    type="button"
+                    onClick={() => loadDashboard(startDate, endDate)}
+                    className="w-full rounded-2xl bg-[#10B557] px-5 py-3 text-sm font-black text-white"
+                  >
+                    Buscar
+                  </button>
+                </div>
+
+                <div className="flex items-end">
+                  <button
+                    type="button"
+                    onClick={setYesterdayRange}
+                    className="w-full rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-black"
+                  >
+                    Ayer
+                  </button>
+                </div>
+
+                <div className="flex items-end">
+                  <button
+                    type="button"
+                    onClick={setCurrentMonthRange}
+                    className="w-full rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-black"
+                  >
+                    Este mes
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            {loading ? (
+              <div className="rounded-3xl bg-zinc-50 p-10 text-center font-black text-zinc-500">
+                Cargando reporte...
+              </div>
+            ) : message ? (
+              <div className="rounded-3xl bg-red-50 p-6 text-center font-black text-red-600">
+                {message}
+              </div>
+            ) : data ? (
+              <>
+                <section className="mb-6 grid gap-4 md:grid-cols-6">
+                  <article className="rounded-3xl bg-zinc-950 p-5 text-white">
+                    <p className="text-xs font-black uppercase opacity-80">
+                      Rango
+                    </p>
+                    <p className="mt-2 text-3xl font-black">
+                      {formatPrice(data.summary.rangeTotal)}
+                    </p>
+                    <p className="mt-1 text-xs font-bold opacity-80">
+                      {data.summary.rangeOrdersCount} pedidos
+                    </p>
+                  </article>
+
+                  <article className="rounded-3xl bg-emerald-50 p-5">
+                    <p className="text-xs font-black uppercase text-emerald-700">
+                      Saldo disponible
+                    </p>
+                    <p className="mt-2 text-3xl font-black text-[#10B557]">
+                      {formatPrice(walletBalance)}
+                    </p>
+                  </article>
+
+                  <article className="rounded-3xl bg-blue-50 p-5">
+                    <p className="text-xs font-black uppercase text-blue-700">
+                      Esta semana
+                    </p>
+                    <p className="mt-2 text-3xl font-black text-blue-700">
+                      {formatPrice(data.summary.weeklyTotal)}
+                    </p>
+                    <p className="mt-1 text-xs font-bold text-zinc-500">
+                      {data.summary.weeklyOrdersCount} pedidos
+                    </p>
+                  </article>
+
+                  <article className="rounded-3xl bg-purple-50 p-5">
+                    <p className="text-xs font-black uppercase text-purple-700">
+                      Este mes
+                    </p>
+                    <p className="mt-2 text-3xl font-black text-purple-700">
+                      {formatPrice(data.summary.monthlyTotal)}
+                    </p>
+                    <p className="mt-1 text-xs font-bold text-zinc-500">
+                      {data.summary.monthlyOrdersCount} pedidos
+                    </p>
+                  </article>
+
+                  <article className="rounded-3xl bg-green-50 p-5">
+                    <p className="text-xs font-black uppercase text-green-700">
+                      Total comprado
+                    </p>
+                    <p className="mt-2 text-3xl font-black text-[#10B557]">
+                      {formatPrice(data.summary.totalHistorical)}
+                    </p>
+                  </article>
+
+                  <article className="rounded-3xl bg-yellow-50 p-5">
+                    <p className="text-xs font-black uppercase text-yellow-700">
+                      Ticket promedio
+                    </p>
+                    <p className="mt-2 text-3xl font-black text-yellow-700">
+                      {formatPrice(data.summary.averageTicket)}
+                    </p>
+                  </article>
+                </section>
+
+                <section className="overflow-x-auto rounded-3xl border border-zinc-200">
+                  <table className="w-full min-w-[1050px] text-left text-sm">
+                    <thead className="bg-zinc-100">
+                      <tr>
+                        <th className="p-4 font-black">Pedido</th>
+                        <th className="p-4 font-black">Fecha compra</th>
+                        <th className="p-4 font-black">Programado</th>
+                        <th className="p-4 font-black">Medio pago</th>
+                        <th className="p-4 font-black">Estado</th>
+                        <th className="p-4 font-black">Detalle</th>
+                        <th className="p-4 text-right font-black">Total</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {data.orders.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="p-10 text-center font-bold text-zinc-500">
+                            No hay pedidos en el rango seleccionado.
+                          </td>
+                        </tr>
+                      ) : (
+                        data.orders.map((order) => (
+                          <tr key={order.id} className="border-t border-zinc-100 align-top">
+                            <td className="p-4 font-black text-[#10B557]">
+                              #{String(order.orderNumber).padStart(3, "0")}
+                            </td>
+
+                            <td className="p-4 font-bold">
+                              {formatDate(order.createdAt)}
+                            </td>
+
+                            <td className="p-4 font-bold text-zinc-500">
+                              {formatDate(order.scheduledFor)}
+                            </td>
+
+                            <td className="p-4 font-bold">
+                              {paymentLabel(order.paymentMethod)}
+                            </td>
+
+                            <td className="p-4 font-bold">
+                              {statusLabel(order.status)}
+                            </td>
+
+                            <td className="p-4">
+                              <div className="space-y-3">
+                                {order.items.map((item) => (
+                                  <div key={item.id} className="rounded-2xl bg-zinc-50 p-3">
+                                    <div className="flex justify-between gap-3">
+                                      <p className="font-black">
+                                        {item.quantity}x {item.productName}
+                                      </p>
+                                      <p className="font-black">
+                                        {formatPrice(item.total)}
+                                      </p>
+                                    </div>
+
+                                    {item.modifiers.length > 0 && (
+                                      <div className="mt-2 flex flex-wrap gap-2">
+                                        {item.modifiers.map((modifier) => (
+                                          <span
+                                            key={modifier.id}
+                                            className="rounded-full bg-white px-3 py-1 text-xs font-bold text-zinc-600"
+                                          >
+                                            {modifier.groupName}: {modifier.optionName}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+
+                            <td className="p-4 text-right text-lg font-black text-[#10B557]">
+                              {formatPrice(order.totalPaid)}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </section>
+              </>
+            ) : null}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

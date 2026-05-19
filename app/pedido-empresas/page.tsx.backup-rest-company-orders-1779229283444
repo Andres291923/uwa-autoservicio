@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
-import CompanyOrdersPublicModalButton from "./CompanyOrdersPublicModalButton";
 
 type Category = {
   id: number;
@@ -1521,12 +1520,12 @@ export default function PedidoPage() {
                     Salir de la cuenta
                   </button>
 
-                  <CompanyOrdersPublicModalButton
-                    companyId={loggedCustomer.id}
-                    companyName={loggedCustomer.name}
-                    companyEmail={loggedCustomer.email}
-                    walletBalance={loggedCustomer.walletBalance}
-                  />
+                  <a
+                    href="/admin/customers/companies"
+                    className="rounded-xl bg-[#10B557] px-4 py-2 text-xs font-black text-white"
+                  >
+                    Mis pedidos
+                  </a>
                 </div>
               </div>
             ) : (
