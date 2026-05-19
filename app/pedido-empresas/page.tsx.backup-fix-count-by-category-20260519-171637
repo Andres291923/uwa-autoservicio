@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -503,8 +503,7 @@ export default function PedidoPage() {
   const cartTotal = useMemo(() => {
     return cart.reduce((sum, item) => sum + item.total, 0);
   }, [cart]);
-
-  const couponDiscountAmount = 0;
+const couponDiscountAmount = 0;
 
   const subtotalAfterDiscount = cartTotal;
 
@@ -515,7 +514,15 @@ export default function PedidoPage() {
 
   const totalToPay = Math.max(0, subtotalAfterDiscount - walletAmountToUse);
 
-  const companyBowlCount = cart.length;
+  const companyBowlCount = useMemo(() => {
+    return cart.filter((item) => {
+      const productName = String(item.productName || "").toLowerCase();
+      const categoryName = String((item as any).categoryName || "").toLowerCase();
+
+      return productName.includes("bowl") || categoryName.includes("bowl");
+    }).length;
+  }, [cart]);
+
   const minimumCompanyBowls = 5;
   const hasMinimumCompanyBowls = companyBowlCount >= minimumCompanyBowls;
 
@@ -951,12 +958,11 @@ export default function PedidoPage() {
 
       if (!hasMinimumCompanyBowls) {
         setMessage(
-          `Pedido minimo para empresas con despacho: ${minimumCompanyBowls} bowls. Actualmente tienes ${companyBowlCount}.`
+          `Pedido mínimo para empresas con despacho: ${minimumCompanyBowls} bowls. Actualmente tienes ${companyBowlCount}.`
         );
         return;
       }
-
-      const finalCustomerName = loggedCustomer?.name || guestName.trim();
+const finalCustomerName = loggedCustomer?.name || guestName.trim();
 
       if (!finalCustomerName) {
         setMessage("Ingresa tu nombre o entra con tu cuenta.");
@@ -1763,22 +1769,7 @@ export default function PedidoPage() {
               ))}
             </div>
           )}
-
-          {cart.length > 0 && (
-            <div
-              className={`mt-4 rounded-2xl p-4 text-sm font-black ${
-                hasMinimumCompanyBowls
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "bg-yellow-50 text-yellow-700"
-              }`}
-            >
-              Pedido minimo despacho empresas: {companyBowlCount}/{minimumCompanyBowls} bowls.
-              {!hasMinimumCompanyBowls &&
-                " Agrega mas bowls para confirmar el pedido."}
-            </div>
-          )}
-
-          <div className="mt-5 border-t border-zinc-200 pt-5">
+<div className="mt-5 border-t border-zinc-200 pt-5">
             <div className="grid grid-cols-2 gap-2"><button suppressHydrationWarning
                 type="button"
                 onClick={switchToScheduled}
@@ -1932,7 +1923,7 @@ export default function PedidoPage() {
             {loadingOrder
               ? "Enviando..."
               : cart.length > 0 && !hasMinimumCompanyBowls
-              ? `Minimo ${minimumCompanyBowls} bowls`
+              ? `Mínimo ${minimumCompanyBowls} bowls`
               : "Confirmar Pedido online empresas"}
           </button>
         </aside>
@@ -2289,6 +2280,12 @@ export default function PedidoPage() {
     </main>
   );
 }
+
+
+
+
+
+
 
 
 

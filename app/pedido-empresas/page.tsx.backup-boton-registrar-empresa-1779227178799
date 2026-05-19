@@ -790,7 +790,7 @@ export default function PedidoPage() {
       setAuthMessage("Empresa registrada correctamente.");
     } catch (error) {
       console.error(error);
-      setAuthMessage("Error al Registrar Empresa.");
+      setAuthMessage("Error al Registrar empresa.");
     } finally {
       setLoadingAuth(false);
     }
@@ -1515,11 +1515,11 @@ export default function PedidoPage() {
               </div>
             ) : (
               <div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button suppressHydrationWarning
                     type="button"
                     onClick={() => setAuthMode("login")}
-                    className={`rounded-xl px-3 py-2 text-xs font-black whitespace-nowrap ${
+                    className={`rounded-xl px-3 py-2 text-xs font-black ${
                       authMode === "login"
                         ? "text-white"
                         : "bg-white text-zinc-600"
@@ -1535,7 +1535,7 @@ export default function PedidoPage() {
                   <button suppressHydrationWarning
                     type="button"
                     onClick={() => setAuthMode("register")}
-                    className={`rounded-xl px-3 py-2 text-xs font-black whitespace-nowrap ${
+                    className={`rounded-xl px-3 py-2 text-xs font-black ${
                       authMode === "register"
                         ? "text-white"
                         : "bg-white text-zinc-600"
@@ -1547,7 +1547,7 @@ export default function PedidoPage() {
                           : undefined,
                     }}
                   >
-                    Registrar Empresa
+                    Registrar empresa
                   </button>
 
                   
@@ -1676,7 +1676,7 @@ export default function PedidoPage() {
                         ? "Procesando..."
                         : authMode === "login"
                         ? "Ingresar"
-                        : "Registrar Empresa"}
+                        : "Registrar empresa"}
                     </button>
                   </>
                 ) : (
