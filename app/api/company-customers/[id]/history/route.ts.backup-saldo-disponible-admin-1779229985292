@@ -170,10 +170,7 @@ export async function GET(request: Request) {
       cleanOrders.length > 0 ? Math.round(totalHistorical / cleanOrders.length) : 0;
 
     return NextResponse.json({
-      company: {
-        ...company,
-        walletBalance: moneyNumber((company as any).walletBalance),
-      },
+      company,
       summary: {
         rangeOrdersCount: filteredOrders.length,
         rangeTotal,

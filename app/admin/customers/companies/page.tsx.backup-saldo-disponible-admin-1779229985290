@@ -535,7 +535,7 @@ export default function AdminCompanyCustomersPage() {
               </div>
             ) : history ? (
               <>
-                <div className="mb-6 grid gap-4 md:grid-cols-6">
+                <div className="mb-6 grid gap-4 md:grid-cols-5">
                   <article className="rounded-3xl bg-zinc-950 p-5 text-white">
                     <p className="text-xs font-black uppercase opacity-80">
                       Rango seleccionado
@@ -545,15 +545,6 @@ export default function AdminCompanyCustomersPage() {
                     </p>
                     <p className="mt-1 text-xs font-bold opacity-80">
                       {history.summary.rangeOrdersCount} pedidos
-                    </p>
-                  </article>
-
-                  <article className="rounded-3xl bg-emerald-50 p-5">
-                    <p className="text-xs font-black uppercase text-emerald-700">
-                      Saldo disponible
-                    </p>
-                    <p className="mt-2 text-3xl font-black text-[#10B557]">
-                      {formatPrice(Number((history.company as any).walletBalance || 0))}
                     </p>
                   </article>
 
