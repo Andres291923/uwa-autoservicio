@@ -310,7 +310,6 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const companyCustomerId = body.companyCustomerId ? Number(body.companyCustomerId) : null;
 
     const customerId = body.customerId ? Number(body.customerId) : null;
 
@@ -658,7 +657,6 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const companyCustomerId = body.companyCustomerId ? Number(body.companyCustomerId) : null;
 
     const id = Number(body.id);
     const status = String(body.status || "");
@@ -717,8 +715,6 @@ export async function PATCH(request: Request) {
     );
   }
 }
-
-
 
 
 

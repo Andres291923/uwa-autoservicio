@@ -101,7 +101,6 @@ model Order {
   customerName       String?
   customerComment    String?
   customerId         Int?
-  companyCustomerId  Int?
   walletAmountUsed   Int     @default(0)
   cashbackEarned     Int     @default(0)
   tipAmount          Int     @default(0)
@@ -112,12 +111,11 @@ model Order {
   totemCode          String?
   paymentMethod      String  @default("unknown")
 
-  orderSource     String           @default("totem")
-  fulfillmentType String           @default("immediate")
+  orderSource     String      @default("totem")
+  fulfillmentType String      @default("immediate")
   scheduledFor    DateTime?
   items           OrderItem[]
-  customer        Customer?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  companyCustomer CompanyCustomer? @relation(fields: [companyCustomerId], references: [id], onDelete: SetNull)
+  customer        Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @default(now()) @updatedAt
@@ -394,32 +392,4 @@ model PurchaseInvoice {
   @@index([issueDate])
   @@index([category])
   @@index([supplierRut])
-}
-
-model CompanyCustomer {
-  id           Int      @id @default(autoincrement())
-  companyName  String
-  rut          String   @unique
-  giro         String
-  address      String
-  contactName  String
-  phone        String
-  email        String   @unique
-  passwordHash String
-  active       Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  orders Order[]
-}
-
-model CompanyBankSettings {
-  id            Int      @id @default(1)
-  businessName  String   @default("")
-  rut           String   @default("")
-  bank          String   @default("")
-  accountType   String   @default("")
-  accountNumber String   @default("")
-  email         String   @default("")
-  updatedAt     DateTime @updatedAt
 }

@@ -482,24 +482,6 @@ export default function CustomersPage() {
 
   return (
     <main className="min-h-screen bg-[#f5f6f8] px-4 py-6 text-zinc-950 md:px-6">
-        <div className="mb-6 rounded-[2rem] bg-white p-4 shadow-sm">
-          <div className="flex flex-wrap gap-3">
-            <a
-              href="/admin/customers"
-              className="rounded-2xl bg-[#10B557] px-5 py-3 text-sm font-black text-white shadow-sm"
-            >
-              Clientes personales
-            </a>
-
-            <a
-              href="/admin/customers/companies"
-              className="rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-black text-zinc-800 shadow-sm"
-            >
-              Empresas
-            </a>
-          </div>
-        </div>
-
       <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.25em] text-[#10B557]">
@@ -1134,6 +1116,5 @@ export default function CustomersPage() {
     </main>
   );
 }
-
 
 
