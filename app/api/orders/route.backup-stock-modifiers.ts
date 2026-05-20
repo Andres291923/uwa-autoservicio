@@ -620,26 +620,8 @@ export async function POST(request: Request) {
         },
       });
 
-      const soldProductQuantities = new Map<number, number>();
-      const soldModifierOptionQuantities = new Map<number, number>();
-
-      for (const orderItem of createdOrder.items as any[]) {
-        soldProductQuantities.set(
-          orderItem.productId,
-          (soldProductQuantities.get(orderItem.productId) || 0) + orderItem.quantity
-        );
-
-        for (const modifier of orderItem.modifiers || []) {
-          soldModifierOptionQuantities.set(
-            modifier.optionId,
-            (soldModifierOptionQuantities.get(modifier.optionId) || 0) + orderItem.quantity
-          );
-        }
-      }
-
-      const stockProductIds = Array.from(soldProductQuantities.keys());
-      const stockModifierOptionIds = Array.from(soldModifierOptionQuantities.keys());
-
+      const stockProductIds = Array.from(productStockDeductions.keys());
+      const stockModifierOptionIds = Array.from(modifierStockDeductions.keys());
       const stockOrFilters: any[] = [];
 
       if (stockProductIds.length > 0) {
@@ -667,15 +649,11 @@ export async function POST(request: Request) {
         });
 
         for (const stockItem of stockItems) {
-          let quantityToDiscount = 0;
-
-          if (stockItem.modifierOptionId) {
-            quantityToDiscount =
-              soldModifierOptionQuantities.get(stockItem.modifierOptionId) || 0;
-          } else if (stockItem.productId) {
-            quantityToDiscount =
-              soldProductQuantities.get(stockItem.productId) || 0;
-          }
+          const quantityToDiscount = stockItem.productId
+            ? productStockDeductions.get(stockItem.productId) || 0
+            : stockItem.modifierOptionId
+              ? modifierStockDeductions.get(stockItem.modifierOptionId) || 0
+              : 0;
 
           if (quantityToDiscount <= 0) continue;
 
@@ -816,7 +794,6 @@ export async function PATCH(request: Request) {
     );
   }
 }
-
 
 
 

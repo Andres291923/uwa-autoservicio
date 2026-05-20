@@ -431,8 +431,6 @@ export async function POST(request: Request) {
     }[] = [];
 
     let orderTotal = 0;
-    const productStockDeductions = new Map<number, number>();
-    const modifierStockDeductions = new Map<number, number>();
 
     for (const item of items) {
       const productId = Number(item.productId);
@@ -507,18 +505,6 @@ export async function POST(request: Request) {
           })),
         },
       });
-
-      productStockDeductions.set(
-        product.id,
-        (productStockDeductions.get(product.id) || 0) + quantity
-      );
-
-      for (const option of selectedOptions) {
-        modifierStockDeductions.set(
-          option.id,
-          (modifierStockDeductions.get(option.id) || 0) + quantity
-        );
-      }
     }
 
     const subtotalAmount = orderTotal;
@@ -619,91 +605,6 @@ export async function POST(request: Request) {
           },
         },
       });
-
-      const soldProductQuantities = new Map<number, number>();
-      const soldModifierOptionQuantities = new Map<number, number>();
-
-      for (const orderItem of createdOrder.items as any[]) {
-        soldProductQuantities.set(
-          orderItem.productId,
-          (soldProductQuantities.get(orderItem.productId) || 0) + orderItem.quantity
-        );
-
-        for (const modifier of orderItem.modifiers || []) {
-          soldModifierOptionQuantities.set(
-            modifier.optionId,
-            (soldModifierOptionQuantities.get(modifier.optionId) || 0) + orderItem.quantity
-          );
-        }
-      }
-
-      const stockProductIds = Array.from(soldProductQuantities.keys());
-      const stockModifierOptionIds = Array.from(soldModifierOptionQuantities.keys());
-
-      const stockOrFilters: any[] = [];
-
-      if (stockProductIds.length > 0) {
-        stockOrFilters.push({
-          productId: {
-            in: stockProductIds,
-          },
-        });
-      }
-
-      if (stockModifierOptionIds.length > 0) {
-        stockOrFilters.push({
-          modifierOptionId: {
-            in: stockModifierOptionIds,
-          },
-        });
-      }
-
-      if (stockOrFilters.length > 0) {
-        const stockItems = await tx.stockItem.findMany({
-          where: {
-            active: true,
-            OR: stockOrFilters,
-          },
-        });
-
-        for (const stockItem of stockItems) {
-          let quantityToDiscount = 0;
-
-          if (stockItem.modifierOptionId) {
-            quantityToDiscount =
-              soldModifierOptionQuantities.get(stockItem.modifierOptionId) || 0;
-          } else if (stockItem.productId) {
-            quantityToDiscount =
-              soldProductQuantities.get(stockItem.productId) || 0;
-          }
-
-          if (quantityToDiscount <= 0) continue;
-
-          const previousStock = stockItem.currentStock;
-          const newStock = Math.max(0, previousStock - quantityToDiscount);
-
-          await tx.stockItem.update({
-            where: {
-              id: stockItem.id,
-            },
-            data: {
-              currentStock: newStock,
-            },
-          });
-
-          await tx.stockMovement.create({
-            data: {
-              stockItemId: stockItem.id,
-              type: "sale",
-              quantity: quantityToDiscount,
-              previousStock,
-              newStock,
-              reason: `Venta pedido #${orderNumber}`,
-              orderId: createdOrder.id,
-            },
-          });
-        }
-      }
 
       if (customerId && walletAmountUsed > 0) {
         await tx.walletTransaction.create({
@@ -816,8 +717,6 @@ export async function PATCH(request: Request) {
     );
   }
 }
-
-
 
 
 
