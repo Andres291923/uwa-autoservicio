@@ -133,9 +133,6 @@ export default function AdminDashboardPage() {
 
   return (
     <main className="min-h-screen text-zinc-950">
-      <div className="mb-4 flex flex-wrap gap-3">
-        
-      </div>
       <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.25em] text-[#10B557]">
@@ -414,5 +411,3 @@ export default function AdminDashboardPage() {
     </main>
   );
 }
-
-

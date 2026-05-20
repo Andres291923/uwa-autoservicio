@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 
@@ -522,7 +522,7 @@ export default function AdminInventoryPage() {
                   <div>
                     <h3 className="text-2xl font-black">{category.name}</h3>
                     <p className="text-sm font-bold text-zinc-500">
-                      {category.items.length} productos Â· {category.subcategories.length} subcategorias
+                      {category.items.length} productos - {category.subcategories.length} subcategorias
                     </p>
                   </div>
 
@@ -579,7 +579,7 @@ export default function AdminInventoryPage() {
                           <h4 className="font-black">{item.name}</h4>
                           <p className="text-xs font-bold text-zinc-500">
                             {item.subcategory?.name || "Sin subcategoria"}
-                            {item.unit ? ` Â· ${item.unit}` : ""}
+                            {item.unit ? ` - ${item.unit}` : ""}
                           </p>
                           <p className="mt-1 text-xs font-black">
                             {item.active ? "Activo" : "Inactivo"}

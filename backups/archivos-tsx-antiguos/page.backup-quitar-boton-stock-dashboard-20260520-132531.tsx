@@ -134,7 +134,12 @@ export default function AdminDashboardPage() {
   return (
     <main className="min-h-screen text-zinc-950">
       <div className="mb-4 flex flex-wrap gap-3">
-        
+        <a
+          href="/admin/products/beverage-stock"
+          className="inline-flex items-center justify-center rounded-2xl bg-green-600 px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-green-700"
+        >
+          Stock bebidas
+        </a>
       </div>
       <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -414,5 +419,4 @@ export default function AdminDashboardPage() {
     </main>
   );
 }
-
 

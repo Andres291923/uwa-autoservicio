@@ -69,7 +69,7 @@ function formatPrice(price: number) {
 
 function formatChannelVisibility(value?: string) {
   if (value === "online") return "Solo online";
-  if (value === "totem") return "Solo Totem";
+  if (value === "totem") return "Solo tótem";
   return "Todos";
 }
 function createEmptyModifierOption(): ModifierOptionInput {
@@ -212,7 +212,7 @@ const [loadingGlobalModifier, setLoadingGlobalModifier] = useState(false);
     }
 
     if (!data.url) {
-      alert("La imagen subio, pero no llego la URL.");
+      alert("La imagen subió, pero no llegó la URL.");
       return null;
     }
 
@@ -344,17 +344,17 @@ const [loadingGlobalModifier, setLoadingGlobalModifier] = useState(false);
       const data = await response.json();
 
       if (!response.ok) {
-        setCategoryMessage(data.error || "No se pudo crear la categoria.");
+        setCategoryMessage(data.error || "No se pudo crear la categoría.");
         return;
       }
 
       setCategoryName("");
       setCategoryOrder("0");
-      setCategoryMessage("Categoria creada correctamente.");
+      setCategoryMessage("Categoría creada correctamente.");
       await loadCategories();
     } catch (error) {
       console.error(error);
-      setCategoryMessage("Error al crear categoria.");
+      setCategoryMessage("Error al crear categoría.");
     } finally {
       setLoadingCategory(false);
     }
@@ -631,7 +631,7 @@ function startEditGlobalOption(option: ModifierOption) {
   setGlobalOptionImageUrl(option.imageUrl || "");
   setGlobalOptionOrder(String(option.order));
   setGlobalOptionActive(option.active);
-  setGlobalModifierMessage("Editando opcion del modificador.");
+  setGlobalModifierMessage("Editando opción del modificador.");
 }
 
 async function saveGlobalModifier(event: FormEvent<HTMLFormElement>) {
@@ -680,7 +680,7 @@ async function saveGlobalModifier(event: FormEvent<HTMLFormElement>) {
 
 async function deleteGlobalModifier(template: ModifierTemplate) {
   const ok = window.confirm(
-    `¿Eliminar el modificador "${template.name}"? Esto tambien lo quitara de los productos donde este importado.`
+    `¿Eliminar el modificador "${template.name}"? Esto también lo quitará de los productos donde esté importado.`
   );
 
   if (!ok) return;
@@ -757,7 +757,7 @@ async function saveGlobalOption(event: FormEvent<HTMLFormElement>) {
     const data = await response.json();
 
     if (!response.ok) {
-      setGlobalModifierMessage(data.error || "No se pudo guardar la opcion.");
+      setGlobalModifierMessage(data.error || "No se pudo guardar la opción.");
       return;
     }
 
@@ -776,19 +776,19 @@ async function saveGlobalOption(event: FormEvent<HTMLFormElement>) {
 
     setGlobalModifierMessage(
       editingGlobalOptionId
-        ? "Opcion actualizada correctamente."
-        : "Opcion creada correctamente."
+        ? "Opción actualizada correctamente."
+        : "Opción creada correctamente."
     );
   } catch (error) {
     console.error(error);
-    setGlobalModifierMessage("Error al guardar opcion.");
+    setGlobalModifierMessage("Error al guardar opción.");
   } finally {
     setLoadingGlobalModifier(false);
   }
 }
 
 async function deleteGlobalOption(option: ModifierOption) {
-  const ok = window.confirm(`¿Eliminar la opcion "${option.name}"?`);
+  const ok = window.confirm(`¿Eliminar la opción "${option.name}"?`);
 
   if (!ok) return;
 
@@ -809,7 +809,7 @@ async function deleteGlobalOption(option: ModifierOption) {
     const data = await response.json();
 
     if (!response.ok) {
-      setGlobalModifierMessage(data.error || "No se pudo eliminar la opcion.");
+      setGlobalModifierMessage(data.error || "No se pudo eliminar la opción.");
       return;
     }
 
@@ -826,10 +826,10 @@ async function deleteGlobalOption(option: ModifierOption) {
       await loadProductModifierGroups(selectedProductForModifiers.id);
     }
 
-    setGlobalModifierMessage("Opcion eliminada correctamente.");
+    setGlobalModifierMessage("Opción eliminada correctamente.");
   } catch (error) {
     console.error(error);
-    setGlobalModifierMessage("Error al eliminar opcion.");
+    setGlobalModifierMessage("Error al eliminar opción.");
   } finally {
     setLoadingGlobalModifier(false);
   }
@@ -858,7 +858,7 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
 
     if (!response.ok) {
       setGlobalModifierMessage(
-        data.error || "No se pudo cambiar el estado de la opcion."
+        data.error || "No se pudo cambiar el estado de la opción."
       );
       return;
     }
@@ -871,12 +871,12 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
 
     setGlobalModifierMessage(
       !option.active
-        ? `La opcion "${option.name}" fue activada.`
-        : `La opcion "${option.name}" fue desactivada.`
+        ? `La opción "${option.name}" fue activada.`
+        : `La opción "${option.name}" fue desactivada.`
     );
   } catch (error) {
     console.error(error);
-    setGlobalModifierMessage("Error al cambiar estado de la opcion.");
+    setGlobalModifierMessage("Error al cambiar estado de la opción.");
   } finally {
     setLoadingGlobalModifier(false);
   }
@@ -887,30 +887,13 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
 
   return (
     <main className="min-h-screen bg-zinc-50 px-6 py-6 text-zinc-900">
-      <div className="mb-6 flex flex-wrap items-center gap-3 rounded-3xl border border-green-200 bg-green-50 p-4">
-        <div className="flex-1">
-          <p className="text-sm font-black uppercase tracking-wide text-green-700">
-            Inventario rápido
-          </p>
-          <p className="text-sm text-slate-600">
-            Controla stock de bebidas, jugos y aguas conectadas a productos o modificadores.
-          </p>
-        </div>
-
-        <a
-          href="/admin/products/beverage-stock"
-          className="inline-flex items-center justify-center rounded-2xl bg-green-600 px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-green-700"
-        >
-          Stock bebidas
-        </a>
-      </div>
       <div className="mx-auto max-w-7xl">
         <header className="mb-6 flex items-center justify-between">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.25em] text-[#10B557]">
               Panel Admin
             </p>
-            <h1 className="mt-1 text-3xl font-black">Administracion UWA</h1>
+            <h1 className="mt-1 text-3xl font-black">Administración ÜWA</h1>
           </div>
 
           <div className="flex items-center gap-3">
@@ -918,14 +901,14 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
     href="/admin/settings"
     className="rounded-xl bg-[#10B557] px-4 py-2 text-sm font-black text-white shadow-sm"
   >
-    Configuracion
+    Configuración
   </a>
 
   <a
     href="/totem"
     className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-bold"
   >
-    Ver totem
+    Ver tótem
   </a>
 
   <a
@@ -947,7 +930,7 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
         <section className="mb-6 grid gap-4 md:grid-cols-3">
           <div className="rounded-2xl bg-[#10B557] p-5 text-white shadow-sm">
             <p className="text-xs font-black uppercase opacity-80">
-              Categorias
+              Categorías
             </p>
             <h2 className="mt-2 text-4xl font-black">{categories.length}</h2>
             <p className="mt-1 text-sm font-semibold">Creadas desde admin</p>
@@ -1006,7 +989,7 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
     <div className="space-y-3">
       {modifierTemplates.length === 0 ? (
         <div className="rounded-xl bg-zinc-100 p-5 text-center">
-          <p className="font-black">Aun no hay modificadores globales.</p>
+          <p className="font-black">Aún no hay modificadores globales.</p>
         </div>
       ) : (
         modifierTemplates.map((template) => (
@@ -1022,7 +1005,7 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
               <div>
                 <h3 className="text-lg font-black">{template.name}</h3>
                 <p className="mt-1 text-sm text-zinc-500">
-                  {template.options.length} opciones -{" "}
+                  {template.options.length} opciones ·{" "}
                   {template.active ? "Activo" : "Inactivo"}
                 </p>
               </div>
@@ -1129,13 +1112,13 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
             className="rounded-2xl border border-zinc-200 bg-white p-4"
           >
             <h3 className="text-lg font-black">
-              {editingGlobalOptionId ? "Editar opcion" : "Agregar opcion"}
+              {editingGlobalOptionId ? "Editar opción" : "Agregar opción"}
             </h3>
 
             <div className="mt-4 grid gap-4 md:grid-cols-[1fr_140px_140px]">
               <label className="block">
                 <span className="text-xs font-black uppercase text-zinc-500">
-                  Nombre opcion
+                  Nombre opción
                 </span>
                 <input
                   value={globalOptionName}
@@ -1173,7 +1156,7 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
             <div className="mt-4 grid gap-4 md:grid-cols-[1fr_160px]">
               <div>
                 <span className="text-xs font-black uppercase text-zinc-500">
-                  Imagen opcion
+                  Imagen opción
                 </span>
 
                 <div className="mt-2 flex items-center gap-3">
@@ -1181,7 +1164,7 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
                     {globalOptionImageUrl ? (
                       <img
                         src={globalOptionImageUrl}
-                        alt={globalOptionName || "Opcion"}
+                        alt={globalOptionName || "Opción"}
                         className="h-full w-full object-contain p-1"
                       />
                     ) : (
@@ -1238,7 +1221,7 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
                 disabled={loadingGlobalModifier}
                 className="flex-1 rounded-xl bg-[#10B557] py-3 text-sm font-black text-white disabled:bg-zinc-300"
               >
-                {editingGlobalOptionId ? "Actualizar opcion" : "Agregar opcion"}
+                {editingGlobalOptionId ? "Actualizar opción" : "Agregar opción"}
               </button>
 
               {editingGlobalOptionId && (
@@ -1330,7 +1313,7 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
             onSubmit={createCategory}
             className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm"
           >
-            <h2 className="text-xl font-black">Crear categoria</h2>
+            <h2 className="text-xl font-black">Crear categoría</h2>
 
             <label className="mt-5 block">
               <span className="text-xs font-black uppercase text-zinc-500">
@@ -1339,7 +1322,7 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
               <input
                 value={categoryName}
                 onChange={(event) => setCategoryName(event.target.value)}
-                placeholder="Ej: Bebidas, Cafes, Menus, Postres"
+                placeholder="Ej: Bebidas, Cafés, Menús, Postres"
                 className="mt-2 w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
               />
             </label>
@@ -1366,7 +1349,7 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
               disabled={loadingCategory}
               className="mt-5 w-full rounded-xl bg-[#10B557] py-3 text-sm font-black text-white disabled:bg-zinc-300"
             >
-              {loadingCategory ? "Guardando..." : "Guardar categoria"}
+              {loadingCategory ? "Guardando..." : "Guardar categoría"}
             </button>
           </form>
 
@@ -1385,21 +1368,21 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
                   onClick={resetProductForm}
                   className="rounded-xl border border-zinc-300 px-4 py-2 text-xs font-black"
                 >
-                  Cancelar edicion
+                  Cancelar edición
                 </button>
               )}
             </div>
 
             <label className="mt-5 block">
               <span className="text-xs font-black uppercase text-zinc-500">
-                Categoria
+                Categoría
               </span>
               <select
                 value={productCategoryId}
                 onChange={(event) => setProductCategoryId(event.target.value)}
                 className="mt-2 w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
               >
-                <option value="">Seleccionar categoria</option>
+                <option value="">Seleccionar categoría</option>
                 {categories.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
@@ -1415,19 +1398,19 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
               <input
                 value={productName}
                 onChange={(event) => setProductName(event.target.value)}
-                placeholder="Ej: Cafe latte, Bowl M, Hamburguesa"
+                placeholder="Ej: Café latte, Bowl M, Hamburguesa"
                 className="mt-2 w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
               />
             </label>
 
             <label className="mt-4 block">
               <span className="text-xs font-black uppercase text-zinc-500">
-                Descripcion
+                Descripción
               </span>
               <input
                 value={productDescription}
                 onChange={(event) => setProductDescription(event.target.value)}
-                placeholder="Descripcion corta del producto"
+                placeholder="Descripción corta del producto"
                 className="mt-2 w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
               />
             </label>
@@ -1599,7 +1582,7 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
                   onClick={resetModifierForm}
                   className="rounded-xl border border-red-300 bg-red-50 px-4 py-2 text-sm font-black text-red-600"
                 >
-                  Cancelar edicion de reglas
+                  Cancelar edición de reglas
                 </button>
               )}
             </div>
@@ -1634,7 +1617,7 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
 
         {modifierTemplates.map((template) => (
           <option key={template.id} value={template.id}>
-            {template.name} - {template.options.length} opciones
+            {template.name} · {template.options.length} opciones
           </option>
         ))}
       </select>
@@ -1642,7 +1625,7 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
 
     {modifierTemplates.length === 0 && (
       <p className="mt-3 rounded-xl bg-yellow-50 p-3 text-sm font-bold text-yellow-800">
-        Aun no hay modificadores globales para importar. Primero crea un modificador.
+        Aún no hay modificadores globales para importar. Primero crea un modificador.
       </p>
     )}
   </div>
@@ -1659,7 +1642,7 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
                     <input
                       value={modifierName}
                       onChange={(event) => setModifierName(event.target.value)}
-                      placeholder="Ej: Tipo de leche, Tamano, Extras, Salsas"
+                      placeholder="Ej: Tipo de leche, Tamaño, Extras, Salsas"
                       className="mt-2 w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
                     />
                   </label>
@@ -1671,7 +1654,7 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
                         className="rounded-2xl border border-zinc-200 bg-white p-4"
                       >
                         <div className="mb-3 flex items-center justify-between">
-                          <h4 className="font-black">Opcion #{index + 1}</h4>
+                          <h4 className="font-black">Opción #{index + 1}</h4>
 
                           <button
                             type="button"
@@ -1687,7 +1670,7 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
                         <div className="grid gap-4 md:grid-cols-[1fr_140px_140px]">
                           <label className="block">
                             <span className="text-xs font-black uppercase text-zinc-500">
-                              Nombre opcion
+                              Nombre opción
                             </span>
                             <input
                               value={option.name}
@@ -1743,7 +1726,7 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
                         <div className="mt-4 grid gap-4 md:grid-cols-[1fr_160px]">
   <div>
     <span className="text-xs font-black uppercase text-zinc-500">
-      Imagen opcion
+      Imagen opción
     </span>
 
     <div className="mt-2 flex items-center gap-3">
@@ -1751,7 +1734,7 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
         {option.imageUrl ? (
           <img
             src={option.imageUrl}
-            alt={option.name || "Opcion"}
+            alt={option.name || "Opción"}
             className="h-full w-full object-contain p-1"
           />
         ) : (
@@ -1819,7 +1802,7 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
                     onClick={addModifierOption}
                     className="mt-4 rounded-xl border border-[#10B557] px-4 py-2 text-sm font-black text-[#10B557]"
                   >
-                    + Agregar opcion
+                    + Agregar opción
                   </button>
                 </div>
               )}
@@ -1827,7 +1810,7 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
               <div className="mt-5 grid gap-4 md:grid-cols-6">
                 <label className="block">
                   <span className="text-xs font-black uppercase text-zinc-500">
-                    Minimo
+                    Mínimo
                   </span>
                   <input
                     value={modifierMin}
@@ -1839,7 +1822,7 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
 
                 <label className="block">
                   <span className="text-xs font-black uppercase text-zinc-500">
-                    Maximo
+                    Máximo
                   </span>
                   <input
                     value={modifierMax}
@@ -1873,7 +1856,7 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
                     className="mt-2 w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
                   >
                     <option value="all">Todos</option>
-                    <option value="totem">Solo Totem</option>
+                    <option value="totem">Solo tótem</option>
                     <option value="online">Solo online</option>
                   </select>
                 </label>
@@ -1953,9 +1936,9 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
                             {group.template.name}
                           </h4>
                           <p className="mt-1 text-sm text-zinc-500">
-                            Min: {group.min} / Max: {group.max} /{" "}
+                            Mín: {group.min} / Máx: {group.max} /{" "}
                             {group.required ? "Obligatorio" : "Opcional"}
-                            {" - "}Canal: {formatChannelVisibility(group.channelVisibility)}
+                            {" · "}Canal: {formatChannelVisibility(group.channelVisibility)}
                           </p>
                         </div>
 
@@ -1984,13 +1967,13 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
       }`}
       title={
         option.active
-          ? "Click para desactivar esta opcion"
-          : "Click para activar esta opcion"
+          ? "Click para desactivar esta opción"
+          : "Click para activar esta opción"
       }
     >
       {option.name}
       {option.price > 0 && ` +${formatPrice(option.price)}`}
-      {option.active ? " - Activo" : " - Inactivo"}
+      {option.active ? " · Activo" : " · Inactivo"}
     </button>
   ))}
 </div>
@@ -2028,7 +2011,7 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
 
           {products.length === 0 ? (
             <div className="mt-5 rounded-xl bg-zinc-100 p-6 text-center">
-              <p className="text-lg font-black">Aun no hay productos</p>
+              <p className="text-lg font-black">Aún no hay productos</p>
               <p className="mt-1 text-sm text-zinc-500">
                 Crea un producto desde el formulario.
               </p>
@@ -2039,7 +2022,7 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
                 <thead className="bg-zinc-100">
                   <tr>
                     <th className="p-3 font-black">Producto</th>
-                    <th className="p-3 font-black">Categoria</th>
+                    <th className="p-3 font-black">Categoría</th>
                     <th className="p-3 font-black">Precio</th>
                     <th className="p-3 font-black">Orden</th>
                     <th className="p-3 font-black">Estado</th>

@@ -20,15 +20,14 @@ model Category {
 }
 
 model Product {
-  stockItems        StockItem[]
-  id                Int         @id @default(autoincrement())
+  id                Int     @id @default(autoincrement())
   name              String
   description       String?
   price             Int
   imageUrl          String?
-  active            Boolean     @default(true)
-  channelVisibility String      @default("all")
-  order             Int         @default(0)
+  active            Boolean @default(true)
+  channelVisibility String  @default("all")
+  order             Int     @default(0)
 
   categoryId Int
   category   Category @relation(fields: [categoryId], references: [id])
@@ -55,14 +54,13 @@ model ModifierTemplate {
 }
 
 model ModifierOption {
-  stockItems        StockItem[]
-  id                Int         @id @default(autoincrement())
+  id                Int     @id @default(autoincrement())
   name              String
-  price             Int         @default(0)
+  price             Int     @default(0)
   imageUrl          String?
-  active            Boolean     @default(true)
-  channelVisibility String      @default("all")
-  order             Int         @default(0)
+  active            Boolean @default(true)
+  channelVisibility String  @default("all")
+  order             Int     @default(0)
 
   templateId Int
   template   ModifierTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
@@ -96,24 +94,23 @@ model ProductModifierGroup {
 }
 
 model Order {
-  stockMovements     StockMovement[]
-  id                 Int             @id @default(autoincrement())
+  id                 Int     @id @default(autoincrement())
   orderNumber        Int
-  status             String          @default("pending")
-  total              Int             @default(0)
+  status             String  @default("pending")
+  total              Int     @default(0)
   customerName       String?
   customerComment    String?
   customerId         Int?
   companyCustomerId  Int?
-  walletAmountUsed   Int             @default(0)
-  cashbackEarned     Int             @default(0)
-  tipAmount          Int             @default(0)
-  subtotalAmount     Int             @default(0)
-  discountAmount     Int             @default(0)
-  discountPercent    Int             @default(0)
+  walletAmountUsed   Int     @default(0)
+  cashbackEarned     Int     @default(0)
+  tipAmount          Int     @default(0)
+  subtotalAmount     Int     @default(0)
+  discountAmount     Int     @default(0)
+  discountPercent    Int     @default(0)
   discountCouponCode String?
   totemCode          String?
-  paymentMethod      String          @default("unknown")
+  paymentMethod      String  @default("unknown")
 
   orderSource     String           @default("totem")
   fulfillmentType String           @default("immediate")
@@ -425,50 +422,4 @@ model CompanyBankSettings {
   accountNumber String   @default("")
   email         String   @default("")
   updatedAt     DateTime @updatedAt
-}
-
-model StockItem {
-  id Int @id @default(autoincrement())
-
-  name         String
-  currentStock Int     @default(0)
-  minStock     Int     @default(0)
-  active       Boolean @default(true)
-
-  productId Int?
-  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
-
-  modifierOptionId Int?
-  modifierOption   ModifierOption? @relation(fields: [modifierOptionId], references: [id], onDelete: SetNull)
-
-  movements StockMovement[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([productId])
-  @@index([modifierOptionId])
-}
-
-model StockMovement {
-  id Int @id @default(autoincrement())
-
-  stockItemId Int
-  stockItem   StockItem @relation(fields: [stockItemId], references: [id], onDelete: Cascade)
-
-  type     String
-  quantity Int
-
-  previousStock Int
-  newStock      Int
-
-  reason String?
-
-  orderId Int?
-  order   Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
-
-  createdAt DateTime @default(now())
-
-  @@index([stockItemId])
-  @@index([orderId])
 }
