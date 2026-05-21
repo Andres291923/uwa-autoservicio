@@ -1,0 +1,251 @@
+﻿"use client";
+
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+
+type WorkerTotemSession = {
+  accountType: "company_worker_totem";
+  workerId: number;
+  companyCustomerId: number;
+  workerName: string;
+  workerEmail: string | null;
+  workerRut: string | null;
+  walletBalance: number;
+  companyName: string;
+  companyEmail: string;
+};
+
+function formatPrice(value: number) {
+  return new Intl.NumberFormat("es-CL", {
+    style: "currency",
+    currency: "CLP",
+    maximumFractionDigits: 0,
+  }).format(value || 0);
+}
+
+export default function TotemCompanyWorkerLoginButton() {
+  const [mounted, setMounted] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [rut, setRut] = useState("");
+  const [pin, setPin] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [session, setSession] = useState<WorkerTotemSession | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+
+    const saved = window.localStorage.getItem("totem_company_worker_session");
+
+    if (!saved) return;
+
+    try {
+      setSession(JSON.parse(saved));
+    } catch {
+      window.localStorage.removeItem("totem_company_worker_session");
+    }
+  }, []);
+
+  function saveSession(data: WorkerTotemSession) {
+    setSession(data);
+
+    window.localStorage.setItem(
+      "totem_company_worker_session",
+      JSON.stringify(data)
+    );
+
+    window.dispatchEvent(
+      new CustomEvent("totem-company-worker-login", {
+        detail: data,
+      })
+    );
+  }
+
+  function logoutWorker() {
+    setSession(null);
+    setRut("");
+    setPin("");
+    setMessage("");
+    window.localStorage.removeItem("totem_company_worker_session");
+
+    window.dispatchEvent(new CustomEvent("totem-company-worker-logout"));
+  }
+
+  async function loginWorker() {
+    try {
+      setLoading(true);
+      setMessage("");
+
+      const response = await fetch("/api/company-worker-auth/totem-login", {
+        method: "POST",
+        cache: "no-store",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          rut,
+          pin,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(data.error || "No se pudo ingresar con saldo empresa.");
+        return;
+      }
+
+      saveSession(data);
+      setMessage("Trabajador identificado correctamente.");
+      setPin("");
+    } catch (error) {
+      console.error(error);
+      setMessage("Error al ingresar con saldo empresa.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const modal = (
+    <div
+      className="fixed inset-0 flex items-center justify-center bg-black/60 p-4"
+      style={{ zIndex: 999999 }}
+    >
+      <div className="w-full max-w-xl rounded-[2rem] bg-white p-6 shadow-2xl">
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-[#10B557]">
+              Empresas
+            </p>
+            <h2 className="mt-2 text-3xl font-black">
+              Ingresa con saldo empresa
+            </h2>
+            <p className="mt-1 text-sm font-bold text-zinc-500">
+              Usa tu RUT y PIN rapido de trabajador.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-black"
+          >
+            Cerrar
+          </button>
+        </div>
+
+        {!session ? (
+          <div className="space-y-4">
+            <label className="block">
+              <span className="text-xs font-black uppercase text-zinc-500">
+                RUT trabajador
+              </span>
+
+              <input
+                value={rut}
+                onChange={(event) => setRut(event.target.value)}
+                placeholder="Ej: 11111111-1"
+                className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-4 text-lg font-black outline-none focus:border-[#10B557]"
+              />
+            </label>
+
+            <label className="block">
+              <span className="text-xs font-black uppercase text-zinc-500">
+                PIN rapido
+              </span>
+
+              <input
+                type="password"
+                value={pin}
+                onChange={(event) => setPin(event.target.value)}
+                placeholder="••••"
+                className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-4 text-center text-3xl font-black tracking-[0.5em] outline-none focus:border-[#10B557]"
+              />
+            </label>
+
+            <button
+              type="button"
+              onClick={loginWorker}
+              disabled={loading}
+              className="w-full rounded-2xl bg-[#10B557] px-5 py-4 text-lg font-black text-white disabled:bg-zinc-300"
+            >
+              {loading ? "Validando..." : "Ingresar con saldo empresa"}
+            </button>
+
+            {message && (
+              <p className="rounded-2xl bg-zinc-50 p-4 text-sm font-black">
+                {message}
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="rounded-3xl bg-emerald-50 p-5">
+              <p className="text-xs font-black uppercase text-emerald-700">
+                Trabajador identificado
+              </p>
+
+              <h3 className="mt-2 text-3xl font-black">
+                {session.workerName}
+              </h3>
+
+              <p className="mt-1 text-sm font-bold text-zinc-500">
+                Empresa: {session.companyName}
+              </p>
+
+              <p className="mt-4 text-xs font-black uppercase text-emerald-700">
+                Saldo disponible
+              </p>
+
+              <p className="mt-1 text-5xl font-black text-[#10B557]">
+                {formatPrice(session.walletBalance)}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded-2xl bg-[#10B557] px-5 py-3 text-sm font-black text-white"
+              >
+                Continuar pedido
+              </button>
+
+              <button
+                type="button"
+                onClick={logoutWorker}
+                className="rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-black"
+              >
+                Salir trabajador
+              </button>
+            </div>
+
+            {message && (
+              <p className="rounded-2xl bg-zinc-50 p-4 text-sm font-black">
+                {message}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <button
+        type="button"
+        suppressHydrationWarning
+        onClick={() => {
+          setOpen(true);
+          setMessage("");
+        }}
+        className="rounded-2xl bg-white px-5 py-4 text-sm font-black text-zinc-600 shadow-sm"
+      >
+        Empresas
+      </button>
+
+      {mounted && open ? createPortal(modal, document.body) : null}
+    </>
+  );
+}

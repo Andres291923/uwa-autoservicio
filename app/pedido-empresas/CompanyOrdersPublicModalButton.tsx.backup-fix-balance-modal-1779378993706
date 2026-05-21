@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import CompanyBalanceAmount from "./CompanyBalanceAmount";
 
 type Props = {
   companyId: number;
@@ -314,11 +313,7 @@ export default function CompanyOrdersPublicModalButton({
                   Saldo disponible
                 </p>
                 <p className="mt-2 text-2xl font-black text-[#10B557]">
-                  <CompanyBalanceAmount
-                    companyId={companyId}
-                    initialBalance={walletBalance}
-                    className="mt-2 text-2xl font-black text-[#10B557]"
-                  />
+                  {formatPrice(walletBalance)}
                 </p>
               </article>
 

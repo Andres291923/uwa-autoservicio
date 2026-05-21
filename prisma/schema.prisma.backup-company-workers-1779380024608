@@ -417,8 +417,6 @@ model CompanyCustomer {
   invoices CompanyInvoice[]
   walletBalance Int @default(0)
   walletTransactions CompanyWalletTransaction[]
-  workers CompanyWorker[]
-  workerWalletTransactions CompanyWorkerWalletTransaction[]
 }
 
 model CompanyBankSettings {
@@ -510,40 +508,4 @@ model CompanyWalletTransaction {
 
   companyCustomer CompanyCustomer @relation(fields: [companyCustomerId], references: [id], onDelete: Cascade)
   invoice         CompanyInvoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
-}
-
-
-model CompanyWorker {
-  id                Int      @id @default(autoincrement())
-  companyCustomerId Int
-  name              String
-  email             String?
-  rut               String?
-  phone             String?
-  active            Boolean  @default(true)
-  walletBalance     Int      @default(0)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  companyCustomer CompanyCustomer @relation(fields: [companyCustomerId], references: [id], onDelete: Cascade)
-  walletTransactions CompanyWorkerWalletTransaction[]
-  passwordHash String?
-  totemPinHash String?
-}
-
-
-model CompanyWorkerWalletTransaction {
-  id                  Int      @id @default(autoincrement())
-  companyWorkerId     Int
-  companyCustomerId   Int
-  type                String
-  amount              Int
-  workerBalanceAfter  Int
-  companyBalanceAfter Int
-  reason              String
-  source              String   @default("company_assignment")
-  createdAt           DateTime @default(now())
-
-  worker          CompanyWorker   @relation(fields: [companyWorkerId], references: [id], onDelete: Cascade)
-  companyCustomer CompanyCustomer @relation(fields: [companyCustomerId], references: [id], onDelete: Cascade)
 }

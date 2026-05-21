@@ -1,8 +1,6 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
-import WorkerCreatePasswordModalButton from "./WorkerCreatePasswordModalButton";
-import CompanyWorkersButton from "./CompanyWorkersButton";
 import CompanyBalanceAmount from "./CompanyBalanceAmount";
 import CompanyInvoicesPublicButton from "./CompanyInvoicesPublicButton";
 import CompanyOrdersPublicModalButton from "./CompanyOrdersPublicModalButton";
@@ -81,12 +79,6 @@ type LoggedCustomer = {
   cashbackCredits?: number;
   nextCashbackExpiration?: string | null;
   nextCashbackAmount?: number;
-  accountType?: "company" | "worker";
-  companyCustomerId?: number;
-  companyName?: string;
-  companyEmail?: string;
-  workerId?: number;
-  rut?: string | null;
 };
 
 type WalletSummary = {
@@ -363,7 +355,7 @@ export default function PedidoPage() {
   );
   const [walletSummary, setWalletSummary] = useState<WalletSummary | null>(null);
   const [cashbackDetailVisible, setCashbackDetailVisible] = useState(false);
-  const [authMode, setAuthMode] = useState<"login" | "worker" | "register">(
+  const [authMode, setAuthMode] = useState<"login" | "register">(
     "login"
   );
   const [authName, setAuthName] = useState("");
@@ -374,7 +366,6 @@ export default function PedidoPage() {
   const [companyPhone, setCompanyPhone] = useState("");
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
-  const [workerNewPassword, setWorkerNewPassword] = useState("");
   const [guestName, setGuestName] = useState("");
   const [useWallet, setUseWallet] = useState(false);
 
@@ -760,10 +751,6 @@ export default function PedidoPage() {
         ...data,
         name: data.name || data.companyName,
         walletBalance: data.walletBalance || 0,
-        accountType: "company",
-        companyCustomerId: data.id,
-        companyName: data.companyName || data.name,
-        companyEmail: data.email,
       });
       setGuestName(data.name);
       await loadWalletSummary(data.id);
@@ -773,92 +760,6 @@ export default function PedidoPage() {
     } catch (error) {
       console.error(error);
       setAuthMessage("Error al ingresar.");
-    } finally {
-      setLoadingAuth(false);
-    }
-  }
-
-
-  async function loginWorker() {
-    try {
-      setLoadingAuth(true);
-      setAuthMessage("");
-
-      const response = await fetch("/api/company-worker-auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: authEmail.trim().toLowerCase(),
-          password: authPassword.trim(),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setAuthMessage(data.error || "No se pudo ingresar como trabajador.");
-        return;
-      }
-
-      setLoggedCustomer({
-        ...data,
-        id: data.companyCustomerId,
-        name: data.name,
-        email: data.email,
-        walletBalance: data.walletBalance || 0,
-        accountType: "worker",
-        companyCustomerId: data.companyCustomerId,
-        companyName: data.companyName,
-        companyEmail: data.companyEmail,
-        workerId: data.workerId,
-      });
-
-      setGuestName(data.companyName || data.name);
-      setAuthPassword("");
-      setUseWallet(false);
-      setAuthMessage("Trabajador ingresado correctamente.");
-    } catch (error) {
-      console.error(error);
-      setAuthMessage("Error al ingresar como trabajador.");
-    } finally {
-      setLoadingAuth(false);
-    }
-  }
-
-
-  async function createWorkerPassword() {
-    try {
-      setLoadingAuth(true);
-      setAuthMessage("");
-
-      const response = await fetch("/api/company-worker-auth/create-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: authEmail.trim().toLowerCase(),
-          password: authPassword.trim(),
-          password: workerNewPassword.trim(),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setAuthMessage(data.error || "No se pudo crear clave.");
-        return;
-      }
-
-      setAuthPassword("");
-      setWorkerNewPassword("");
-      setAuthMode("worker");
-      setAuthMessage("Clave creada correctamente. Ahora ingresa como trabajador.");
-    } catch (error) {
-      console.error(error);
-      setAuthMessage("Error al crear clave.");
     } finally {
       setLoadingAuth(false);
     }
@@ -897,10 +798,6 @@ export default function PedidoPage() {
         ...data,
         name: data.name || data.companyName,
         walletBalance: data.walletBalance || 0,
-        accountType: "company",
-        companyCustomerId: data.id,
-        companyName: data.companyName || data.name,
-        companyEmail: data.email,
       });
       setGuestName(data.name);
       await loadWalletSummary(data.id);
@@ -1128,15 +1025,14 @@ export default function PedidoPage() {
         },
         body: JSON.stringify({
           customerId: null,
-          companyCustomerId: loggedCustomer?.companyCustomerId || loggedCustomer?.id || null,
+          companyCustomerId: loggedCustomer?.id || null,
           customerName: finalCustomerName,
           customerComment,
           discountCouponCode: null,
           walletAmountUsed: walletAmountToUse,
           totemCode: "empresa",
           paymentMethod,
-          orderSource:
-            loggedCustomer?.accountType === "worker" ? "company_worker" : "company",
+          orderSource: "company",
           fulfillmentType,
           scheduledFor: scheduledForValue
             ? new Date(scheduledForValue).toISOString()
@@ -1221,12 +1117,6 @@ export default function PedidoPage() {
                 <p className="mt-1 text-sm font-bold text-zinc-500">
                   {loggedCustomer.email}
                 </p>
-
-                  {loggedCustomer.accountType === "worker" && (
-                    <p className="mt-1 text-sm font-black text-zinc-700">
-                      Trabajador: {loggedCustomer.name}
-                    </p>
-                  )}
               </div>
 
               <button suppressHydrationWarning
@@ -1244,7 +1134,7 @@ export default function PedidoPage() {
               </p>
               <p className="mt-1 text-4xl font-black text-[#10B557]">
                 <CompanyBalanceAmount
-                          companyId={loggedCustomer.companyCustomerId || loggedCustomer.id}
+                          companyId={loggedCustomer.id}
                           initialBalance={Number(loggedCustomer.walletBalance || 0)}
                           className="text-4xl font-black text-[#10B557]"
                         />
@@ -1518,9 +1408,7 @@ export default function PedidoPage() {
                 </p>
 
                 <h3 className="mt-1 text-xl font-black">
-                  {loggedCustomer.accountType === "worker"
-                      ? "Empresa: " + (loggedCustomer.companyName || "")
-                      : "Empresa: " + loggedCustomer.name}
+                  Empresa: {loggedCustomer.name}
                 </h3>
 
                 <p className="mt-1 text-sm font-bold text-zinc-500">
@@ -1534,7 +1422,7 @@ export default function PedidoPage() {
 
                   <p className="mt-1 text-3xl font-black text-[#10B557]">
                     <CompanyBalanceAmount
-                          companyId={loggedCustomer.companyCustomerId || loggedCustomer.id}
+                          companyId={loggedCustomer.id}
                           initialBalance={Number(loggedCustomer.walletBalance || 0)}
                           className="text-4xl font-black text-[#10B557]"
                         />
@@ -1644,28 +1532,24 @@ export default function PedidoPage() {
                   </button>
 
                   <CompanyOrdersPublicModalButton
-                    companyId={loggedCustomer.companyCustomerId || loggedCustomer.id}
+                    companyId={loggedCustomer.id}
                     companyName={loggedCustomer.name}
                     companyEmail={loggedCustomer.email}
                     walletBalance={loggedCustomer.walletBalance}
                   />
 
                   <CompanyInvoicesPublicButton
-                    companyId={loggedCustomer.companyCustomerId || loggedCustomer.id}
-                  />
-
-                  <CompanyWorkersButton
-                    companyId={loggedCustomer.companyCustomerId || loggedCustomer.id}
+                    companyId={loggedCustomer.id}
                   />
                 </div>
               </div>
             ) : (
               <div>
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <button suppressHydrationWarning
                     type="button"
                     onClick={() => setAuthMode("login")}
-                    className={`rounded-xl px-2 py-3 text-[11px] font-black whitespace-nowrap text-center ${
+                    className={`rounded-xl px-3 py-2 text-xs font-black whitespace-nowrap ${
                       authMode === "login"
                         ? "text-white"
                         : "bg-white text-zinc-600"
@@ -1675,31 +1559,28 @@ export default function PedidoPage() {
                         authMode === "login" ? settings.primaryColor : undefined,
                     }}
                   >
-                    Ingresar Empresa
+                    Ingresar
                   </button>
-
-                  <a
-                    href="/pedido-trabajador"
-                    className="rounded-xl bg-white px-2 py-3 text-center text-[11px] font-black whitespace-nowrap text-zinc-600"
-                  >
-                    Ingresar Trabajador
-                  </a>
 
                   <button suppressHydrationWarning
                     type="button"
                     onClick={() => setAuthMode("register")}
-                    className={`rounded-xl px-2 py-3 text-[11px] font-black whitespace-nowrap text-center ${
+                    className={`rounded-xl px-3 py-2 text-xs font-black whitespace-nowrap ${
                       authMode === "register"
                         ? "text-white"
                         : "bg-white text-zinc-600"
                     }`}
                     style={{
                       background:
-                        authMode === "register" ? settings.primaryColor : undefined,
+                        authMode === "register"
+                          ? settings.primaryColor
+                          : undefined,
                     }}
                   >
                     Registrar Empresa
                   </button>
+
+                  
                 </div>
 
                 {authMode === "register" && (
@@ -1797,26 +1678,22 @@ export default function PedidoPage() {
 
                     <label className="mt-4 block">
                       <span className="text-xs font-black uppercase text-zinc-500">
-                        {authMode === "worker" ? "Clave trabajador" : "Clave"}
+                        Clave
                       </span>
                       <input suppressHydrationWarning
                         type="password"
                         value={authPassword}
                         onChange={(event) => setAuthPassword(event.target.value)}
                         className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
-                        placeholder={authMode === "worker" ? "Clave trabajador" : "Clave"}
+                        placeholder="Clave"
                       />
                     </label>
 
-                  {authMode === "worker" && (
-                    <div className="rounded-2xl bg-zinc-50 p-4 text-sm font-bold text-zinc-600">
-                      <WorkerCreatePasswordModalButton />
-                    </div>
-                  )}
-
                     <button suppressHydrationWarning
                       type="button"
-                      onClick={authMode === "login" ? loginCustomer : authMode === "worker" ? loginWorker : registerCustomer}
+                      onClick={
+                        authMode === "login" ? loginCustomer : registerCustomer
+                      }
                       disabled={loadingAuth}
                       className="mt-4 w-full rounded-2xl py-3 text-sm font-black text-white disabled:bg-zinc-300"
                       style={{
@@ -1827,7 +1704,9 @@ export default function PedidoPage() {
                     >
                       {loadingAuth
                         ? "Procesando..."
-                        : authMode === "login" ? "Ingresar Empresa" : authMode === "worker" ? "Ingresar Trabajador" : "Registrar Empresa"}
+                        : authMode === "login"
+                        ? "Ingresar"
+                        : "Registrar Empresa"}
                     </button>
                   </>
                 ) : (

@@ -1,7 +1,12 @@
-﻿"use client";
+
+
+==============================
+PAGINA PEDIDO EMPRESAS
+ARCHIVO: app\pedido-empresas\page.tsx
+==============================
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
-import WorkerCreatePasswordModalButton from "./WorkerCreatePasswordModalButton";
 import CompanyWorkersButton from "./CompanyWorkersButton";
 import CompanyBalanceAmount from "./CompanyBalanceAmount";
 import CompanyInvoicesPublicButton from "./CompanyInvoicesPublicButton";
@@ -81,12 +86,6 @@ type LoggedCustomer = {
   cashbackCredits?: number;
   nextCashbackExpiration?: string | null;
   nextCashbackAmount?: number;
-  accountType?: "company" | "worker";
-  companyCustomerId?: number;
-  companyName?: string;
-  companyEmail?: string;
-  workerId?: number;
-  rut?: string | null;
 };
 
 type WalletSummary = {
@@ -363,7 +362,7 @@ export default function PedidoPage() {
   );
   const [walletSummary, setWalletSummary] = useState<WalletSummary | null>(null);
   const [cashbackDetailVisible, setCashbackDetailVisible] = useState(false);
-  const [authMode, setAuthMode] = useState<"login" | "worker" | "register">(
+  const [authMode, setAuthMode] = useState<"login" | "register">(
     "login"
   );
   const [authName, setAuthName] = useState("");
@@ -374,7 +373,6 @@ export default function PedidoPage() {
   const [companyPhone, setCompanyPhone] = useState("");
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
-  const [workerNewPassword, setWorkerNewPassword] = useState("");
   const [guestName, setGuestName] = useState("");
   const [useWallet, setUseWallet] = useState(false);
 
@@ -760,10 +758,6 @@ export default function PedidoPage() {
         ...data,
         name: data.name || data.companyName,
         walletBalance: data.walletBalance || 0,
-        accountType: "company",
-        companyCustomerId: data.id,
-        companyName: data.companyName || data.name,
-        companyEmail: data.email,
       });
       setGuestName(data.name);
       await loadWalletSummary(data.id);
@@ -773,92 +767,6 @@ export default function PedidoPage() {
     } catch (error) {
       console.error(error);
       setAuthMessage("Error al ingresar.");
-    } finally {
-      setLoadingAuth(false);
-    }
-  }
-
-
-  async function loginWorker() {
-    try {
-      setLoadingAuth(true);
-      setAuthMessage("");
-
-      const response = await fetch("/api/company-worker-auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: authEmail.trim().toLowerCase(),
-          password: authPassword.trim(),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setAuthMessage(data.error || "No se pudo ingresar como trabajador.");
-        return;
-      }
-
-      setLoggedCustomer({
-        ...data,
-        id: data.companyCustomerId,
-        name: data.name,
-        email: data.email,
-        walletBalance: data.walletBalance || 0,
-        accountType: "worker",
-        companyCustomerId: data.companyCustomerId,
-        companyName: data.companyName,
-        companyEmail: data.companyEmail,
-        workerId: data.workerId,
-      });
-
-      setGuestName(data.companyName || data.name);
-      setAuthPassword("");
-      setUseWallet(false);
-      setAuthMessage("Trabajador ingresado correctamente.");
-    } catch (error) {
-      console.error(error);
-      setAuthMessage("Error al ingresar como trabajador.");
-    } finally {
-      setLoadingAuth(false);
-    }
-  }
-
-
-  async function createWorkerPassword() {
-    try {
-      setLoadingAuth(true);
-      setAuthMessage("");
-
-      const response = await fetch("/api/company-worker-auth/create-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: authEmail.trim().toLowerCase(),
-          password: authPassword.trim(),
-          password: workerNewPassword.trim(),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setAuthMessage(data.error || "No se pudo crear clave.");
-        return;
-      }
-
-      setAuthPassword("");
-      setWorkerNewPassword("");
-      setAuthMode("worker");
-      setAuthMessage("Clave creada correctamente. Ahora ingresa como trabajador.");
-    } catch (error) {
-      console.error(error);
-      setAuthMessage("Error al crear clave.");
     } finally {
       setLoadingAuth(false);
     }
@@ -897,10 +805,6 @@ export default function PedidoPage() {
         ...data,
         name: data.name || data.companyName,
         walletBalance: data.walletBalance || 0,
-        accountType: "company",
-        companyCustomerId: data.id,
-        companyName: data.companyName || data.name,
-        companyEmail: data.email,
       });
       setGuestName(data.name);
       await loadWalletSummary(data.id);
@@ -1128,15 +1032,14 @@ export default function PedidoPage() {
         },
         body: JSON.stringify({
           customerId: null,
-          companyCustomerId: loggedCustomer?.companyCustomerId || loggedCustomer?.id || null,
+          companyCustomerId: loggedCustomer?.id || null,
           customerName: finalCustomerName,
           customerComment,
           discountCouponCode: null,
           walletAmountUsed: walletAmountToUse,
           totemCode: "empresa",
           paymentMethod,
-          orderSource:
-            loggedCustomer?.accountType === "worker" ? "company_worker" : "company",
+          orderSource: "company",
           fulfillmentType,
           scheduledFor: scheduledForValue
             ? new Date(scheduledForValue).toISOString()
@@ -1221,12 +1124,6 @@ export default function PedidoPage() {
                 <p className="mt-1 text-sm font-bold text-zinc-500">
                   {loggedCustomer.email}
                 </p>
-
-                  {loggedCustomer.accountType === "worker" && (
-                    <p className="mt-1 text-sm font-black text-zinc-700">
-                      Trabajador: {loggedCustomer.name}
-                    </p>
-                  )}
               </div>
 
               <button suppressHydrationWarning
@@ -1244,7 +1141,7 @@ export default function PedidoPage() {
               </p>
               <p className="mt-1 text-4xl font-black text-[#10B557]">
                 <CompanyBalanceAmount
-                          companyId={loggedCustomer.companyCustomerId || loggedCustomer.id}
+                          companyId={loggedCustomer.id}
                           initialBalance={Number(loggedCustomer.walletBalance || 0)}
                           className="text-4xl font-black text-[#10B557]"
                         />
@@ -1518,9 +1415,7 @@ export default function PedidoPage() {
                 </p>
 
                 <h3 className="mt-1 text-xl font-black">
-                  {loggedCustomer.accountType === "worker"
-                      ? "Empresa: " + (loggedCustomer.companyName || "")
-                      : "Empresa: " + loggedCustomer.name}
+                  Empresa: {loggedCustomer.name}
                 </h3>
 
                 <p className="mt-1 text-sm font-bold text-zinc-500">
@@ -1534,7 +1429,7 @@ export default function PedidoPage() {
 
                   <p className="mt-1 text-3xl font-black text-[#10B557]">
                     <CompanyBalanceAmount
-                          companyId={loggedCustomer.companyCustomerId || loggedCustomer.id}
+                          companyId={loggedCustomer.id}
                           initialBalance={Number(loggedCustomer.walletBalance || 0)}
                           className="text-4xl font-black text-[#10B557]"
                         />
@@ -1644,28 +1539,28 @@ export default function PedidoPage() {
                   </button>
 
                   <CompanyOrdersPublicModalButton
-                    companyId={loggedCustomer.companyCustomerId || loggedCustomer.id}
+                    companyId={loggedCustomer.id}
                     companyName={loggedCustomer.name}
                     companyEmail={loggedCustomer.email}
                     walletBalance={loggedCustomer.walletBalance}
                   />
 
                   <CompanyInvoicesPublicButton
-                    companyId={loggedCustomer.companyCustomerId || loggedCustomer.id}
+                    companyId={loggedCustomer.id}
                   />
 
                   <CompanyWorkersButton
-                    companyId={loggedCustomer.companyCustomerId || loggedCustomer.id}
+                    companyId={loggedCustomer.id}
                   />
                 </div>
               </div>
             ) : (
               <div>
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <button suppressHydrationWarning
                     type="button"
                     onClick={() => setAuthMode("login")}
-                    className={`rounded-xl px-2 py-3 text-[11px] font-black whitespace-nowrap text-center ${
+                    className={`rounded-xl px-3 py-2 text-xs font-black whitespace-nowrap ${
                       authMode === "login"
                         ? "text-white"
                         : "bg-white text-zinc-600"
@@ -1675,31 +1570,28 @@ export default function PedidoPage() {
                         authMode === "login" ? settings.primaryColor : undefined,
                     }}
                   >
-                    Ingresar Empresa
+                    Ingresar
                   </button>
-
-                  <a
-                    href="/pedido-trabajador"
-                    className="rounded-xl bg-white px-2 py-3 text-center text-[11px] font-black whitespace-nowrap text-zinc-600"
-                  >
-                    Ingresar Trabajador
-                  </a>
 
                   <button suppressHydrationWarning
                     type="button"
                     onClick={() => setAuthMode("register")}
-                    className={`rounded-xl px-2 py-3 text-[11px] font-black whitespace-nowrap text-center ${
+                    className={`rounded-xl px-3 py-2 text-xs font-black whitespace-nowrap ${
                       authMode === "register"
                         ? "text-white"
                         : "bg-white text-zinc-600"
                     }`}
                     style={{
                       background:
-                        authMode === "register" ? settings.primaryColor : undefined,
+                        authMode === "register"
+                          ? settings.primaryColor
+                          : undefined,
                     }}
                   >
                     Registrar Empresa
                   </button>
+
+                  
                 </div>
 
                 {authMode === "register" && (
@@ -1797,26 +1689,22 @@ export default function PedidoPage() {
 
                     <label className="mt-4 block">
                       <span className="text-xs font-black uppercase text-zinc-500">
-                        {authMode === "worker" ? "Clave trabajador" : "Clave"}
+                        Clave
                       </span>
                       <input suppressHydrationWarning
                         type="password"
                         value={authPassword}
                         onChange={(event) => setAuthPassword(event.target.value)}
                         className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
-                        placeholder={authMode === "worker" ? "Clave trabajador" : "Clave"}
+                        placeholder="Clave"
                       />
                     </label>
 
-                  {authMode === "worker" && (
-                    <div className="rounded-2xl bg-zinc-50 p-4 text-sm font-bold text-zinc-600">
-                      <WorkerCreatePasswordModalButton />
-                    </div>
-                  )}
-
                     <button suppressHydrationWarning
                       type="button"
-                      onClick={authMode === "login" ? loginCustomer : authMode === "worker" ? loginWorker : registerCustomer}
+                      onClick={
+                        authMode === "login" ? loginCustomer : registerCustomer
+                      }
                       disabled={loadingAuth}
                       className="mt-4 w-full rounded-2xl py-3 text-sm font-black text-white disabled:bg-zinc-300"
                       style={{
@@ -1827,7 +1715,9 @@ export default function PedidoPage() {
                     >
                       {loadingAuth
                         ? "Procesando..."
-                        : authMode === "login" ? "Ingresar Empresa" : authMode === "worker" ? "Ingresar Trabajador" : "Registrar Empresa"}
+                        : authMode === "login"
+                        ? "Ingresar"
+                        : "Registrar Empresa"}
                     </button>
                   </>
                 ) : (
@@ -2479,3 +2369,1847 @@ export default function PedidoPage() {
 
 
 
+
+
+==============================
+API LOGIN EMPRESA
+ARCHIVO: app\api\company-auth\login\route.ts
+==============================
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { normalizeEmail, verifyPassword } from "@/lib/company-auth";
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+
+    const email = normalizeEmail(body.email);
+    const password = String(body.password || "");
+
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: "Ingresa correo y clave." },
+        { status: 400 }
+      );
+    }
+
+    const company = await prisma.companyCustomer.findUnique({
+      where: { email },
+    });
+
+    if (!company || !company.active) {
+      return NextResponse.json(
+        { error: "Empresa no encontrada o inactiva." },
+        { status: 404 }
+      );
+    }
+
+    const valid = verifyPassword(password, company.passwordHash);
+
+    if (!valid) {
+      return NextResponse.json(
+        { error: "Correo o clave incorrectos." },
+        { status: 401 }
+      );
+    }
+
+    return NextResponse.json({
+      id: company.id,
+      companyName: company.companyName,
+      walletBalance: company.walletBalance || 0,
+      rut: company.rut,
+      giro: company.giro,
+      address: company.address,
+      contactName: company.contactName,
+      phone: company.phone,
+      email: company.email,
+      active: company.active,
+    });
+  } catch (error) {
+    console.error("COMPANY_LOGIN_ERROR", error);
+
+    return NextResponse.json(
+      { error: "No se pudo ingresar." },
+      { status: 500 }
+    );
+  }
+}
+
+
+==============================
+API TRABAJADORES EMPRESA
+ARCHIVO: app\api\company-workers\route.ts
+==============================
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+
+function moneyNumber(value: unknown) {
+  const number = Number(value || 0);
+  return Number.isFinite(number) ? Math.round(number) : 0;
+}
+
+function cleanText(value: unknown) {
+  return String(value || "").trim();
+}
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const companyCustomerId = Number(searchParams.get("companyCustomerId") || 0);
+
+    if (!companyCustomerId) {
+      return NextResponse.json(
+        { error: "Empresa no informada." },
+        { status: 400 }
+      );
+    }
+
+    const company = await prisma.companyCustomer.findUnique({
+      where: { id: companyCustomerId },
+      select: {
+        id: true,
+        companyName: true,
+        email: true,
+        walletBalance: true,
+        workers: {
+          orderBy: { createdAt: "desc" },
+          include: {
+            walletTransactions: {
+              orderBy: { createdAt: "desc" },
+              take: 5,
+            },
+          },
+        },
+      },
+    });
+
+    if (!company) {
+      return NextResponse.json(
+        { error: "Empresa no encontrada." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      company,
+      workers: company.workers,
+    });
+  } catch (error) {
+    console.error("GET_COMPANY_WORKERS_ERROR", error);
+
+    return NextResponse.json(
+      { error: "No se pudieron cargar trabajadores." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+
+    const action = cleanText(body.action);
+    const companyCustomerId = Number(body.companyCustomerId || 0);
+
+    if (!companyCustomerId) {
+      return NextResponse.json(
+        { error: "Empresa no informada." },
+        { status: 400 }
+      );
+    }
+
+    const company = await prisma.companyCustomer.findUnique({
+      where: { id: companyCustomerId },
+    });
+
+    if (!company) {
+      return NextResponse.json(
+        { error: "Empresa no encontrada." },
+        { status: 404 }
+      );
+    }
+
+    if (action === "create_worker") {
+      const name = cleanText(body.name);
+      const email = cleanText(body.email);
+      const rut = cleanText(body.rut);
+      const phone = cleanText(body.phone);
+
+      if (!name) {
+        return NextResponse.json(
+          { error: "Ingresa nombre del trabajador." },
+          { status: 400 }
+        );
+      }
+
+      if (email || rut) {
+        const existing = await prisma.companyWorker.findFirst({
+          where: {
+            companyCustomerId,
+            OR: [
+              ...(email ? [{ email }] : []),
+              ...(rut ? [{ rut }] : []),
+            ],
+          },
+        });
+
+        if (existing) {
+          return NextResponse.json(
+            { error: "Ya existe un trabajador con ese correo o RUT." },
+            { status: 400 }
+          );
+        }
+      }
+
+      const worker = await prisma.companyWorker.create({
+        data: {
+          companyCustomerId,
+          name,
+          email: email || null,
+          rut: rut || null,
+          phone: phone || null,
+        },
+      });
+
+      return NextResponse.json({ worker });
+    }
+
+    if (action === "assign_balance") {
+      const workerId = Number(body.workerId || 0);
+      const amount = moneyNumber(body.amount);
+      const reason = cleanText(body.reason) || "Asignacion de saldo a trabajador";
+
+      if (!workerId) {
+        return NextResponse.json(
+          { error: "Trabajador no informado." },
+          { status: 400 }
+        );
+      }
+
+      if (amount <= 0) {
+        return NextResponse.json(
+          { error: "El monto debe ser mayor a cero." },
+          { status: 400 }
+        );
+      }
+
+      const worker = await prisma.companyWorker.findFirst({
+        where: {
+          id: workerId,
+          companyCustomerId,
+        },
+      });
+
+      if (!worker) {
+        return NextResponse.json(
+          { error: "Trabajador no encontrado." },
+          { status: 404 }
+        );
+      }
+
+      if (!worker.active) {
+        return NextResponse.json(
+          { error: "El trabajador esta inactivo." },
+          { status: 400 }
+        );
+      }
+
+      if ((company.walletBalance || 0) < amount) {
+        return NextResponse.json(
+          { error: "Saldo empresa insuficiente." },
+          { status: 400 }
+        );
+      }
+
+      const result = await prisma.$transaction(async (tx) => {
+        const updatedCompany = await tx.companyCustomer.update({
+          where: { id: companyCustomerId },
+          data: {
+            walletBalance: {
+              decrement: amount,
+            },
+          },
+        });
+
+        const updatedWorker = await tx.companyWorker.update({
+          where: { id: workerId },
+          data: {
+            walletBalance: {
+              increment: amount,
+            },
+          },
+        });
+
+        const companyTransaction = await tx.companyWalletTransaction.create({
+          data: {
+            companyCustomerId,
+            invoiceId: null,
+            type: "debit",
+            amount,
+            balanceAfter: updatedCompany.walletBalance,
+            reason: `Asignacion a trabajador: ${updatedWorker.name}`,
+            source: "worker_assignment",
+            createdBy: "company",
+          },
+        });
+
+        const workerTransaction = await tx.companyWorkerWalletTransaction.create({
+          data: {
+            companyWorkerId: workerId,
+            companyCustomerId,
+            type: "credit",
+            amount,
+            workerBalanceAfter: updatedWorker.walletBalance,
+            companyBalanceAfter: updatedCompany.walletBalance,
+            reason,
+            source: "company_assignment",
+          },
+        });
+
+        return {
+          company: updatedCompany,
+          worker: updatedWorker,
+          companyTransaction,
+          workerTransaction,
+        };
+      });
+
+      return NextResponse.json(result);
+    }
+
+    if (action === "toggle_worker") {
+      const workerId = Number(body.workerId || 0);
+      const active = Boolean(body.active);
+
+      if (!workerId) {
+        return NextResponse.json(
+          { error: "Trabajador no informado." },
+          { status: 400 }
+        );
+      }
+
+      const worker = await prisma.companyWorker.findFirst({
+        where: {
+          id: workerId,
+          companyCustomerId,
+        },
+      });
+
+      if (!worker) {
+        return NextResponse.json(
+          { error: "Trabajador no encontrado." },
+          { status: 404 }
+        );
+      }
+
+      const updatedWorker = await prisma.companyWorker.update({
+        where: { id: workerId },
+        data: { active },
+      });
+
+      return NextResponse.json({ worker: updatedWorker });
+    }
+
+    return NextResponse.json(
+      { error: "Accion no valida." },
+      { status: 400 }
+    );
+  } catch (error) {
+    console.error("POST_COMPANY_WORKERS_ERROR", error);
+
+    return NextResponse.json(
+      { error: "No se pudo procesar trabajadores empresa." },
+      { status: 500 }
+    );
+  }
+}
+
+
+==============================
+SCHEMA PRISMA
+ARCHIVO: prisma\schema.prisma
+==============================
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id                Int       @id @default(autoincrement())
+  name              String
+  slug              String    @unique
+  order             Int       @default(0)
+  active            Boolean   @default(true)
+  channelVisibility String    @default("all")
+  products          Product[]
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @default(now()) @updatedAt
+}
+
+model Product {
+  stockItems        StockItem[]
+  id                Int         @id @default(autoincrement())
+  name              String
+  description       String?
+  price             Int
+  imageUrl          String?
+  active            Boolean     @default(true)
+  channelVisibility String      @default("all")
+  order             Int         @default(0)
+
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  modifierGroups ProductModifierGroup[]
+  orderItems     OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model ModifierTemplate {
+  id     Int     @id @default(autoincrement())
+  name   String
+  order  Int     @default(0)
+  active Boolean @default(true)
+
+  channelVisibility String                 @default("all")
+  options           ModifierOption[]
+  products          ProductModifierGroup[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model ModifierOption {
+  stockItems        StockItem[]
+  id                Int         @id @default(autoincrement())
+  name              String
+  price             Int         @default(0)
+  imageUrl          String?
+  active            Boolean     @default(true)
+  channelVisibility String      @default("all")
+  order             Int         @default(0)
+
+  templateId Int
+  template   ModifierTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  orderItemModifiers OrderItemModifier[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model ProductModifierGroup {
+  id Int @id @default(autoincrement())
+
+  productId Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  templateId Int
+  template   ModifierTemplate @relation(fields: [templateId], references: [id])
+
+  min      Int     @default(0)
+  max      Int     @default(1)
+  required Boolean @default(false)
+  order    Int     @default(0)
+  active   Boolean @default(true)
+
+  channelVisibility String   @default("all")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now()) @updatedAt
+
+  @@unique([productId, templateId])
+}
+
+model Order {
+  stockMovements     StockMovement[]
+  id                 Int             @id @default(autoincrement())
+  orderNumber        Int
+  status             String          @default("pending")
+  total              Int             @default(0)
+  customerName       String?
+  customerComment    String?
+  customerId         Int?
+  companyCustomerId  Int?
+  walletAmountUsed   Int             @default(0)
+  cashbackEarned     Int             @default(0)
+  tipAmount          Int             @default(0)
+  subtotalAmount     Int             @default(0)
+  discountAmount     Int             @default(0)
+  discountPercent    Int             @default(0)
+  discountCouponCode String?
+  totemCode          String?
+  paymentMethod      String          @default("unknown")
+
+  orderSource     String           @default("totem")
+  fulfillmentType String           @default("immediate")
+  scheduledFor    DateTime?
+  items           OrderItem[]
+  customer        Customer?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  companyCustomer CompanyCustomer? @relation(fields: [companyCustomerId], references: [id], onDelete: SetNull)
+
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @default(now()) @updatedAt
+  businessSettings   BusinessSettings? @relation(fields: [businessSettingsId], references: [id])
+  businessSettingsId Int?
+  cashbackRule       CashbackRule?     @relation(fields: [cashbackRuleId], references: [id])
+  cashbackRuleId     Int?
+}
+
+model OrderItem {
+  id        Int @id @default(autoincrement())
+  quantity  Int @default(1)
+  unitPrice Int
+  total     Int
+
+  orderId Int
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+
+  modifiers OrderItemModifier[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model OrderItemModifier {
+  id Int @id @default(autoincrement())
+
+  orderItemId Int
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  optionId Int
+  option   ModifierOption @relation(fields: [optionId], references: [id])
+
+  price Int @default(0)
+
+  createdAt DateTime @default(now())
+}
+
+model BusinessSettings {
+  id                Int     @id
+  businessName      String  @default("Mi negocio")
+  logoUrl           String?
+  idleBackgroundUrl String?
+  primaryColor      String  @default("#10B557")
+  kioskSubtitle     String  @default("Autoservicio")
+  kioskTitle        String  @default("Elige tus productos")
+
+  tipsEnabled Boolean  @default(false)
+  tipPercent  Int      @default(10)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orders       Order[]
+  openingHours StoreOpeningHour[]
+}
+
+model Customer {
+  id                Int       @id @default(autoincrement())
+  name              String
+  email             String    @unique
+  passwordHash      String?
+  pinHash           String?
+  pinAttempts       Int       @default(0)
+  pinLockedUntil    DateTime?
+  active            Boolean   @default(true)
+  channelVisibility String    @default("all")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  orders Order[]
+
+  openingHours       StoreOpeningHour[]
+  walletTransactions WalletTransaction[]
+  totemSessions      TotemSession[]
+}
+
+model WalletTransaction {
+  id         Int       @id @default(autoincrement())
+  customerId Int
+  type       String
+  amount     Int
+  reason     String
+  source     String    @default("manual")
+  orderId    Int?
+  expiresAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model CashbackRule {
+  id                    Int       @id @default(autoincrement())
+  name                  String
+  active                Boolean   @default(false)
+  cashbackPercent       Float     @default(0)
+  minPurchase           Int       @default(0)
+  maxCashback           Int       @default(0)
+  allowedPaymentMethods String    @default("all")
+  includedCategoryIds   String    @default("all")
+  excludedProductIds    String    @default("")
+  validityDays          Int       @default(0)
+  commercialText        String    @default("")
+  priority              Int       @default(0)
+  startDate             DateTime?
+  endDate               DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  orders       Order[]
+  openingHours StoreOpeningHour[]
+}
+
+model StoreOpeningHour {
+  id                 Int              @id @default(autoincrement())
+  businessSettingsId Int
+  businessSettings   BusinessSettings @relation(fields: [businessSettingsId], references: [id], onDelete: Cascade)
+
+  dayOfWeek Int
+  enabled   Boolean @default(true)
+  openTime  String  @default("10:00")
+  closeTime String  @default("18:00")
+
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  customer       Customer?     @relation(fields: [customerId], references: [id])
+  customerId     Int?
+  cashbackRule   CashbackRule? @relation(fields: [cashbackRuleId], references: [id])
+  cashbackRuleId Int?
+
+  @@unique([businessSettingsId, dayOfWeek])
+}
+
+model DiscountCoupon {
+  id                Int      @id @default(autoincrement())
+  name              String
+  code              String   @unique
+  percent           Int      @default(10)
+  active            Boolean  @default(true)
+  channelVisibility String   @default("all")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model AdminUser {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  passwordHash String
+  permissions  String   @default("")
+  active       Boolean  @default(true)
+  isOwner      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model InventoryCategory {
+  id        Int      @id @default(autoincrement())
+  name      String
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subcategories InventorySubcategory[]
+  items         InventoryItem[]
+}
+
+model InventorySubcategory {
+  id         Int      @id @default(autoincrement())
+  categoryId Int
+  name       String
+  order      Int      @default(0)
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  category InventoryCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  items    InventoryItem[]
+}
+
+model InventoryItem {
+  id             Int      @id @default(autoincrement())
+  categoryId     Int
+  subcategoryId  Int?
+  name           String
+  unit           String   @default("")
+  wasteCostPerKg Int      @default(0)
+  order          Int      @default(0)
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  category     InventoryCategory     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  subcategory  InventorySubcategory? @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
+  entries      InventoryEntry[]
+  wasteEntries InventoryWasteEntry[]
+}
+
+model InventoryEntry {
+  id        Int      @id @default(autoincrement())
+  entryDate DateTime
+  itemId    Int
+  quantity  Float    @default(0)
+  comment   String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  item InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([entryDate, itemId])
+}
+
+model TotemSession {
+  id         Int      @id @default(autoincrement())
+  code       String   @unique
+  status     String   @default("waiting")
+  customerId Int?
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+}
+
+model InventoryWasteEntry {
+  id            Int      @id @default(autoincrement())
+  entryDate     DateTime
+  itemId        Int?
+  productName   String   @default("")
+  quantityGrams Float    @default(0)
+  amount        Int      @default(0)
+  comment       String   @default("")
+  source        String   @default("manual")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  item InventoryItem? @relation(fields: [itemId], references: [id], onDelete: SetNull)
+}
+
+model PurchaseImport {
+  id           Int      @id @default(autoincrement())
+  fileName     String   @default("")
+  status       String   @default("completed")
+  totalRows    Int      @default(0)
+  importedRows Int      @default(0)
+  skippedRows  Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  invoices PurchaseInvoice[]
+}
+
+model PurchaseInvoice {
+  id           Int      @id @default(autoincrement())
+  importId     Int?
+  issueDate    DateTime
+  supplierRut  String   @default("")
+  supplierName String   @default("")
+  documentType String   @default("")
+  folio        String   @default("")
+  netAmount    Int      @default(0)
+  exemptAmount Int      @default(0)
+  ivaAmount    Int      @default(0)
+  totalAmount  Int      @default(0)
+  category     String   @default("unclassified")
+  note         String   @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  import PurchaseImport? @relation(fields: [importId], references: [id], onDelete: SetNull)
+
+  @@index([issueDate])
+  @@index([category])
+  @@index([supplierRut])
+}
+
+model CompanyCustomer {
+  id           Int      @id @default(autoincrement())
+  companyName  String
+  rut          String   @unique
+  giro         String
+  address      String
+  contactName  String
+  phone        String
+  email        String   @unique
+  passwordHash String
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  orders Order[]
+  invoices CompanyInvoice[]
+  walletBalance Int @default(0)
+  walletTransactions CompanyWalletTransaction[]
+  workers CompanyWorker[]
+  workerWalletTransactions CompanyWorkerWalletTransaction[]
+}
+
+model CompanyBankSettings {
+  id            Int      @id @default(1)
+  businessName  String   @default("")
+  rut           String   @default("")
+  bank          String   @default("")
+  accountType   String   @default("")
+  accountNumber String   @default("")
+  email         String   @default("")
+  updatedAt     DateTime @updatedAt
+}
+
+model StockItem {
+  id Int @id @default(autoincrement())
+
+  name         String
+  currentStock Int     @default(0)
+  minStock     Int     @default(0)
+  active       Boolean @default(true)
+
+  productId Int?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  modifierOptionId Int?
+  modifierOption   ModifierOption? @relation(fields: [modifierOptionId], references: [id], onDelete: SetNull)
+
+  movements StockMovement[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId])
+  @@index([modifierOptionId])
+}
+
+model StockMovement {
+  id Int @id @default(autoincrement())
+
+  stockItemId Int
+  stockItem   StockItem @relation(fields: [stockItemId], references: [id], onDelete: Cascade)
+
+  type     String
+  quantity Int
+
+  previousStock Int
+  newStock      Int
+
+  reason String?
+
+  orderId Int?
+  order   Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([stockItemId])
+  @@index([orderId])
+}
+
+
+model CompanyInvoice {
+  id                Int      @id @default(autoincrement())
+  companyCustomerId Int
+  invoiceNumber     String
+  invoiceDate       DateTime?
+  amount            Int      @default(0)
+  fileUrl           String
+  fileName          String?
+  note              String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  companyCustomer CompanyCustomer @relation(fields: [companyCustomerId], references: [id], onDelete: Cascade)
+  walletTransactions CompanyWalletTransaction[]
+}
+
+
+model CompanyWalletTransaction {
+  id                Int      @id @default(autoincrement())
+  companyCustomerId Int
+  invoiceId         Int?
+  type              String
+  amount            Int
+  balanceAfter      Int
+  reason            String
+  source            String   @default("manual_admin")
+  createdBy         String?
+  createdAt         DateTime @default(now())
+
+  companyCustomer CompanyCustomer @relation(fields: [companyCustomerId], references: [id], onDelete: Cascade)
+  invoice         CompanyInvoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+}
+
+
+model CompanyWorker {
+  id                Int      @id @default(autoincrement())
+  companyCustomerId Int
+  name              String
+  email             String?
+  rut               String?
+  phone             String?
+  active            Boolean  @default(true)
+  walletBalance     Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  companyCustomer CompanyCustomer @relation(fields: [companyCustomerId], references: [id], onDelete: Cascade)
+  walletTransactions CompanyWorkerWalletTransaction[]
+}
+
+
+model CompanyWorkerWalletTransaction {
+  id                  Int      @id @default(autoincrement())
+  companyWorkerId     Int
+  companyCustomerId   Int
+  type                String
+  amount              Int
+  workerBalanceAfter  Int
+  companyBalanceAfter Int
+  reason              String
+  source              String   @default("company_assignment")
+  createdAt           DateTime @default(now())
+
+  worker          CompanyWorker   @relation(fields: [companyWorkerId], references: [id], onDelete: Cascade)
+  companyCustomer CompanyCustomer @relation(fields: [companyCustomerId], references: [id], onDelete: Cascade)
+}
+
+
+==============================
+API CREAR PEDIDOS
+ARCHIVO: app\api\orders\route.ts
+==============================
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { calculateWalletBreakdown } from "@/lib/wallet";
+
+const allowedStatuses = ["pending", "ready", "cancelled"];
+const storeTimeZone = "America/Santiago";
+
+function getChileDayOfWeek(date: Date) {
+  const weekday = new Intl.DateTimeFormat("en-US", {
+    timeZone: storeTimeZone,
+    weekday: "short",
+  }).format(date);
+
+  const map: Record<string, number> = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+  };
+
+  return map[weekday] ?? 0;
+}
+
+function getChileMinutes(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: storeTimeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+
+  const hour = Number(parts.find((part) => part.type === "hour")?.value || 0);
+  const minute = Number(parts.find((part) => part.type === "minute")?.value || 0);
+
+  return hour * 60 + minute;
+}
+
+function timeToMinutes(time: string) {
+  const [hour, minute] = time.split(":").map(Number);
+  return (hour || 0) * 60 + (minute || 0);
+}
+
+async function isStoreOpenNow() {
+  const now = new Date();
+  const dayOfWeek = getChileDayOfWeek(now);
+  const currentMinutes = getChileMinutes(now);
+
+  const schedule = await prisma.storeOpeningHour.findUnique({
+    where: {
+      businessSettingsId_dayOfWeek: {
+        businessSettingsId: 1,
+        dayOfWeek,
+      },
+    },
+  });
+
+  if (!schedule || !schedule.enabled) return false;
+
+  const openMinutes = timeToMinutes(schedule.openTime);
+  const closeMinutes = timeToMinutes(schedule.closeTime);
+
+  return currentMinutes >= openMinutes && currentMinutes < closeMinutes;
+}
+
+function normalizePaymentMethod(value: unknown) {
+  if (value === "debit_credit") return "debit_credit";
+  if (value === "food_benefit") return "food_benefit";
+  if (value === "online") return "online";
+  return "unknown";
+}
+
+function normalizeOrderSource(value: unknown) {
+  if (value === "online") return "online";
+  return "totem";
+}
+
+function normalizeFulfillmentType(value: unknown) {
+  if (value === "scheduled") return "scheduled";
+  return "immediate";
+}
+
+function normalizeCouponCode(value: unknown) {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "");
+}
+
+function parseIds(value: string | null | undefined) {
+  if (!value || value === "all") return [];
+
+  return value
+    .split(",")
+    .map((item) => Number(item.trim()))
+    .filter(Boolean);
+}
+
+function calculateBalance(transactions: { type: string; amount: number }[]) {
+  return transactions.reduce((sum, transaction) => {
+    if (transaction.type === "credit") return sum + transaction.amount;
+    if (transaction.type === "debit") return sum - transaction.amount;
+    return sum;
+  }, 0);
+}
+
+async function calculateCashback(params: {
+  customerId: number | null;
+  paymentMethod: string;
+  orderTotal: number;
+  walletAmountUsed: number;
+  itemsMeta: {
+    productId: number;
+    categoryId: number | null;
+    lineTotal: number;
+  }[];
+}) {
+  const { customerId, paymentMethod, walletAmountUsed, itemsMeta } = params;
+
+  if (!customerId) {
+    return { cashbackEarned: 0, expiresAt: null as Date | null };
+  }
+
+  const now = new Date();
+
+  const rules = await prisma.cashbackRule.findMany({
+    where: {
+      active: true,
+    },
+    orderBy: [{ priority: "asc" }, { id: "asc" }],
+  });
+
+  const rule = rules.find((item) => {
+    const startsOk = !item.startDate || item.startDate <= now;
+    const endsOk = !item.endDate || item.endDate >= now;
+    const paymentOk =
+      item.allowedPaymentMethods === "all" ||
+      item.allowedPaymentMethods === paymentMethod;
+
+    return startsOk && endsOk && paymentOk;
+  });
+
+  if (!rule) {
+    return { cashbackEarned: 0, expiresAt: null as Date | null };
+  }
+
+  const includedCategoryIds =
+    rule.includedCategoryIds === "all"
+      ? []
+      : parseIds(rule.includedCategoryIds);
+
+  const excludedProductIds = parseIds(rule.excludedProductIds);
+
+  const eligibleItemsTotal = itemsMeta
+    .filter((item) => {
+      const categoryOk =
+        rule.includedCategoryIds === "all" ||
+        includedCategoryIds.includes(item.categoryId || 0);
+
+      const productOk = !excludedProductIds.includes(item.productId);
+
+      return categoryOk && productOk;
+    })
+    .reduce((sum, item) => sum + item.lineTotal, 0);
+
+  const eligibleAmount = Math.max(0, eligibleItemsTotal - walletAmountUsed);
+
+  if (eligibleAmount <= 0) {
+    return { cashbackEarned: 0, expiresAt: null as Date | null };
+  }
+
+  if (eligibleAmount < rule.minPurchase) {
+    return { cashbackEarned: 0, expiresAt: null as Date | null };
+  }
+
+  let cashbackEarned = Math.round(
+    eligibleAmount * (Number(rule.cashbackPercent) / 100)
+  );
+
+  if (rule.maxCashback > 0) {
+    cashbackEarned = Math.min(cashbackEarned, rule.maxCashback);
+  }
+
+  if (cashbackEarned <= 0) {
+    return { cashbackEarned: 0, expiresAt: null as Date | null };
+  }
+
+  let expiresAt: Date | null = null;
+
+  if (rule.validityDays > 0) {
+    expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + rule.validityDays);
+  }
+
+  return { cashbackEarned, expiresAt };
+}
+
+
+function getScheduledChileDayOfWeek(date: Date) {
+  const weekday = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Santiago",
+    weekday: "short",
+  }).format(date);
+
+  const map: Record<string, number> = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+  };
+
+  return map[weekday] ?? 0;
+}
+
+function getScheduledChileMinutes(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "America/Santiago",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+
+  const hour = Number(parts.find((part) => part.type === "hour")?.value || 0);
+  const minute = Number(parts.find((part) => part.type === "minute")?.value || 0);
+
+  return hour * 60 + minute;
+}
+
+function scheduleTimeToMinutes(time: string) {
+  const [hour, minute] = time.split(":").map(Number);
+  return (hour || 0) * 60 + (minute || 0);
+}
+
+async function validateScheduledOrderTime(date: Date) {
+  const dayOfWeek = getScheduledChileDayOfWeek(date);
+  const scheduledMinutes = getScheduledChileMinutes(date);
+
+  const schedule = await prisma.storeOpeningHour.findUnique({
+    where: {
+      businessSettingsId_dayOfWeek: {
+        businessSettingsId: 1,
+        dayOfWeek,
+      },
+    },
+  });
+
+  if (!schedule || !schedule.enabled) {
+    return {
+      ok: false,
+      openTime: null,
+      closeTime: null,
+    };
+  }
+
+  const openMinutes = scheduleTimeToMinutes(schedule.openTime);
+  const closeMinutes = scheduleTimeToMinutes(schedule.closeTime);
+
+  return {
+    ok: scheduledMinutes >= openMinutes && scheduledMinutes < closeMinutes,
+    openTime: schedule.openTime,
+    closeTime: schedule.closeTime,
+  };
+}
+
+export async function GET() {
+  try {
+    const orders = await prisma.order.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        customer: true,
+        items: {
+          include: {
+            product: {
+              include: {
+                category: true,
+              },
+            },
+            modifiers: {
+              include: {
+                option: {
+                  include: {
+                    template: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return NextResponse.json(orders);
+  } catch (error) {
+    console.error("GET_ORDERS_ERROR", error);
+
+    return NextResponse.json(
+      { error: "No se pudieron cargar los pedidos." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const companyCustomerId = body.companyCustomerId ? Number(body.companyCustomerId) : null;
+
+    const customerId = body.customerId ? Number(body.customerId) : null;
+
+    const customerName = body.customerName
+      ? String(body.customerName).trim()
+      : null;
+
+    const customerComment = body.customerComment
+      ? String(body.customerComment).trim().slice(0, 500)
+      : null;
+
+    const totemCode = body.totemCode ? String(body.totemCode) : "totem-local";
+    const paymentMethod = normalizePaymentMethod(body.paymentMethod);
+    const orderSource = normalizeOrderSource(body.orderSource);
+    const fulfillmentType = normalizeFulfillmentType(body.fulfillmentType);
+    const scheduledFor = body.scheduledFor ? new Date(body.scheduledFor) : null;
+    const requestedDiscountCouponCode = normalizeCouponCode(
+      body.discountCouponCode || body.couponCode
+    );
+
+    const requestedWalletAmount = Math.max(
+      0,
+      Math.round(Number(body.walletAmountUsed || 0))
+    );
+
+    const tipAmount = Math.max(
+      0,
+      Math.round(Number(body.tipAmount || 0))
+    );
+
+    const items = Array.isArray(body.items) ? body.items : [];
+
+    if (items.length === 0) {
+      return NextResponse.json(
+        { error: "El pedido no tiene productos." },
+        { status: 400 }
+      );
+    }
+
+    if (!customerName) {
+      return NextResponse.json(
+        { error: "El nombre del cliente es obligatorio." },
+        { status: 400 }
+      );
+    }
+
+    if (fulfillmentType === "scheduled" && !scheduledFor) {
+      return NextResponse.json(
+        { error: "Falta fecha u hora programada." },
+        { status: 400 }
+      );
+    }
+
+
+    if (fulfillmentType !== "scheduled") {
+      const storeIsOpen = await isStoreOpenNow();
+
+      if (!storeIsOpen) {
+        return NextResponse.json(
+          {
+            error:
+              "STORE_CLOSED_FOR_IMMEDIATE_ORDER: Tienda cerrada, solo puedes hacer pedidos programados.",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (fulfillmentType === "scheduled" && scheduledFor) {
+      const scheduledValidation = await validateScheduledOrderTime(scheduledFor);
+
+      if (!scheduledValidation.ok) {
+        const hoursText =
+          scheduledValidation.openTime && scheduledValidation.closeTime
+            ? `Horario disponible: ${scheduledValidation.openTime} a ${scheduledValidation.closeTime}.`
+            : "La tienda no abre ese dia.";
+
+        return NextResponse.json(
+          {
+            error:
+              `STORE_CLOSED_FOR_SCHEDULED_ORDER: La tienda esta cerrada en ese horario. ${hoursText}`,
+          },
+          { status: 400 }
+        );
+      }
+    }
+    const customer = customerId
+      ? await prisma.customer.findUnique({
+          where: {
+            id: customerId,
+          },
+          include: {
+            walletTransactions: true,
+          },
+        })
+      : null;
+
+    if (customerId && (!customer || !customer.active)) {
+      return NextResponse.json(
+        { error: "Cliente no encontrado o inactivo." },
+        { status: 400 }
+      );
+    }
+
+    const lastOrder = await prisma.order.findFirst({
+      orderBy: {
+        orderNumber: "desc",
+      },
+    });
+
+    const orderNumber = (lastOrder?.orderNumber || 0) + 1;
+
+    const orderItemsData: any[] = [];
+    const itemsMeta: {
+      productId: number;
+      categoryId: number | null;
+      lineTotal: number;
+    }[] = [];
+
+    let orderTotal = 0;
+    const productStockDeductions = new Map<number, number>();
+    const modifierStockDeductions = new Map<number, number>();
+
+    for (const item of items) {
+      const productId = Number(item.productId);
+      const quantity = Math.max(1, Number(item.quantity || 1));
+
+      const modifierOptionIds = Array.isArray(item.modifierOptionIds)
+        ? item.modifierOptionIds
+            .map((id: unknown) => Number(id))
+            .filter(Boolean)
+        : [];
+
+      if (!productId) {
+        return NextResponse.json(
+          { error: "Producto invalido en el pedido." },
+          { status: 400 }
+        );
+      }
+
+      const product = await prisma.product.findUnique({
+        where: {
+          id: productId,
+        },
+        include: {
+          category: true,
+        },
+      });
+
+      if (!product || !product.active) {
+        return NextResponse.json(
+          { error: "Uno de los productos no esta disponible." },
+          { status: 400 }
+        );
+      }
+
+      const selectedOptions =
+        modifierOptionIds.length > 0
+          ? await prisma.modifierOption.findMany({
+              where: {
+                id: {
+                  in: modifierOptionIds,
+                },
+                active: true,
+              },
+            })
+          : [];
+
+      const modifiersTotal = selectedOptions.reduce(
+        (sum, option) => sum + option.price,
+        0
+      );
+
+      const unitTotal = product.price + modifiersTotal;
+      const lineTotal = unitTotal * quantity;
+
+      orderTotal += lineTotal;
+
+      itemsMeta.push({
+        productId: product.id,
+        categoryId: product.categoryId || null,
+        lineTotal,
+      });
+
+      orderItemsData.push({
+        productId: product.id,
+        quantity,
+        unitPrice: product.price,
+        total: lineTotal,
+        modifiers: {
+          create: selectedOptions.map((option) => ({
+            optionId: option.id,
+            price: option.price,
+          })),
+        },
+      });
+
+      productStockDeductions.set(
+        product.id,
+        (productStockDeductions.get(product.id) || 0) + quantity
+      );
+
+      for (const option of selectedOptions) {
+        modifierStockDeductions.set(
+          option.id,
+          (modifierStockDeductions.get(option.id) || 0) + quantity
+        );
+      }
+    }
+
+    const subtotalAmount = orderTotal;
+    let discountAmount = 0;
+    let discountPercent = 0;
+    let discountCouponCode: string | null = null;
+
+    if (orderSource === "online" && requestedDiscountCouponCode) {
+      const coupon = await prisma.discountCoupon.findUnique({
+        where: {
+          code: requestedDiscountCouponCode,
+        },
+      });
+
+      if (!coupon || !coupon.active) {
+        return NextResponse.json(
+          { error: "Cupón inválido o inactivo." },
+          { status: 400 }
+        );
+      }
+
+      discountPercent = Math.max(1, Math.min(100, coupon.percent));
+      discountAmount = Math.round(subtotalAmount * (discountPercent / 100));
+      discountCouponCode = coupon.code;
+    }
+
+    const totalAfterDiscount = Math.max(0, subtotalAmount - discountAmount);
+
+    const walletBalance = customer
+      ? calculateWalletBreakdown(customer.walletTransactions).totalBalance
+      : 0;
+
+    const walletAmountUsed = customer
+      ? Math.min(requestedWalletAmount, walletBalance, totalAfterDiscount)
+      : 0;
+
+    const { cashbackEarned, expiresAt } = await calculateCashback({
+      customerId,
+      paymentMethod,
+      orderTotal: totalAfterDiscount,
+      walletAmountUsed,
+      itemsMeta,
+    });
+
+    const order = await prisma.$transaction(async (tx) => {
+      const orderData: any = {
+        orderNumber,
+        status: "pending",
+        total: totalAfterDiscount,
+        subtotalAmount,
+        discountAmount,
+        discountPercent,
+        discountCouponCode,
+        customerName,
+        customerComment,
+        walletAmountUsed,
+        cashbackEarned,
+        tipAmount,
+        totemCode,
+        paymentMethod,
+        orderSource,
+        fulfillmentType,
+        scheduledFor,
+        items: {
+          create: orderItemsData,
+        },
+      };
+
+      if (customerId) {
+        orderData.customer = {
+          connect: {
+            id: customerId,
+          },
+        };
+      }
+
+      const createdOrder = await tx.order.create({
+        data: orderData,
+        include: {
+          customer: true,
+          items: {
+            include: {
+              product: {
+                include: {
+                  category: true,
+                },
+              },
+              modifiers: {
+                include: {
+                  option: {
+                    include: {
+                      template: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const soldProductQuantities = new Map<number, number>();
+      const soldModifierOptionQuantities = new Map<number, number>();
+
+      for (const orderItem of createdOrder.items as any[]) {
+        soldProductQuantities.set(
+          orderItem.productId,
+          (soldProductQuantities.get(orderItem.productId) || 0) + orderItem.quantity
+        );
+
+        for (const modifier of orderItem.modifiers || []) {
+          soldModifierOptionQuantities.set(
+            modifier.optionId,
+            (soldModifierOptionQuantities.get(modifier.optionId) || 0) + orderItem.quantity
+          );
+        }
+      }
+
+      const stockProductIds = Array.from(soldProductQuantities.keys());
+      const stockModifierOptionIds = Array.from(soldModifierOptionQuantities.keys());
+
+      const stockOrFilters: any[] = [];
+
+      if (stockProductIds.length > 0) {
+        stockOrFilters.push({
+          productId: {
+            in: stockProductIds,
+          },
+        });
+      }
+
+      if (stockModifierOptionIds.length > 0) {
+        stockOrFilters.push({
+          modifierOptionId: {
+            in: stockModifierOptionIds,
+          },
+        });
+      }
+
+      if (stockOrFilters.length > 0) {
+        const stockItems = await tx.stockItem.findMany({
+          where: {
+            active: true,
+            OR: stockOrFilters,
+          },
+        });
+
+        for (const stockItem of stockItems) {
+          let quantityToDiscount = 0;
+
+          if (stockItem.modifierOptionId) {
+            quantityToDiscount =
+              soldModifierOptionQuantities.get(stockItem.modifierOptionId) || 0;
+          } else if (stockItem.productId) {
+            quantityToDiscount =
+              soldProductQuantities.get(stockItem.productId) || 0;
+          }
+
+          if (quantityToDiscount <= 0) continue;
+
+          const previousStock = stockItem.currentStock;
+          const newStock = Math.max(0, previousStock - quantityToDiscount);
+
+          await tx.stockItem.update({
+            where: {
+              id: stockItem.id,
+            },
+            data: {
+              currentStock: newStock,
+            },
+          });
+
+          await tx.stockMovement.create({
+            data: {
+              stockItemId: stockItem.id,
+              type: "sale",
+              quantity: quantityToDiscount,
+              previousStock,
+              newStock,
+              reason: `Venta pedido #${orderNumber}`,
+              orderId: createdOrder.id,
+            },
+          });
+        }
+      }
+
+      if (customerId && walletAmountUsed > 0) {
+        await tx.walletTransaction.create({
+          data: {
+            customer: {
+              connect: {
+                id: customerId,
+              },
+            },
+            type: "debit",
+            amount: walletAmountUsed,
+            reason: `Uso de saldo en pedido #${orderNumber}`,
+            source: "wallet_spend",
+          },
+        });
+      }
+
+      if (customerId && cashbackEarned > 0) {
+        const cashbackTransactionData: any = {
+          customer: {
+            connect: {
+              id: customerId,
+            },
+          },
+          type: "credit",
+          amount: cashbackEarned,
+          reason: `Cashback pedido #${orderNumber}`,
+            source: "cashback",
+            expiresAt,
+        };
+
+        await tx.walletTransaction.create({
+          data: cashbackTransactionData,
+        });
+      }
+
+      return createdOrder;
+    });
+
+    return NextResponse.json(order);
+  } catch (error) {
+    console.error("CREATE_ORDER_ERROR", error);
+
+    return NextResponse.json(
+      { error: "No se pudo crear el pedido." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const companyCustomerId = body.companyCustomerId ? Number(body.companyCustomerId) : null;
+
+    const id = Number(body.id);
+    const status = String(body.status || "");
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Falta el ID del pedido." },
+        { status: 400 }
+      );
+    }
+
+    if (!allowedStatuses.includes(status)) {
+      return NextResponse.json(
+        { error: "Estado de pedido invalido." },
+        { status: 400 }
+      );
+    }
+
+    const order = await prisma.order.update({
+      where: {
+        id,
+      },
+      data: {
+        status,
+      },
+      include: {
+        customer: true,
+        items: {
+          include: {
+            product: {
+              include: {
+                category: true,
+              },
+            },
+            modifiers: {
+              include: {
+                option: {
+                  include: {
+                    template: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return NextResponse.json(order);
+  } catch (error) {
+    console.error("UPDATE_ORDER_ERROR", error);
+
+    return NextResponse.json(
+      { error: "No se pudo actualizar el pedido." },
+      { status: 500 }
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+
+==============================
+COMPONENTE SALDO EMPRESA
+ARCHIVO: app\pedido-empresas\CompanyBalanceAmount.tsx
+==============================
+"use client";
+
+import { useEffect, useState } from "react";
+
+type Props = {
+  companyId: number;
+  initialBalance?: number;
+  className?: string;
+};
+
+function formatPrice(value: number) {
+  return new Intl.NumberFormat("es-CL", {
+    style: "currency",
+    currency: "CLP",
+    maximumFractionDigits: 0,
+  }).format(value || 0);
+}
+
+export default function CompanyBalanceAmount({
+  companyId,
+  initialBalance = 0,
+  className = "",
+}: Props) {
+  const [balance, setBalance] = useState(Number(initialBalance || 0));
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadBalance() {
+      try {
+        setLoading(true);
+
+        const response = await fetch("/api/company-auth/balance", {
+          method: "POST",
+          cache: "no-store",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            companyCustomerId: companyId,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!active) return;
+
+        if (response.ok) {
+          setBalance(Number(data.walletBalance || 0));
+        }
+      } catch (error) {
+        console.error("No se pudo cargar saldo empresa", error);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    if (companyId) {
+      loadBalance();
+    }
+
+    return () => {
+      active = false;
+    };
+  }, [companyId]);
+
+
+  useEffect(() => {
+    function handleCompanyBalanceUpdated(event: Event) {
+      const customEvent = event as CustomEvent<{
+        companyId: number;
+        walletBalance: number;
+      }>;
+
+      if (Number(customEvent.detail?.companyId) === Number(companyId)) {
+        setBalance(Number(customEvent.detail?.walletBalance || 0));
+      }
+    }
+
+    window.addEventListener(
+      "company-balance-updated",
+      handleCompanyBalanceUpdated
+    );
+
+    return () => {
+      window.removeEventListener(
+        "company-balance-updated",
+        handleCompanyBalanceUpdated
+      );
+    };
+  }, [companyId]);
+
+  return (
+    <span className={className}>
+      {loading && balance === 0 ? "Cargando..." : formatPrice(balance)}
+    </span>
+  );
+}

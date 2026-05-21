@@ -1678,12 +1678,23 @@ export default function PedidoPage() {
                     Ingresar Empresa
                   </button>
 
-                  <a
-                    href="/pedido-trabajador"
-                    className="rounded-xl bg-white px-2 py-3 text-center text-[11px] font-black whitespace-nowrap text-zinc-600"
+                  <button suppressHydrationWarning
+                    type="button"
+                    onClick={() => setAuthMode("worker")}
+                    className={`rounded-xl px-2 py-3 text-[11px] font-black whitespace-nowrap text-center ${
+                      authMode === "worker" || authMode === "workerPassword"
+                        ? "text-white"
+                        : "bg-white text-zinc-600"
+                    }`}
+                    style={{
+                      background:
+                        authMode === "worker" || authMode === "workerPassword"
+                          ? settings.primaryColor
+                          : undefined,
+                    }}
                   >
                     Ingresar Trabajador
-                  </a>
+                  </button>
 
                   <button suppressHydrationWarning
                     type="button"

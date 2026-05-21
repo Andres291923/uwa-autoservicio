@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
-import WorkerCreatePasswordModalButton from "./WorkerCreatePasswordModalButton";
 import CompanyWorkersButton from "./CompanyWorkersButton";
 import CompanyBalanceAmount from "./CompanyBalanceAmount";
 import CompanyInvoicesPublicButton from "./CompanyInvoicesPublicButton";
@@ -374,7 +373,6 @@ export default function PedidoPage() {
   const [companyPhone, setCompanyPhone] = useState("");
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
-  const [workerNewPassword, setWorkerNewPassword] = useState("");
   const [guestName, setGuestName] = useState("");
   const [useWallet, setUseWallet] = useState(false);
 
@@ -791,7 +789,7 @@ export default function PedidoPage() {
         },
         body: JSON.stringify({
           email: authEmail.trim().toLowerCase(),
-          password: authPassword.trim(),
+          rut: authPassword.trim(),
         }),
       });
 
@@ -822,43 +820,6 @@ export default function PedidoPage() {
     } catch (error) {
       console.error(error);
       setAuthMessage("Error al ingresar como trabajador.");
-    } finally {
-      setLoadingAuth(false);
-    }
-  }
-
-
-  async function createWorkerPassword() {
-    try {
-      setLoadingAuth(true);
-      setAuthMessage("");
-
-      const response = await fetch("/api/company-worker-auth/create-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: authEmail.trim().toLowerCase(),
-          password: authPassword.trim(),
-          password: workerNewPassword.trim(),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setAuthMessage(data.error || "No se pudo crear clave.");
-        return;
-      }
-
-      setAuthPassword("");
-      setWorkerNewPassword("");
-      setAuthMode("worker");
-      setAuthMessage("Clave creada correctamente. Ahora ingresa como trabajador.");
-    } catch (error) {
-      console.error(error);
-      setAuthMessage("Error al crear clave.");
     } finally {
       setLoadingAuth(false);
     }
@@ -1661,11 +1622,11 @@ export default function PedidoPage() {
               </div>
             ) : (
               <div>
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button suppressHydrationWarning
                     type="button"
                     onClick={() => setAuthMode("login")}
-                    className={`rounded-xl px-2 py-3 text-[11px] font-black whitespace-nowrap text-center ${
+                    className={`rounded-xl px-3 py-2 text-xs font-black whitespace-nowrap ${
                       authMode === "login"
                         ? "text-white"
                         : "bg-white text-zinc-600"
@@ -1678,17 +1639,26 @@ export default function PedidoPage() {
                     Ingresar Empresa
                   </button>
 
-                  <a
-                    href="/pedido-trabajador"
-                    className="rounded-xl bg-white px-2 py-3 text-center text-[11px] font-black whitespace-nowrap text-zinc-600"
+                  <button suppressHydrationWarning
+                    type="button"
+                    onClick={() => setAuthMode("worker")}
+                    className={`rounded-xl px-3 py-2 text-xs font-black whitespace-nowrap ${
+                      authMode === "worker"
+                        ? "text-white"
+                        : "bg-white text-zinc-600"
+                    }`}
+                    style={{
+                      background:
+                        authMode === "worker" ? settings.primaryColor : undefined,
+                    }}
                   >
                     Ingresar Trabajador
-                  </a>
+                  </button>
 
                   <button suppressHydrationWarning
                     type="button"
                     onClick={() => setAuthMode("register")}
-                    className={`rounded-xl px-2 py-3 text-[11px] font-black whitespace-nowrap text-center ${
+                    className={`rounded-xl px-3 py-2 text-xs font-black whitespace-nowrap ${
                       authMode === "register"
                         ? "text-white"
                         : "bg-white text-zinc-600"
@@ -1797,26 +1767,26 @@ export default function PedidoPage() {
 
                     <label className="mt-4 block">
                       <span className="text-xs font-black uppercase text-zinc-500">
-                        {authMode === "worker" ? "Clave trabajador" : "Clave"}
+                        {authMode === "worker" ? "RUT trabajador" : "Clave"}
                       </span>
                       <input suppressHydrationWarning
-                        type="password"
+                        type={authMode === "worker" ? "text" : "password"}
                         value={authPassword}
                         onChange={(event) => setAuthPassword(event.target.value)}
                         className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
-                        placeholder={authMode === "worker" ? "Clave trabajador" : "Clave"}
+                        placeholder={authMode === "worker" ? "Ej: 11111111-1" : "Clave"}
                       />
                     </label>
 
-                  {authMode === "worker" && (
-                    <div className="rounded-2xl bg-zinc-50 p-4 text-sm font-bold text-zinc-600">
-                      <WorkerCreatePasswordModalButton />
-                    </div>
-                  )}
-
                     <button suppressHydrationWarning
                       type="button"
-                      onClick={authMode === "login" ? loginCustomer : authMode === "worker" ? loginWorker : registerCustomer}
+                      onClick={
+                        authMode === "login"
+                          ? loginCustomer
+                          : authMode === "worker"
+                          ? loginWorker
+                          : registerCustomer
+                      }
                       disabled={loadingAuth}
                       className="mt-4 w-full rounded-2xl py-3 text-sm font-black text-white disabled:bg-zinc-300"
                       style={{
@@ -1827,7 +1797,11 @@ export default function PedidoPage() {
                     >
                       {loadingAuth
                         ? "Procesando..."
-                        : authMode === "login" ? "Ingresar Empresa" : authMode === "worker" ? "Ingresar Trabajador" : "Registrar Empresa"}
+                        : authMode === "login"
+                        ? "Ingresar Empresa"
+                        : authMode === "worker"
+                        ? "Ingresar Trabajador"
+                        : "Registrar Empresa"}
                     </button>
                   </>
                 ) : (

@@ -1,9 +1,5 @@
 "use client";
 
-import CompanyWalletAdminButton from "./CompanyWalletAdminButton";
-
-import CompanyInvoicesAdminButton from "./CompanyInvoicesAdminButton";
-
 import { useEffect, useMemo, useState } from "react";
 
 type Company = {
@@ -435,16 +431,6 @@ export default function AdminCompanyCustomersPage() {
                       >
                         Ver historial
                       </button>
-
-                      <CompanyInvoicesAdminButton
-                        companyId={company.id}
-                        companyName={company.companyName}
-                      />
-
-                      <CompanyWalletAdminButton
-                        companyId={company.id}
-                        companyName={company.companyName}
-                      />
                     </td>
                   </tr>
                 ))

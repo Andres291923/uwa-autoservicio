@@ -528,7 +528,6 @@ model CompanyWorker {
   companyCustomer CompanyCustomer @relation(fields: [companyCustomerId], references: [id], onDelete: Cascade)
   walletTransactions CompanyWorkerWalletTransaction[]
   passwordHash String?
-  totemPinHash String?
 }
 
 

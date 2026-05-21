@@ -78,18 +78,6 @@ type TotemStep = "catalog" | "summary" | "customer" | "payment";
 
 type PaymentMethod = "debit_credit" | "food_benefit";
 
-type WorkerTotemSession = {
-  accountType: "company_worker_totem";
-  workerId: number;
-  companyCustomerId: number;
-  workerName: string;
-  workerEmail: string | null;
-  workerRut: string | null;
-  walletBalance: number;
-  companyName: string;
-  companyEmail: string;
-};
-
 type StoreStatus = {
   isOpen: boolean;
   message: string;
@@ -203,10 +191,7 @@ export default function TotemPage() {
   const [closedModalVisible, setClosedModalVisible] = useState(false);
 
   const [identifiedCustomer, setIdentifiedCustomer] =
-      useState<IdentifiedTotemCustomer | null>(null);
-
-    const [companyWorkerSession, setCompanyWorkerSession] =
-      useState<WorkerTotemSession | null>(null);
+    useState<IdentifiedTotemCustomer | null>(null);
   const [totemAuthVisible, setTotemAuthVisible] = useState(false);
   const [totemAuthMode, setTotemAuthMode] = useState<TotemAuthMode>("login");
   const [totemAuthName, setTotemAuthName] = useState("");
@@ -680,9 +665,7 @@ export default function TotemPage() {
   function goToPaymentStep() {
     if (cart.length === 0) return;
 
-    const finalCustomerName = companyWorkerSession
-      ? companyWorkerSession.companyName
-      : (loggedCustomerName || customerName).trim();
+    const finalCustomerName = (loggedCustomerName || customerName).trim();
 
     if (!finalCustomerName) {
       setCustomerMessage("Debes ingresar el nombre del cliente.");
@@ -698,37 +681,19 @@ export default function TotemPage() {
   async function confirmOrder() {
     if (cart.length === 0) return;
 
-    const finalCustomerName = companyWorkerSession
-      ? companyWorkerSession.companyName
-      : (loggedCustomerName || customerName).trim();
+    const finalCustomerName = (loggedCustomerName || customerName).trim();
 
     if (!finalCustomerName) {
       setCustomerMessage("Debes ingresar el nombre del cliente.");
       return;
     }
 
-    if (!companyWorkerSession && amountToPay > 0 && !selectedPaymentMethod) {
+    if (amountToPay > 0 && !selectedPaymentMethod) {
       setCustomerMessage("Debes seleccionar un medio de pago.");
       return;
     }
 
-    if (companyWorkerSession && amountToPay > companyWorkerSession.walletBalance) {
-      setCustomerMessage("Saldo trabajador insuficiente para este pedido.");
-      return;
-    }
-
-    const baseCustomerComment = buildOrderCustomerComment();
-
-    const customerComment = companyWorkerSession
-      ? [
-          "TRABAJADOR EMPRESA",
-          "Empresa: " + companyWorkerSession.companyName,
-          "Trabajador: " + companyWorkerSession.workerName,
-          baseCustomerComment,
-        ]
-          .filter(Boolean)
-          .join(" | ")
-      : baseCustomerComment;
+    const customerComment = buildOrderCustomerComment();
 
     try {
       setConfirmingOrder(true);
@@ -742,19 +707,13 @@ export default function TotemPage() {
         },
         body: JSON.stringify({
           customerName: finalCustomerName,
-            customerId: companyWorkerSession ? null : identifiedCustomer?.id || null,
-            companyCustomerId: companyWorkerSession?.companyCustomerId || null,
-            companyWorkerId: companyWorkerSession?.workerId || null,
-            customerComment,
+          customerId: identifiedCustomer?.id || null,
+          customerComment,
           totemCode: "totem-local",
-          paymentMethod: companyWorkerSession
-              ? "worker_wallet"
-              : amountToPay === 0
-              ? "wallet"
-              : selectedPaymentMethod,
-          walletAmountUsed: companyWorkerSession ? amountToPay : walletAmountToUse,
+          paymentMethod: amountToPay === 0 ? "wallet" : selectedPaymentMethod,
+          walletAmountUsed: walletAmountToUse,
           tipAmount,
-          orderSource: companyWorkerSession ? "company_worker_totem" : "totem",
+          orderSource: "totem",
           fulfillmentType: "immediate",
           items: cart.map((item) => ({
             productId: item.productId,
@@ -782,47 +741,7 @@ export default function TotemPage() {
     setUseWalletBalance(false);
     setIdentifiedCustomer(null);
     setStep("catalog");
-      if (companyWorkerSession) {
-          try {
-            const balanceResponse = await fetch("/api/company-worker-auth/balance", {
-              method: "POST",
-              cache: "no-store",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                workerId: companyWorkerSession.workerId,
-              }),
-            });
-
-            const balanceData = await balanceResponse.json();
-
-            if (balanceResponse.ok) {
-              const updatedSession = {
-                ...companyWorkerSession,
-                walletBalance: Number(balanceData.walletBalance || 0),
-              };
-
-              setCompanyWorkerSession(updatedSession);
-
-              window.localStorage.setItem(
-                "totem_company_worker_session",
-                JSON.stringify(updatedSession)
-              );
-
-              window.dispatchEvent(
-                new CustomEvent("totem-company-worker-update", {
-                  detail: updatedSession,
-                })
-              );
-            }
-          } catch (error) {
-            console.error(error);
-          }
-        }
-
-        // UPDATE_COMPANY_WORKER_BALANCE_AFTER_ORDER
-        setOrderMessage(`Pedido #${data.orderNumber} enviado a cocina.`);
+      setOrderMessage(`Pedido #${data.orderNumber} enviado a cocina.`);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
       console.error(error);
@@ -831,50 +750,6 @@ export default function TotemPage() {
       setConfirmingOrder(false);
     }
   }
-
-  useEffect(() => {
-    // LOAD_COMPANY_WORKER_TOTEM_SESSION
-    function loadCompanyWorkerSession() {
-      const saved = window.localStorage.getItem("totem_company_worker_session");
-
-      if (!saved) {
-        setCompanyWorkerSession(null);
-        return;
-      }
-
-      try {
-        setCompanyWorkerSession(JSON.parse(saved));
-      } catch {
-        window.localStorage.removeItem("totem_company_worker_session");
-        setCompanyWorkerSession(null);
-      }
-    }
-
-    function handleCompanyWorkerLogin(event: Event) {
-      const customEvent = event as CustomEvent<WorkerTotemSession>;
-      setCompanyWorkerSession(customEvent.detail);
-      setIdentifiedCustomer(null);
-      setUseWalletBalance(false);
-      setCustomerName(customEvent.detail.workerName || "");
-      setCustomerMessage("");
-    }
-
-    function handleCompanyWorkerLogout() {
-      setCompanyWorkerSession(null);
-    }
-
-    loadCompanyWorkerSession();
-
-    window.addEventListener("totem-company-worker-login", handleCompanyWorkerLogin);
-    window.addEventListener("totem-company-worker-update", handleCompanyWorkerLogin);
-    window.addEventListener("totem-company-worker-logout", handleCompanyWorkerLogout);
-
-    return () => {
-      window.removeEventListener("totem-company-worker-login", handleCompanyWorkerLogin);
-      window.removeEventListener("totem-company-worker-update", handleCompanyWorkerLogin);
-      window.removeEventListener("totem-company-worker-logout", handleCompanyWorkerLogout);
-    };
-  }, []);
 
   useEffect(() => {
     if (!identifiedCustomer || walletBalance <= 0 || finalTotal <= 0) {
@@ -896,9 +771,6 @@ export default function TotemPage() {
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-white pb-[112px] text-zinc-950">
-
-      {/* BADGE_WORKER_ROOT */}
-      <TotemCompanyWorkerSessionBadge />
       <header className="sticky top-0 z-40 border-b border-zinc-100 bg-white px-3 py-2 shadow-sm">
         <div className="flex h-[70px] items-center justify-between gap-3">
           <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -1592,13 +1464,7 @@ export default function TotemPage() {
               </p>
             )}
 
-            {companyWorkerSession && (
-                <p className="mt-5 rounded-2xl bg-emerald-50 p-4 text-sm font-black text-emerald-700">
-                  Pago con saldo empresa activo: {companyWorkerSession.workerName}
-                </p>
-              )}
-
-              <div className="mt-6 flex items-center justify-between rounded-3xl bg-zinc-100 p-5">
+            <div className="mt-6 flex items-center justify-between rounded-3xl bg-zinc-100 p-5">
               <p className="text-2xl font-black">Total a pagar</p>
 
               <p
@@ -1908,22 +1774,20 @@ export default function TotemPage() {
 
             <button
               onClick={confirmOrder}
-              disabled={(!companyWorkerSession && amountToPay > 0 && !selectedPaymentMethod) || confirmingOrder}
+              disabled={(amountToPay > 0 && !selectedPaymentMethod) || confirmingOrder}
               className="mt-5 w-full rounded-2xl py-5 text-xl font-black text-white disabled:bg-zinc-200 disabled:text-zinc-500"
               style={{
                 background:
-                  (companyWorkerSession || amountToPay === 0 || selectedPaymentMethod) && !confirmingOrder
+                  (amountToPay === 0 || selectedPaymentMethod) && !confirmingOrder
                     ? settings.primaryColor
                     : undefined,
               }}
             >
               {confirmingOrder
-                  ? "Confirmando pago..."
-                  : companyWorkerSession
-                  ? "Confirmar con saldo empresa"
-                  : amountToPay === 0
-                  ? "Confirmar pago con billetera"
-                  : "Confirmar pago y enviar a cocina"}
+                ? "Confirmando pago..."
+                : amountToPay === 0
+                ? "Confirmar pago con billetera"
+                : "Confirmar pago y enviar a cocina"}
             </button>
 
             <p className="mt-3 text-center text-xs font-bold text-zinc-400">
@@ -2009,7 +1873,9 @@ export default function TotemPage() {
                       key={product.id}
                       className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm transition active:scale-[0.99]"
                     >
-<button
+
+      <TotemCompanyWorkerSessionBadge />
+                      <button
                         onClick={() => openProduct(product)}
                         className="flex h-[315px] w-full flex-col text-left"
                       >

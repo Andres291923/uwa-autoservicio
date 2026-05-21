@@ -1,7 +1,5 @@
 "use client";
 
-import CompanyWalletAdminButton from "./CompanyWalletAdminButton";
-
 import CompanyInvoicesAdminButton from "./CompanyInvoicesAdminButton";
 
 import { useEffect, useMemo, useState } from "react";
@@ -437,11 +435,6 @@ export default function AdminCompanyCustomersPage() {
                       </button>
 
                       <CompanyInvoicesAdminButton
-                        companyId={company.id}
-                        companyName={company.companyName}
-                      />
-
-                      <CompanyWalletAdminButton
                         companyId={company.id}
                         companyName={company.companyName}
                       />

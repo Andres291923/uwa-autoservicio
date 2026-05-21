@@ -1,0 +1,1032 @@
+﻿"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+
+type WorkerSession = {
+  accountType: "worker";
+  workerId: number;
+  companyCustomerId: number;
+  name: string;
+  email: string;
+  rut: string | null;
+  walletBalance: number;
+  companyName: string;
+  companyEmail: string;
+};
+
+type ModifierOption = {
+  id: number;
+  name: string;
+  imageUrl?: string | null;
+  price?: number;
+  priceExtra?: number;
+  extraPrice?: number;
+  active?: boolean;
+  available?: boolean;
+};
+
+type ModifierTemplate = {
+  id: number;
+  name: string;
+  options: ModifierOption[];
+};
+
+type ModifierGroup = {
+  id: number;
+  name?: string;
+  active?: boolean;
+  required?: boolean;
+  isRequired?: boolean;
+  min?: number;
+  max?: number;
+  minSelections?: number;
+  maxSelections?: number;
+  template?: ModifierTemplate;
+  modifierTemplate?: ModifierTemplate;
+};
+
+type Product = {
+  id: number;
+  name: string;
+  price: number;
+  imageUrl?: string | null;
+  active?: boolean;
+  category?: {
+    id: number;
+    name: string;
+  } | null;
+  modifierGroups?: ModifierGroup[];
+  productModifierGroups?: ModifierGroup[];
+  modifiers?: ModifierGroup[];
+};
+
+type CartItem = {
+  id: string;
+  productId: number;
+  productName: string;
+  price: number;
+  quantity: number;
+  modifierOptionIds: number[];
+  modifiersText: string[];
+  total: number;
+};
+
+function formatPrice(value: number) {
+  return new Intl.NumberFormat("es-CL", {
+    style: "currency",
+    currency: "CLP",
+    maximumFractionDigits: 0,
+  }).format(value || 0);
+}
+
+function optionPrice(option: ModifierOption) {
+  return Number(option.priceExtra ?? option.extraPrice ?? option.price ?? 0);
+}
+
+function isActive(value: unknown) {
+  return value !== false;
+}
+
+function getProductGroups(product: Product) {
+  const groups =
+    product.modifierGroups ||
+    product.productModifierGroups ||
+    product.modifiers ||
+    [];
+
+  return groups.filter((group) => isActive(group.active));
+}
+
+function getGroupTemplate(group: ModifierGroup) {
+  return group.template || group.modifierTemplate;
+}
+
+function getGroupName(group: ModifierGroup) {
+  return group.name || getGroupTemplate(group)?.name || "Modificador";
+}
+
+function getGroupMin(group: ModifierGroup) {
+  return Number(group.min ?? group.minSelections ?? 0);
+}
+
+function getGroupMax(group: ModifierGroup) {
+  return Number(group.max ?? group.maxSelections ?? 0);
+}
+
+function isGroupRequired(group: ModifierGroup) {
+  return Boolean(group.required ?? group.isRequired ?? false);
+}
+
+function getGroupOptions(group: ModifierGroup) {
+  const template = getGroupTemplate(group);
+
+  return (template?.options || []).filter((option) => {
+    return isActive(option.active) && isActive(option.available);
+  });
+}
+
+export default function PedidoTrabajadorPage() {
+  const [mode, setMode] = useState<"login" | "createPassword">("login");
+  const [email, setEmail] = useState("");
+  const [rut, setRut] = useState("");
+  const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [creatingOrder, setCreatingOrder] = useState(false);
+  const [message, setMessage] = useState("");
+  const [totemPin, setTotemPin] = useState("");
+  const [savingTotemPin, setSavingTotemPin] = useState(false);
+  const [totemPinMessage, setTotemPinMessage] = useState("");
+  const [worker, setWorker] = useState<WorkerSession | null>(null);
+  const [balance, setBalance] = useState(0);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState("todos");
+  const [cart, setCart] = useState<CartItem[]>([]);
+
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedOptions, setSelectedOptions] = useState<Record<number, number[]>>(
+    {}
+  );
+  const [modifierMessage, setModifierMessage] = useState("");
+
+  const categories = useMemo(() => {
+    const names = products
+      .map((product) => product.category?.name || "Sin categoria")
+      .filter(Boolean);
+
+    return ["todos", ...Array.from(new Set(names))];
+  }, [products]);
+
+  const filteredProducts = useMemo(() => {
+    if (selectedCategory === "todos") return products;
+
+    return products.filter(
+      (product) => (product.category?.name || "Sin categoria") === selectedCategory
+    );
+  }, [products, selectedCategory]);
+
+  const cartTotal = useMemo(() => {
+    return cart.reduce((sum, item) => sum + item.total, 0);
+  }, [cart]);
+
+  const canPay = worker && cart.length > 0 && balance >= cartTotal;
+
+  const selectedProductTotal = useMemo(() => {
+    if (!selectedProduct) return 0;
+
+    const groups = getProductGroups(selectedProduct);
+
+    const extra = groups.reduce((sum, group) => {
+      const ids = selectedOptions[group.id] || [];
+      const options = getGroupOptions(group);
+
+      return (
+        sum +
+        ids.reduce((innerSum, optionId) => {
+          const option = options.find((item) => item.id === optionId);
+          return innerSum + (option ? optionPrice(option) : 0);
+        }, 0)
+      );
+    }, 0);
+
+    return Number(selectedProduct.price || 0) + extra;
+  }, [selectedProduct, selectedOptions]);
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem("company_worker_session");
+
+    if (!saved) return;
+
+    try {
+      const parsed = JSON.parse(saved) as WorkerSession;
+      setWorker(parsed);
+      setBalance(Number(parsed.walletBalance || 0));
+      refreshBalance(parsed.workerId);
+      loadProducts();
+    } catch {
+      window.localStorage.removeItem("company_worker_session");
+    }
+  }, []);
+
+  async function loadProducts() {
+    try {
+      setLoadingProducts(true);
+
+      const response = await fetch("/api/products", {
+        cache: "no-store",
+      });
+
+      const data = await response.json();
+
+      const list = Array.isArray(data)
+        ? data
+        : Array.isArray(data.products)
+        ? data.products
+        : [];
+
+      setProducts(
+        list.filter((product: Product) => product.active !== false)
+      );
+    } catch (error) {
+      console.error(error);
+      setMessage("No se pudieron cargar productos.");
+    } finally {
+      setLoadingProducts(false);
+    }
+  }
+
+  async function refreshBalance(workerId: number) {
+    try {
+      const response = await fetch("/api/company-worker-auth/balance", {
+        method: "POST",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ workerId }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setBalance(Number(data.walletBalance || 0));
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function loginWorker() {
+    try {
+      setLoading(true);
+      setMessage("");
+
+      const response = await fetch("/api/company-worker-auth/login", {
+        method: "POST",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(data.error || "No se pudo ingresar.");
+        return;
+      }
+
+      setWorker(data);
+      setBalance(Number(data.walletBalance || 0));
+      window.localStorage.setItem("company_worker_session", JSON.stringify(data));
+      setPassword("");
+      await loadProducts();
+    } catch (error) {
+      console.error(error);
+      setMessage("Error al ingresar.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function createPassword() {
+    try {
+      setLoading(true);
+      setMessage("");
+
+      const response = await fetch("/api/company-worker-auth/create-password", {
+        method: "POST",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          rut,
+          password: newPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(data.error || "No se pudo crear clave.");
+        return;
+      }
+
+      setMode("login");
+      setRut("");
+      setNewPassword("");
+      setMessage("Clave creada correctamente. Ahora ingresa con correo y clave.");
+    } catch (error) {
+      console.error(error);
+      setMessage("Error al crear clave.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+
+  async function saveTotemPin() {
+    try {
+      if (!worker) return;
+
+      setSavingTotemPin(true);
+      setTotemPinMessage("");
+
+      const response = await fetch("/api/company-worker-auth/set-totem-pin", {
+        method: "POST",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          workerId: worker.workerId,
+          pin: totemPin,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setTotemPinMessage(data.error || "No se pudo guardar PIN rapido.");
+        return;
+      }
+
+      setTotemPin("");
+      setTotemPinMessage("PIN rapido guardado. Ya puedes usarlo en el totem.");
+    } catch (error) {
+      console.error(error);
+      setTotemPinMessage("Error al guardar PIN rapido.");
+    } finally {
+      setSavingTotemPin(false);
+    }
+  }
+
+  function logout() {
+    setWorker(null);
+    setBalance(0);
+    setEmail("");
+    setPassword("");
+    setCart([]);
+    window.localStorage.removeItem("company_worker_session");
+  }
+
+  function openProduct(product: Product) {
+    setSelectedProduct(product);
+    setSelectedOptions({});
+    setModifierMessage("");
+  }
+
+  function toggleOption(group: ModifierGroup, option: ModifierOption) {
+    setSelectedOptions((current) => {
+      const currentIds = current[group.id] || [];
+      const max = getGroupMax(group);
+      const isSelected = currentIds.includes(option.id);
+
+      if (isSelected) {
+        return {
+          ...current,
+          [group.id]: currentIds.filter((id) => id !== option.id),
+        };
+      }
+
+      if (max === 1) {
+        return {
+          ...current,
+          [group.id]: [option.id],
+        };
+      }
+
+      if (max > 0 && currentIds.length >= max) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [group.id]: [...currentIds, option.id],
+      };
+    });
+  }
+
+  function addConfiguredProductToCart() {
+    if (!selectedProduct) return;
+
+    const groups = getProductGroups(selectedProduct);
+    const texts: string[] = [];
+    const optionIds: number[] = [];
+
+    for (const group of groups) {
+      const selectedIds = selectedOptions[group.id] || [];
+      const min = isGroupRequired(group)
+        ? Math.max(1, getGroupMin(group))
+        : getGroupMin(group);
+      const max = getGroupMax(group);
+
+      if (min > 0 && selectedIds.length < min) {
+        setModifierMessage(
+          `Debes seleccionar al menos ${min} opcion(es) en ${getGroupName(group)}.`
+        );
+        return;
+      }
+
+      if (max > 0 && selectedIds.length > max) {
+        setModifierMessage(
+          `Solo puedes seleccionar ${max} opcion(es) en ${getGroupName(group)}.`
+        );
+        return;
+      }
+
+      const options = getGroupOptions(group);
+
+      const selectedNames = selectedIds
+        .map((id) => options.find((option) => option.id === id))
+        .filter(Boolean)
+        .map((option) => {
+          optionIds.push(Number(option?.id));
+          return option?.name || "";
+        });
+
+      if (selectedNames.length > 0) {
+        texts.push(`${getGroupName(group)}: ${selectedNames.join(", ")}`);
+      }
+    }
+
+    const newItem: CartItem = {
+      id: `${selectedProduct.id}-${Date.now()}`,
+      productId: selectedProduct.id,
+      productName: selectedProduct.name,
+      price: Number(selectedProduct.price || 0),
+      quantity: 1,
+      modifierOptionIds: optionIds,
+      modifiersText: texts,
+      total: selectedProductTotal,
+    };
+
+    setCart((current) => [...current, newItem]);
+    setSelectedProduct(null);
+    setSelectedOptions({});
+    setModifierMessage("");
+  }
+
+  function removeCartItem(id: string) {
+    setCart((current) => current.filter((item) => item.id !== id));
+  }
+
+  async function confirmOrder() {
+    try {
+      if (!worker) {
+        setMessage("Debes ingresar como trabajador.");
+        return;
+      }
+
+      if (cart.length === 0) {
+        setMessage("Agrega productos al pedido.");
+        return;
+      }
+
+      if (balance < cartTotal) {
+        setMessage("Saldo insuficiente para confirmar este pedido.");
+        return;
+      }
+
+      setCreatingOrder(true);
+      setMessage("");
+
+      const response = await fetch("/api/company-worker-auth/create-order", {
+        method: "POST",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          workerId: worker.workerId,
+          items: cart.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+            modifierOptionIds: item.modifierOptionIds,
+          })),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(data.error || "No se pudo crear pedido.");
+        return;
+      }
+
+      const newBalance = Number(data.worker?.walletBalance || 0);
+      setBalance(newBalance);
+      setCart([]);
+      setMessage(
+        `Pedido #${String(data.order?.orderNumber || "").padStart(
+          3,
+          "0"
+        )} creado correctamente.`
+      );
+
+      const updatedSession = {
+        ...worker,
+        walletBalance: newBalance,
+      };
+
+      setWorker(updatedSession);
+      window.localStorage.setItem(
+        "company_worker_session",
+        JSON.stringify(updatedSession)
+      );
+    } catch (error) {
+      console.error(error);
+      setMessage("Error al confirmar pedido.");
+    } finally {
+      setCreatingOrder(false);
+    }
+  }
+
+  return (
+    <main className="min-h-screen bg-zinc-100">
+      <header className="border-b border-zinc-200 bg-white px-6 py-5">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.3em] text-[#10B557]">
+              Pedido trabajador
+            </p>
+            <h1 className="text-3xl font-black">Compra con saldo empresa</h1>
+          </div>
+
+          <Link
+            href="/pedido-empresas"
+            className="rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-black"
+          >
+            Volver a empresas
+          </Link>
+        </div>
+      </header>
+
+      {!worker ? (
+        <section className="mx-auto max-w-xl px-6 py-10">
+          <div className="rounded-[2rem] bg-white p-6 shadow-sm">
+            <h2 className="text-3xl font-black">Ingresar trabajador</h2>
+
+            <div className="mt-5 grid grid-cols-2 gap-2 rounded-3xl bg-zinc-50 p-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("login");
+                  setMessage("");
+                }}
+                className={`rounded-2xl px-4 py-3 text-sm font-black ${
+                  mode === "login" ? "bg-[#10B557] text-white" : "bg-white text-zinc-600"
+                }`}
+              >
+                Ingresar
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("createPassword");
+                  setMessage("");
+                }}
+                className={`rounded-2xl px-4 py-3 text-sm font-black ${
+                  mode === "createPassword" ? "bg-[#10B557] text-white" : "bg-white text-zinc-600"
+                }`}
+              >
+                Crear clave
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              <label className="block">
+                <span className="text-xs font-black uppercase text-zinc-500">
+                  Correo trabajador
+                </span>
+                <input
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="correo@empresa.cl"
+                  className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-4 text-sm font-black outline-none focus:border-[#10B557]"
+                />
+              </label>
+
+              {mode === "createPassword" && (
+                <label className="block">
+                  <span className="text-xs font-black uppercase text-zinc-500">
+                    RUT trabajador
+                  </span>
+                  <input
+                    value={rut}
+                    onChange={(event) => setRut(event.target.value)}
+                    placeholder="Ej: 11111111-1"
+                    className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-4 text-sm font-black outline-none focus:border-[#10B557]"
+                  />
+                </label>
+              )}
+
+              <label className="block">
+                <span className="text-xs font-black uppercase text-zinc-500">
+                  {mode === "login" ? "Clave" : "Nueva clave"}
+                </span>
+                <input
+                  type="password"
+                  value={mode === "login" ? password : newPassword}
+                  onChange={(event) =>
+                    mode === "login"
+                      ? setPassword(event.target.value)
+                      : setNewPassword(event.target.value)
+                  }
+                  placeholder={mode === "login" ? "Ingresa tu clave" : "Crea una clave"}
+                  className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-4 text-sm font-black outline-none focus:border-[#10B557]"
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={mode === "login" ? loginWorker : createPassword}
+                disabled={loading}
+                className="w-full rounded-2xl bg-[#10B557] px-5 py-4 text-sm font-black text-white disabled:bg-zinc-300"
+              >
+                {loading
+                  ? "Procesando..."
+                  : mode === "login"
+                  ? "Ingresar trabajador"
+                  : "Crear clave"}
+              </button>
+
+              {message && (
+                <p className="rounded-2xl bg-zinc-50 p-4 text-sm font-black">
+                  {message}
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
+      ) : (
+        <section className="mx-auto max-w-7xl px-6 py-6">
+          <div className="mb-6 rounded-[2rem] bg-white p-5 shadow-sm">
+            <div className="grid gap-4 lg:grid-cols-[1fr_1fr_auto] lg:items-center">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.25em] text-[#10B557]">
+                  Trabajador registrado
+                </p>
+                <h2 className="mt-1 text-2xl font-black">
+                  Empresa: {worker.companyName}
+                </h2>
+                <p className="mt-1 text-sm font-bold text-zinc-500">
+                  {worker.email}
+                </p>
+                <p className="mt-1 text-lg font-black">
+                  Trabajador: {worker.name}
+                </p>
+              </div>
+
+              <div className="rounded-3xl bg-emerald-50 p-4">
+                <p className="text-xs font-black uppercase text-emerald-700">
+                  Saldo disponible
+                </p>
+                <p className="mt-1 text-4xl font-black text-[#10B557]">
+                  {formatPrice(balance)}
+                </p>
+              </div>
+
+              <div className="rounded-3xl bg-zinc-50 p-4">
+                <p className="text-xs font-black uppercase text-zinc-500">
+                  PIN rapido para totem
+                </p>
+
+                <div className="mt-3 flex flex-wrap gap-3">
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={4}
+                    value={totemPin}
+                    onChange={(event) =>
+                      setTotemPin(event.target.value.replace(/\D/g, "").slice(0, 4))
+                    }
+                    placeholder="••••"
+                    className="min-w-[160px] flex-1 rounded-2xl border border-zinc-300 px-4 py-3 text-center text-2xl font-black tracking-[0.4em] outline-none focus:border-[#10B557]"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={saveTotemPin}
+                    disabled={savingTotemPin}
+                    className="rounded-2xl bg-zinc-950 px-5 py-3 text-sm font-black text-white disabled:bg-zinc-300"
+                  >
+                    {savingTotemPin ? "Guardando..." : "Guardar PIN"}
+                  </button>
+                </div>
+
+                <p className="mt-2 text-xs font-bold text-zinc-500">
+                  Este PIN es solo para usar saldo empresa en el totem. Debe tener 4 numeros.
+                </p>
+
+                {totemPinMessage && (
+                  <p className="mt-3 rounded-2xl bg-white p-3 text-sm font-black">
+                    {totemPinMessage}
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={logout}
+                className="rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-black"
+              >
+                Salir de la cuenta
+              </button>
+            </div>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
+            <section className="rounded-[2rem] bg-white p-6 shadow-sm">
+              <h2 className="text-3xl font-black">Productos</h2>
+
+              {loadingProducts ? (
+                <div className="mt-6 rounded-3xl bg-zinc-50 p-8 text-center font-black text-zinc-500">
+                  Cargando productos...
+                </div>
+              ) : (
+                <>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    {categories.map((category) => (
+                      <button
+                        key={category}
+                        type="button"
+                        onClick={() => setSelectedCategory(category)}
+                        className={`rounded-2xl px-4 py-2 text-sm font-black ${
+                          selectedCategory === category
+                            ? "bg-[#10B557] text-white"
+                            : "bg-zinc-100 text-zinc-700"
+                        }`}
+                      >
+                        {category === "todos" ? "Todos" : category}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    {filteredProducts.map((product) => (
+                      <article
+                        key={product.id}
+                        className="overflow-hidden rounded-3xl border border-zinc-200 bg-white"
+                      >
+                        <div className="h-36 bg-zinc-100">
+                          {product.imageUrl ? (
+                            <img
+                              src={product.imageUrl}
+                              alt={product.name}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full items-center justify-center text-sm font-black text-zinc-400">
+                              SIN FOTO
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="p-4">
+                          <h3 className="min-h-[3rem] text-lg font-black">
+                            {product.name}
+                          </h3>
+                          <p className="mt-1 text-2xl font-black text-[#10B557]">
+                            {formatPrice(Number(product.price || 0))}
+                          </p>
+
+                          <button
+                            type="button"
+                            onClick={() => openProduct(product)}
+                            className="mt-4 w-full rounded-2xl bg-zinc-950 px-4 py-3 text-sm font-black text-white"
+                          >
+                            Elegir
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </>
+              )}
+            </section>
+
+            <aside className="rounded-[2rem] bg-white p-6 shadow-sm">
+              <h2 className="text-3xl font-black">Tu pedido</h2>
+
+              {cart.length === 0 ? (
+                <p className="mt-5 rounded-3xl bg-zinc-50 p-5 text-sm font-bold text-zinc-500">
+                  Aun no agregas productos.
+                </p>
+              ) : (
+                <div className="mt-5 space-y-3">
+                  {cart.map((item) => (
+                    <article
+                      key={item.id}
+                      className="rounded-3xl border border-zinc-200 p-4"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="font-black">{item.productName}</h3>
+                          <p className="mt-1 text-sm font-bold text-zinc-500">
+                            {formatPrice(item.total)}
+                          </p>
+
+                          {item.modifiersText.length > 0 && (
+                            <div className="mt-2 space-y-1">
+                              {item.modifiersText.map((text) => (
+                                <p
+                                  key={text}
+                                  className="text-xs font-bold text-zinc-500"
+                                >
+                                  {text}
+                                </p>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => removeCartItem(item.id)}
+                          className="rounded-xl bg-red-50 px-3 py-2 text-xs font-black text-red-600"
+                        >
+                          Quitar
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-6 border-t border-zinc-200 pt-5">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-black uppercase text-zinc-500">
+                    Total
+                  </span>
+                  <span className="text-3xl font-black text-[#10B557]">
+                    {formatPrice(cartTotal)}
+                  </span>
+                </div>
+
+                {cart.length > 0 && balance < cartTotal && (
+                  <p className="mt-3 rounded-2xl bg-red-50 p-4 text-sm font-black text-red-600">
+                    Saldo insuficiente para confirmar este pedido.
+                  </p>
+                )}
+
+                <button
+                  type="button"
+                  onClick={confirmOrder}
+                  disabled={!canPay || creatingOrder}
+                  className="mt-5 w-full rounded-2xl bg-[#10B557] px-5 py-4 text-sm font-black text-white disabled:bg-zinc-300"
+                >
+                  {creatingOrder ? "Confirmando..." : "Confirmar pedido"}
+                </button>
+
+                {message && (
+                  <p className="mt-4 rounded-2xl bg-zinc-50 p-4 text-sm font-black">
+                    {message}
+                  </p>
+                )}
+              </div>
+            </aside>
+          </div>
+        </section>
+      )}
+
+      {selectedProduct && (
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/60 p-4">
+          <div className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-[2rem] bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.25em] text-[#10B557]">
+                  Personalizar producto
+                </p>
+                <h2 className="mt-2 text-3xl font-black">
+                  {selectedProduct.name}
+                </h2>
+                <p className="mt-1 text-2xl font-black text-[#10B557]">
+                  {formatPrice(selectedProductTotal)}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedProduct(null)}
+                className="rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-black"
+              >
+                Cerrar
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-6">
+              {getProductGroups(selectedProduct).length === 0 ? (
+                <div className="rounded-3xl bg-zinc-50 p-5 text-sm font-bold text-zinc-500">
+                  Este producto no tiene modificadores.
+                </div>
+              ) : (
+                getProductGroups(selectedProduct).map((group) => {
+                  const options = getGroupOptions(group);
+                  const selectedIds = selectedOptions[group.id] || [];
+                  const min = isGroupRequired(group)
+                    ? Math.max(1, getGroupMin(group))
+                    : getGroupMin(group);
+                  const max = getGroupMax(group);
+
+                  return (
+                    <section
+                      key={group.id}
+                      className="rounded-3xl border border-zinc-200 p-5"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <h3 className="text-xl font-black">
+                            {getGroupName(group)}
+                          </h3>
+                          <p className="mt-1 text-sm font-bold text-zinc-500">
+                            {min > 0 ? `Minimo ${min}` : "Opcional"}
+                            {max > 0 ? ` · Maximo ${max}` : ""}
+                          </p>
+                        </div>
+                      </div>
+
+                      {options.length === 0 ? (
+                        <p className="mt-4 rounded-2xl bg-yellow-50 p-4 text-sm font-black text-yellow-700">
+                          Sin opciones disponibles. Revisa stock en admin.
+                        </p>
+                      ) : (
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                          {options.map((option) => {
+                            const selected = selectedIds.includes(option.id);
+                            const extra = optionPrice(option);
+
+                            return (
+                              <button
+                                key={option.id}
+                                type="button"
+                                onClick={() => toggleOption(group, option)}
+                                className={`rounded-3xl border p-3 text-left ${
+                                  selected
+                                    ? "border-[#10B557] bg-emerald-50"
+                                    : "border-zinc-200 bg-white"
+                                }`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="h-14 w-14 overflow-hidden rounded-2xl bg-zinc-100">
+                                    {option.imageUrl ? (
+                                      <img
+                                        src={option.imageUrl}
+                                        alt={option.name}
+                                        className="h-full w-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="flex h-full items-center justify-center text-[10px] font-black text-zinc-400">
+                                        FOTO
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  <div className="min-w-0 flex-1">
+                                    <p className="font-black">{option.name}</p>
+                                    {extra > 0 && (
+                                      <p className="mt-1 text-sm font-black text-[#10B557]">
+                                        +{formatPrice(extra)}
+                                      </p>
+                                    )}
+                                  </div>
+
+                                  <div
+                                    className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-black ${
+                                      selected
+                                        ? "bg-[#10B557] text-white"
+                                        : "bg-zinc-100 text-zinc-400"
+                                    }`}
+                                  >
+                                    ✓
+                                  </div>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </section>
+                  );
+                })
+              )}
+            </div>
+
+            {modifierMessage && (
+              <p className="mt-5 rounded-2xl bg-red-50 p-4 text-sm font-black text-red-600">
+                {modifierMessage}
+              </p>
+            )}
+
+            <button
+              type="button"
+              onClick={addConfiguredProductToCart}
+              className="mt-6 w-full rounded-2xl bg-[#10B557] px-5 py-4 text-sm font-black text-white"
+            >
+              Agregar al pedido
+            </button>
+          </div>
+        </div>
+      )}
+    </main>
+  );
+}

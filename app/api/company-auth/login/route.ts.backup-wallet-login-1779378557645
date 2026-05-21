@@ -39,7 +39,6 @@ export async function POST(request: Request) {
     return NextResponse.json({
       id: company.id,
       companyName: company.companyName,
-      walletBalance: company.walletBalance || 0,
       rut: company.rut,
       giro: company.giro,
       address: company.address,

@@ -69,15 +69,11 @@ function normalizePaymentMethod(value: unknown) {
   if (value === "debit_credit") return "debit_credit";
   if (value === "food_benefit") return "food_benefit";
   if (value === "online") return "online";
-  if (value === "worker_wallet") return "worker_wallet";
   return "unknown";
 }
 
 function normalizeOrderSource(value: unknown) {
   if (value === "online") return "online";
-  if (value === "company") return "company";
-  if (value === "company_worker") return "company_worker";
-  if (value === "company_worker_totem") return "company_worker_totem";
   return "totem";
 }
 
@@ -315,7 +311,6 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const companyCustomerId = body.companyCustomerId ? Number(body.companyCustomerId) : null;
-    const companyWorkerId = body.companyWorkerId ? Number(body.companyWorkerId) : null;
 
     const customerId = body.customerId ? Number(body.customerId) : null;
 
@@ -552,59 +547,11 @@ export async function POST(request: Request) {
 
     const totalAfterDiscount = Math.max(0, subtotalAmount - discountAmount);
 
-    const companyWorker = companyWorkerId
-      ? await prisma.companyWorker.findUnique({
-          where: { id: companyWorkerId },
-          include: { companyCustomer: true },
-        })
-      : null;
-
-    if (companyWorkerId && !companyWorker) {
-      return NextResponse.json(
-        { error: "Trabajador empresa no encontrado." },
-        { status: 404 }
-      );
-    }
-
-    if (companyWorker && companyWorker.active === false) {
-      return NextResponse.json(
-        { error: "Trabajador empresa inactivo." },
-        { status: 400 }
-      );
-    }
-
-    if (companyWorker && companyWorker.companyCustomer?.active === false) {
-      return NextResponse.json(
-        { error: "Empresa inactiva." },
-        { status: 400 }
-      );
-    }
-
-    if (
-      companyWorker &&
-      companyCustomerId &&
-      Number(companyWorker.companyCustomerId) !== Number(companyCustomerId)
-    ) {
-      return NextResponse.json(
-        { error: "El trabajador no pertenece a esta empresa." },
-        { status: 400 }
-      );
-    }
-
-    if (companyWorker && Number(companyWorker.walletBalance || 0) < totalAfterDiscount) {
-      return NextResponse.json(
-        { error: "Saldo trabajador insuficiente." },
-        { status: 400 }
-      );
-    }
-
     const walletBalance = customer
       ? calculateWalletBreakdown(customer.walletTransactions).totalBalance
       : 0;
 
-    const walletAmountUsed = companyWorker
-      ? totalAfterDiscount
-      : customer
+    const walletAmountUsed = customer
       ? Math.min(requestedWalletAmount, walletBalance, totalAfterDiscount)
       : 0;
 
@@ -641,20 +588,12 @@ export async function POST(request: Request) {
       };
 
       if (customerId) {
-          orderData.customer = {
-            connect: {
-              id: customerId,
-            },
-          };
-        }
-
-        if (companyCustomerId) {
-          orderData.companyCustomer = {
-            connect: {
-              id: companyCustomerId,
-            },
-          };
-        }
+        orderData.customer = {
+          connect: {
+            id: customerId,
+          },
+        };
+      }
 
       const createdOrder = await tx.order.create({
         data: orderData,
@@ -781,30 +720,6 @@ export async function POST(request: Request) {
           },
         });
       }
-
-        if (companyWorker && walletAmountUsed > 0) {
-          const updatedWorker = await tx.companyWorker.update({
-            where: { id: companyWorker.id },
-            data: {
-              walletBalance: {
-                decrement: walletAmountUsed,
-              },
-            },
-          });
-
-          await tx.companyWorkerWalletTransaction.create({
-            data: {
-              companyWorkerId: companyWorker.id,
-              companyCustomerId: companyWorker.companyCustomerId,
-              type: "debit",
-              amount: walletAmountUsed,
-              workerBalanceAfter: updatedWorker.walletBalance,
-              companyBalanceAfter: companyWorker.companyCustomer?.walletBalance || 0,
-              reason: `Compra tótem pedido #${orderNumber}`,
-              source: "worker_order_payment_totem",
-            },
-          });
-        }
 
       if (customerId && cashbackEarned > 0) {
         const cashbackTransactionData: any = {

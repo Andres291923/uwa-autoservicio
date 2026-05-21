@@ -1,4 +1,10 @@
-﻿"use client";
+
+
+==============================
+TOTEM PAGE
+ARCHIVO: app\totem\page.tsx
+==============================
+"use client";
 
 import TotemCompanyWorkerSessionBadge from "./TotemCompanyWorkerSessionBadge";
 
@@ -77,18 +83,6 @@ type CartItem = {
 type TotemStep = "catalog" | "summary" | "customer" | "payment";
 
 type PaymentMethod = "debit_credit" | "food_benefit";
-
-type WorkerTotemSession = {
-  accountType: "company_worker_totem";
-  workerId: number;
-  companyCustomerId: number;
-  workerName: string;
-  workerEmail: string | null;
-  workerRut: string | null;
-  walletBalance: number;
-  companyName: string;
-  companyEmail: string;
-};
 
 type StoreStatus = {
   isOpen: boolean;
@@ -203,10 +197,7 @@ export default function TotemPage() {
   const [closedModalVisible, setClosedModalVisible] = useState(false);
 
   const [identifiedCustomer, setIdentifiedCustomer] =
-      useState<IdentifiedTotemCustomer | null>(null);
-
-    const [companyWorkerSession, setCompanyWorkerSession] =
-      useState<WorkerTotemSession | null>(null);
+    useState<IdentifiedTotemCustomer | null>(null);
   const [totemAuthVisible, setTotemAuthVisible] = useState(false);
   const [totemAuthMode, setTotemAuthMode] = useState<TotemAuthMode>("login");
   const [totemAuthName, setTotemAuthName] = useState("");
@@ -680,9 +671,7 @@ export default function TotemPage() {
   function goToPaymentStep() {
     if (cart.length === 0) return;
 
-    const finalCustomerName = companyWorkerSession
-      ? companyWorkerSession.companyName
-      : (loggedCustomerName || customerName).trim();
+    const finalCustomerName = (loggedCustomerName || customerName).trim();
 
     if (!finalCustomerName) {
       setCustomerMessage("Debes ingresar el nombre del cliente.");
@@ -698,37 +687,19 @@ export default function TotemPage() {
   async function confirmOrder() {
     if (cart.length === 0) return;
 
-    const finalCustomerName = companyWorkerSession
-      ? companyWorkerSession.companyName
-      : (loggedCustomerName || customerName).trim();
+    const finalCustomerName = (loggedCustomerName || customerName).trim();
 
     if (!finalCustomerName) {
       setCustomerMessage("Debes ingresar el nombre del cliente.");
       return;
     }
 
-    if (!companyWorkerSession && amountToPay > 0 && !selectedPaymentMethod) {
+    if (amountToPay > 0 && !selectedPaymentMethod) {
       setCustomerMessage("Debes seleccionar un medio de pago.");
       return;
     }
 
-    if (companyWorkerSession && amountToPay > companyWorkerSession.walletBalance) {
-      setCustomerMessage("Saldo trabajador insuficiente para este pedido.");
-      return;
-    }
-
-    const baseCustomerComment = buildOrderCustomerComment();
-
-    const customerComment = companyWorkerSession
-      ? [
-          "TRABAJADOR EMPRESA",
-          "Empresa: " + companyWorkerSession.companyName,
-          "Trabajador: " + companyWorkerSession.workerName,
-          baseCustomerComment,
-        ]
-          .filter(Boolean)
-          .join(" | ")
-      : baseCustomerComment;
+    const customerComment = buildOrderCustomerComment();
 
     try {
       setConfirmingOrder(true);
@@ -742,19 +713,13 @@ export default function TotemPage() {
         },
         body: JSON.stringify({
           customerName: finalCustomerName,
-            customerId: companyWorkerSession ? null : identifiedCustomer?.id || null,
-            companyCustomerId: companyWorkerSession?.companyCustomerId || null,
-            companyWorkerId: companyWorkerSession?.workerId || null,
-            customerComment,
+          customerId: identifiedCustomer?.id || null,
+          customerComment,
           totemCode: "totem-local",
-          paymentMethod: companyWorkerSession
-              ? "worker_wallet"
-              : amountToPay === 0
-              ? "wallet"
-              : selectedPaymentMethod,
-          walletAmountUsed: companyWorkerSession ? amountToPay : walletAmountToUse,
+          paymentMethod: amountToPay === 0 ? "wallet" : selectedPaymentMethod,
+          walletAmountUsed: walletAmountToUse,
           tipAmount,
-          orderSource: companyWorkerSession ? "company_worker_totem" : "totem",
+          orderSource: "totem",
           fulfillmentType: "immediate",
           items: cart.map((item) => ({
             productId: item.productId,
@@ -782,47 +747,7 @@ export default function TotemPage() {
     setUseWalletBalance(false);
     setIdentifiedCustomer(null);
     setStep("catalog");
-      if (companyWorkerSession) {
-          try {
-            const balanceResponse = await fetch("/api/company-worker-auth/balance", {
-              method: "POST",
-              cache: "no-store",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                workerId: companyWorkerSession.workerId,
-              }),
-            });
-
-            const balanceData = await balanceResponse.json();
-
-            if (balanceResponse.ok) {
-              const updatedSession = {
-                ...companyWorkerSession,
-                walletBalance: Number(balanceData.walletBalance || 0),
-              };
-
-              setCompanyWorkerSession(updatedSession);
-
-              window.localStorage.setItem(
-                "totem_company_worker_session",
-                JSON.stringify(updatedSession)
-              );
-
-              window.dispatchEvent(
-                new CustomEvent("totem-company-worker-update", {
-                  detail: updatedSession,
-                })
-              );
-            }
-          } catch (error) {
-            console.error(error);
-          }
-        }
-
-        // UPDATE_COMPANY_WORKER_BALANCE_AFTER_ORDER
-        setOrderMessage(`Pedido #${data.orderNumber} enviado a cocina.`);
+      setOrderMessage(`Pedido #${data.orderNumber} enviado a cocina.`);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
       console.error(error);
@@ -831,50 +756,6 @@ export default function TotemPage() {
       setConfirmingOrder(false);
     }
   }
-
-  useEffect(() => {
-    // LOAD_COMPANY_WORKER_TOTEM_SESSION
-    function loadCompanyWorkerSession() {
-      const saved = window.localStorage.getItem("totem_company_worker_session");
-
-      if (!saved) {
-        setCompanyWorkerSession(null);
-        return;
-      }
-
-      try {
-        setCompanyWorkerSession(JSON.parse(saved));
-      } catch {
-        window.localStorage.removeItem("totem_company_worker_session");
-        setCompanyWorkerSession(null);
-      }
-    }
-
-    function handleCompanyWorkerLogin(event: Event) {
-      const customEvent = event as CustomEvent<WorkerTotemSession>;
-      setCompanyWorkerSession(customEvent.detail);
-      setIdentifiedCustomer(null);
-      setUseWalletBalance(false);
-      setCustomerName(customEvent.detail.workerName || "");
-      setCustomerMessage("");
-    }
-
-    function handleCompanyWorkerLogout() {
-      setCompanyWorkerSession(null);
-    }
-
-    loadCompanyWorkerSession();
-
-    window.addEventListener("totem-company-worker-login", handleCompanyWorkerLogin);
-    window.addEventListener("totem-company-worker-update", handleCompanyWorkerLogin);
-    window.addEventListener("totem-company-worker-logout", handleCompanyWorkerLogout);
-
-    return () => {
-      window.removeEventListener("totem-company-worker-login", handleCompanyWorkerLogin);
-      window.removeEventListener("totem-company-worker-update", handleCompanyWorkerLogin);
-      window.removeEventListener("totem-company-worker-logout", handleCompanyWorkerLogout);
-    };
-  }, []);
 
   useEffect(() => {
     if (!identifiedCustomer || walletBalance <= 0 || finalTotal <= 0) {
@@ -896,9 +777,6 @@ export default function TotemPage() {
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-white pb-[112px] text-zinc-950">
-
-      {/* BADGE_WORKER_ROOT */}
-      <TotemCompanyWorkerSessionBadge />
       <header className="sticky top-0 z-40 border-b border-zinc-100 bg-white px-3 py-2 shadow-sm">
         <div className="flex h-[70px] items-center justify-between gap-3">
           <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -1592,13 +1470,7 @@ export default function TotemPage() {
               </p>
             )}
 
-            {companyWorkerSession && (
-                <p className="mt-5 rounded-2xl bg-emerald-50 p-4 text-sm font-black text-emerald-700">
-                  Pago con saldo empresa activo: {companyWorkerSession.workerName}
-                </p>
-              )}
-
-              <div className="mt-6 flex items-center justify-between rounded-3xl bg-zinc-100 p-5">
+            <div className="mt-6 flex items-center justify-between rounded-3xl bg-zinc-100 p-5">
               <p className="text-2xl font-black">Total a pagar</p>
 
               <p
@@ -1908,22 +1780,20 @@ export default function TotemPage() {
 
             <button
               onClick={confirmOrder}
-              disabled={(!companyWorkerSession && amountToPay > 0 && !selectedPaymentMethod) || confirmingOrder}
+              disabled={(amountToPay > 0 && !selectedPaymentMethod) || confirmingOrder}
               className="mt-5 w-full rounded-2xl py-5 text-xl font-black text-white disabled:bg-zinc-200 disabled:text-zinc-500"
               style={{
                 background:
-                  (companyWorkerSession || amountToPay === 0 || selectedPaymentMethod) && !confirmingOrder
+                  (amountToPay === 0 || selectedPaymentMethod) && !confirmingOrder
                     ? settings.primaryColor
                     : undefined,
               }}
             >
               {confirmingOrder
-                  ? "Confirmando pago..."
-                  : companyWorkerSession
-                  ? "Confirmar con saldo empresa"
-                  : amountToPay === 0
-                  ? "Confirmar pago con billetera"
-                  : "Confirmar pago y enviar a cocina"}
+                ? "Confirmando pago..."
+                : amountToPay === 0
+                ? "Confirmar pago con billetera"
+                : "Confirmar pago y enviar a cocina"}
             </button>
 
             <p className="mt-3 text-center text-xs font-bold text-zinc-400">
@@ -2009,7 +1879,9 @@ export default function TotemPage() {
                       key={product.id}
                       className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm transition active:scale-[0.99]"
                     >
-<button
+
+      <TotemCompanyWorkerSessionBadge />
+                      <button
                         onClick={() => openProduct(product)}
                         className="flex h-[315px] w-full flex-col text-left"
                       >
@@ -2133,3 +2005,2229 @@ export default function TotemPage() {
 
 
 
+
+
+==============================
+BOTON EMPRESAS TOTEM
+ARCHIVO: app\totem\TotemCompanyWorkerLoginButton.tsx
+==============================
+"use client";
+
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+
+type WorkerTotemSession = {
+  accountType: "company_worker_totem";
+  workerId: number;
+  companyCustomerId: number;
+  workerName: string;
+  workerEmail: string | null;
+  workerRut: string | null;
+  walletBalance: number;
+  companyName: string;
+  companyEmail: string;
+};
+
+function formatPrice(value: number) {
+  return new Intl.NumberFormat("es-CL", {
+    style: "currency",
+    currency: "CLP",
+    maximumFractionDigits: 0,
+  }).format(value || 0);
+}
+
+export default function TotemCompanyWorkerLoginButton() {
+  const [mounted, setMounted] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [rut, setRut] = useState("");
+  const [pin, setPin] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [session, setSession] = useState<WorkerTotemSession | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+
+    const saved = window.localStorage.getItem("totem_company_worker_session");
+
+    if (!saved) return;
+
+    try {
+      setSession(JSON.parse(saved));
+    } catch {
+      window.localStorage.removeItem("totem_company_worker_session");
+    }
+  }, []);
+
+  function saveSession(data: WorkerTotemSession) {
+    setSession(data);
+
+    window.localStorage.setItem(
+      "totem_company_worker_session",
+      JSON.stringify(data)
+    );
+
+    window.dispatchEvent(
+      new CustomEvent("totem-company-worker-login", {
+        detail: data,
+      })
+    );
+  }
+
+  function logoutWorker() {
+    setSession(null);
+    setRut("");
+    setPin("");
+    setMessage("");
+    window.localStorage.removeItem("totem_company_worker_session");
+
+    window.dispatchEvent(new CustomEvent("totem-company-worker-logout"));
+  }
+
+  async function loginWorker() {
+    try {
+      setLoading(true);
+      setMessage("");
+
+      const response = await fetch("/api/company-worker-auth/totem-login", {
+        method: "POST",
+        cache: "no-store",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          rut,
+          pin,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(data.error || "No se pudo ingresar con saldo empresa.");
+        return;
+      }
+
+      saveSession(data);
+      setMessage("Trabajador identificado correctamente.");
+      setPin("");
+    } catch (error) {
+      console.error(error);
+      setMessage("Error al ingresar con saldo empresa.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const modal = (
+    <div
+      className="fixed inset-0 flex items-center justify-center bg-black/60 p-4"
+      style={{ zIndex: 999999 }}
+    >
+      <div className="w-full max-w-xl rounded-[2rem] bg-white p-6 shadow-2xl">
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-[#10B557]">
+              Empresas
+            </p>
+            <h2 className="mt-2 text-3xl font-black">
+              Ingresa con saldo empresa
+            </h2>
+            <p className="mt-1 text-sm font-bold text-zinc-500">
+              Usa tu RUT y PIN rapido de trabajador.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-black"
+          >
+            Cerrar
+          </button>
+        </div>
+
+        {!session ? (
+          <div className="space-y-4">
+            <label className="block">
+              <span className="text-xs font-black uppercase text-zinc-500">
+                RUT trabajador
+              </span>
+
+              <input
+                value={rut}
+                onChange={(event) => setRut(event.target.value)}
+                placeholder="Ej: 11111111-1"
+                className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-4 text-lg font-black outline-none focus:border-[#10B557]"
+              />
+            </label>
+
+            <label className="block">
+              <span className="text-xs font-black uppercase text-zinc-500">
+                PIN rapido
+              </span>
+
+              <input
+                type="password"
+                value={pin}
+                onChange={(event) => setPin(event.target.value)}
+                placeholder="••••"
+                className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-4 text-center text-3xl font-black tracking-[0.5em] outline-none focus:border-[#10B557]"
+              />
+            </label>
+
+            <button
+              type="button"
+              onClick={loginWorker}
+              disabled={loading}
+              className="w-full rounded-2xl bg-[#10B557] px-5 py-4 text-lg font-black text-white disabled:bg-zinc-300"
+            >
+              {loading ? "Validando..." : "Ingresar con saldo empresa"}
+            </button>
+
+            {message && (
+              <p className="rounded-2xl bg-zinc-50 p-4 text-sm font-black">
+                {message}
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="rounded-3xl bg-emerald-50 p-5">
+              <p className="text-xs font-black uppercase text-emerald-700">
+                Trabajador identificado
+              </p>
+
+              <h3 className="mt-2 text-3xl font-black">
+                {session.workerName}
+              </h3>
+
+              <p className="mt-1 text-sm font-bold text-zinc-500">
+                Empresa: {session.companyName}
+              </p>
+
+              <p className="mt-4 text-xs font-black uppercase text-emerald-700">
+                Saldo disponible
+              </p>
+
+              <p className="mt-1 text-5xl font-black text-[#10B557]">
+                {formatPrice(session.walletBalance)}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  window.dispatchEvent(
+                    new CustomEvent("totem-company-worker-login", {
+                      detail: session,
+                    })
+                  );
+                  window.location.href = "/totem?saldoEmpresa=1";
+                }}
+                className="rounded-2xl bg-[#10B557] px-5 py-3 text-sm font-black text-white"
+              >
+                Continuar pedido
+              </button>
+
+              <button
+                type="button"
+                onClick={logoutWorker}
+                className="rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-black"
+              >
+                Salir trabajador
+              </button>
+            </div>
+
+            {message && (
+              <p className="rounded-2xl bg-zinc-50 p-4 text-sm font-black">
+                {message}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <button
+        type="button"
+        suppressHydrationWarning
+        onClick={() => {
+          setOpen(true);
+          setMessage("");
+        }}
+        className="rounded-2xl bg-white px-5 py-4 text-sm font-black text-zinc-600 shadow-sm"
+      >
+        Empresas
+      </button>
+
+      {mounted && open ? createPortal(modal, document.body) : null}
+    </>
+  );
+}
+
+
+==============================
+BADGE EMPRESA TOTEM
+ARCHIVO: app\totem\TotemCompanyWorkerSessionBadge.tsx
+==============================
+"use client";
+
+import { useEffect, useState } from "react";
+
+type WorkerTotemSession = {
+  accountType: "company_worker_totem";
+  workerId: number;
+  companyCustomerId: number;
+  workerName: string;
+  workerEmail: string | null;
+  workerRut: string | null;
+  walletBalance: number;
+  companyName: string;
+  companyEmail: string;
+};
+
+function formatPrice(value: number) {
+  return new Intl.NumberFormat("es-CL", {
+    style: "currency",
+    currency: "CLP",
+    maximumFractionDigits: 0,
+  }).format(value || 0);
+}
+
+export default function TotemCompanyWorkerSessionBadge() {
+  const [session, setSession] = useState<WorkerTotemSession | null>(null);
+
+  useEffect(() => {
+    function loadSession() {
+      const saved = window.localStorage.getItem("totem_company_worker_session");
+
+      if (!saved) {
+        setSession(null);
+        return;
+      }
+
+      try {
+        setSession(JSON.parse(saved));
+      } catch {
+        window.localStorage.removeItem("totem_company_worker_session");
+        setSession(null);
+      }
+    }
+
+    function handleLogin(event: Event) {
+      const customEvent = event as CustomEvent<WorkerTotemSession>;
+      setSession(customEvent.detail);
+    }
+
+    function handleLogout() {
+      setSession(null);
+    }
+
+    loadSession();
+
+    window.addEventListener("totem-company-worker-login", handleLogin);
+    window.addEventListener("totem-company-worker-logout", handleLogout);
+
+    return () => {
+      window.removeEventListener("totem-company-worker-login", handleLogin);
+      window.removeEventListener("totem-company-worker-logout", handleLogout);
+    };
+  }, []);
+
+  function logout() {
+    window.localStorage.removeItem("totem_company_worker_session");
+    setSession(null);
+    window.dispatchEvent(new CustomEvent("totem-company-worker-logout"));
+  }
+
+  if (!session) return null;
+
+  return (
+    <div
+      className="fixed left-1/2 top-3 z-[999998] w-[min(920px,calc(100vw-24px))] -translate-x-1/2 rounded-3xl border border-emerald-200 bg-white px-5 py-3 shadow-xl"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="text-[11px] font-black uppercase tracking-[0.25em] text-[#10B557]">
+            Saldo empresa activo
+          </p>
+
+          <p className="text-sm font-black text-zinc-900">
+            Empresa: {session.companyName} · Trabajador: {session.workerName}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="rounded-2xl bg-emerald-50 px-4 py-2">
+            <p className="text-[10px] font-black uppercase text-emerald-700">
+              Saldo disponible
+            </p>
+            <p className="text-2xl font-black text-[#10B557]">
+              {formatPrice(session.walletBalance)}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={logout}
+            className="rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-xs font-black"
+          >
+            Salir
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+==============================
+API ORDERS
+ARCHIVO: app\api\orders\route.ts
+==============================
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { calculateWalletBreakdown } from "@/lib/wallet";
+
+const allowedStatuses = ["pending", "ready", "cancelled"];
+const storeTimeZone = "America/Santiago";
+
+function getChileDayOfWeek(date: Date) {
+  const weekday = new Intl.DateTimeFormat("en-US", {
+    timeZone: storeTimeZone,
+    weekday: "short",
+  }).format(date);
+
+  const map: Record<string, number> = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+  };
+
+  return map[weekday] ?? 0;
+}
+
+function getChileMinutes(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: storeTimeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+
+  const hour = Number(parts.find((part) => part.type === "hour")?.value || 0);
+  const minute = Number(parts.find((part) => part.type === "minute")?.value || 0);
+
+  return hour * 60 + minute;
+}
+
+function timeToMinutes(time: string) {
+  const [hour, minute] = time.split(":").map(Number);
+  return (hour || 0) * 60 + (minute || 0);
+}
+
+async function isStoreOpenNow() {
+  const now = new Date();
+  const dayOfWeek = getChileDayOfWeek(now);
+  const currentMinutes = getChileMinutes(now);
+
+  const schedule = await prisma.storeOpeningHour.findUnique({
+    where: {
+      businessSettingsId_dayOfWeek: {
+        businessSettingsId: 1,
+        dayOfWeek,
+      },
+    },
+  });
+
+  if (!schedule || !schedule.enabled) return false;
+
+  const openMinutes = timeToMinutes(schedule.openTime);
+  const closeMinutes = timeToMinutes(schedule.closeTime);
+
+  return currentMinutes >= openMinutes && currentMinutes < closeMinutes;
+}
+
+function normalizePaymentMethod(value: unknown) {
+  if (value === "debit_credit") return "debit_credit";
+  if (value === "food_benefit") return "food_benefit";
+  if (value === "online") return "online";
+  return "unknown";
+}
+
+function normalizeOrderSource(value: unknown) {
+  if (value === "online") return "online";
+  return "totem";
+}
+
+function normalizeFulfillmentType(value: unknown) {
+  if (value === "scheduled") return "scheduled";
+  return "immediate";
+}
+
+function normalizeCouponCode(value: unknown) {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "");
+}
+
+function parseIds(value: string | null | undefined) {
+  if (!value || value === "all") return [];
+
+  return value
+    .split(",")
+    .map((item) => Number(item.trim()))
+    .filter(Boolean);
+}
+
+function calculateBalance(transactions: { type: string; amount: number }[]) {
+  return transactions.reduce((sum, transaction) => {
+    if (transaction.type === "credit") return sum + transaction.amount;
+    if (transaction.type === "debit") return sum - transaction.amount;
+    return sum;
+  }, 0);
+}
+
+async function calculateCashback(params: {
+  customerId: number | null;
+  paymentMethod: string;
+  orderTotal: number;
+  walletAmountUsed: number;
+  itemsMeta: {
+    productId: number;
+    categoryId: number | null;
+    lineTotal: number;
+  }[];
+}) {
+  const { customerId, paymentMethod, walletAmountUsed, itemsMeta } = params;
+
+  if (!customerId) {
+    return { cashbackEarned: 0, expiresAt: null as Date | null };
+  }
+
+  const now = new Date();
+
+  const rules = await prisma.cashbackRule.findMany({
+    where: {
+      active: true,
+    },
+    orderBy: [{ priority: "asc" }, { id: "asc" }],
+  });
+
+  const rule = rules.find((item) => {
+    const startsOk = !item.startDate || item.startDate <= now;
+    const endsOk = !item.endDate || item.endDate >= now;
+    const paymentOk =
+      item.allowedPaymentMethods === "all" ||
+      item.allowedPaymentMethods === paymentMethod;
+
+    return startsOk && endsOk && paymentOk;
+  });
+
+  if (!rule) {
+    return { cashbackEarned: 0, expiresAt: null as Date | null };
+  }
+
+  const includedCategoryIds =
+    rule.includedCategoryIds === "all"
+      ? []
+      : parseIds(rule.includedCategoryIds);
+
+  const excludedProductIds = parseIds(rule.excludedProductIds);
+
+  const eligibleItemsTotal = itemsMeta
+    .filter((item) => {
+      const categoryOk =
+        rule.includedCategoryIds === "all" ||
+        includedCategoryIds.includes(item.categoryId || 0);
+
+      const productOk = !excludedProductIds.includes(item.productId);
+
+      return categoryOk && productOk;
+    })
+    .reduce((sum, item) => sum + item.lineTotal, 0);
+
+  const eligibleAmount = Math.max(0, eligibleItemsTotal - walletAmountUsed);
+
+  if (eligibleAmount <= 0) {
+    return { cashbackEarned: 0, expiresAt: null as Date | null };
+  }
+
+  if (eligibleAmount < rule.minPurchase) {
+    return { cashbackEarned: 0, expiresAt: null as Date | null };
+  }
+
+  let cashbackEarned = Math.round(
+    eligibleAmount * (Number(rule.cashbackPercent) / 100)
+  );
+
+  if (rule.maxCashback > 0) {
+    cashbackEarned = Math.min(cashbackEarned, rule.maxCashback);
+  }
+
+  if (cashbackEarned <= 0) {
+    return { cashbackEarned: 0, expiresAt: null as Date | null };
+  }
+
+  let expiresAt: Date | null = null;
+
+  if (rule.validityDays > 0) {
+    expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + rule.validityDays);
+  }
+
+  return { cashbackEarned, expiresAt };
+}
+
+
+function getScheduledChileDayOfWeek(date: Date) {
+  const weekday = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Santiago",
+    weekday: "short",
+  }).format(date);
+
+  const map: Record<string, number> = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+  };
+
+  return map[weekday] ?? 0;
+}
+
+function getScheduledChileMinutes(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "America/Santiago",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+
+  const hour = Number(parts.find((part) => part.type === "hour")?.value || 0);
+  const minute = Number(parts.find((part) => part.type === "minute")?.value || 0);
+
+  return hour * 60 + minute;
+}
+
+function scheduleTimeToMinutes(time: string) {
+  const [hour, minute] = time.split(":").map(Number);
+  return (hour || 0) * 60 + (minute || 0);
+}
+
+async function validateScheduledOrderTime(date: Date) {
+  const dayOfWeek = getScheduledChileDayOfWeek(date);
+  const scheduledMinutes = getScheduledChileMinutes(date);
+
+  const schedule = await prisma.storeOpeningHour.findUnique({
+    where: {
+      businessSettingsId_dayOfWeek: {
+        businessSettingsId: 1,
+        dayOfWeek,
+      },
+    },
+  });
+
+  if (!schedule || !schedule.enabled) {
+    return {
+      ok: false,
+      openTime: null,
+      closeTime: null,
+    };
+  }
+
+  const openMinutes = scheduleTimeToMinutes(schedule.openTime);
+  const closeMinutes = scheduleTimeToMinutes(schedule.closeTime);
+
+  return {
+    ok: scheduledMinutes >= openMinutes && scheduledMinutes < closeMinutes,
+    openTime: schedule.openTime,
+    closeTime: schedule.closeTime,
+  };
+}
+
+export async function GET() {
+  try {
+    const orders = await prisma.order.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        customer: true,
+        items: {
+          include: {
+            product: {
+              include: {
+                category: true,
+              },
+            },
+            modifiers: {
+              include: {
+                option: {
+                  include: {
+                    template: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return NextResponse.json(orders);
+  } catch (error) {
+    console.error("GET_ORDERS_ERROR", error);
+
+    return NextResponse.json(
+      { error: "No se pudieron cargar los pedidos." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const companyCustomerId = body.companyCustomerId ? Number(body.companyCustomerId) : null;
+
+    const customerId = body.customerId ? Number(body.customerId) : null;
+
+    const customerName = body.customerName
+      ? String(body.customerName).trim()
+      : null;
+
+    const customerComment = body.customerComment
+      ? String(body.customerComment).trim().slice(0, 500)
+      : null;
+
+    const totemCode = body.totemCode ? String(body.totemCode) : "totem-local";
+    const paymentMethod = normalizePaymentMethod(body.paymentMethod);
+    const orderSource = normalizeOrderSource(body.orderSource);
+    const fulfillmentType = normalizeFulfillmentType(body.fulfillmentType);
+    const scheduledFor = body.scheduledFor ? new Date(body.scheduledFor) : null;
+    const requestedDiscountCouponCode = normalizeCouponCode(
+      body.discountCouponCode || body.couponCode
+    );
+
+    const requestedWalletAmount = Math.max(
+      0,
+      Math.round(Number(body.walletAmountUsed || 0))
+    );
+
+    const tipAmount = Math.max(
+      0,
+      Math.round(Number(body.tipAmount || 0))
+    );
+
+    const items = Array.isArray(body.items) ? body.items : [];
+
+    if (items.length === 0) {
+      return NextResponse.json(
+        { error: "El pedido no tiene productos." },
+        { status: 400 }
+      );
+    }
+
+    if (!customerName) {
+      return NextResponse.json(
+        { error: "El nombre del cliente es obligatorio." },
+        { status: 400 }
+      );
+    }
+
+    if (fulfillmentType === "scheduled" && !scheduledFor) {
+      return NextResponse.json(
+        { error: "Falta fecha u hora programada." },
+        { status: 400 }
+      );
+    }
+
+
+    if (fulfillmentType !== "scheduled") {
+      const storeIsOpen = await isStoreOpenNow();
+
+      if (!storeIsOpen) {
+        return NextResponse.json(
+          {
+            error:
+              "STORE_CLOSED_FOR_IMMEDIATE_ORDER: Tienda cerrada, solo puedes hacer pedidos programados.",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (fulfillmentType === "scheduled" && scheduledFor) {
+      const scheduledValidation = await validateScheduledOrderTime(scheduledFor);
+
+      if (!scheduledValidation.ok) {
+        const hoursText =
+          scheduledValidation.openTime && scheduledValidation.closeTime
+            ? `Horario disponible: ${scheduledValidation.openTime} a ${scheduledValidation.closeTime}.`
+            : "La tienda no abre ese dia.";
+
+        return NextResponse.json(
+          {
+            error:
+              `STORE_CLOSED_FOR_SCHEDULED_ORDER: La tienda esta cerrada en ese horario. ${hoursText}`,
+          },
+          { status: 400 }
+        );
+      }
+    }
+    const customer = customerId
+      ? await prisma.customer.findUnique({
+          where: {
+            id: customerId,
+          },
+          include: {
+            walletTransactions: true,
+          },
+        })
+      : null;
+
+    if (customerId && (!customer || !customer.active)) {
+      return NextResponse.json(
+        { error: "Cliente no encontrado o inactivo." },
+        { status: 400 }
+      );
+    }
+
+    const lastOrder = await prisma.order.findFirst({
+      orderBy: {
+        orderNumber: "desc",
+      },
+    });
+
+    const orderNumber = (lastOrder?.orderNumber || 0) + 1;
+
+    const orderItemsData: any[] = [];
+    const itemsMeta: {
+      productId: number;
+      categoryId: number | null;
+      lineTotal: number;
+    }[] = [];
+
+    let orderTotal = 0;
+    const productStockDeductions = new Map<number, number>();
+    const modifierStockDeductions = new Map<number, number>();
+
+    for (const item of items) {
+      const productId = Number(item.productId);
+      const quantity = Math.max(1, Number(item.quantity || 1));
+
+      const modifierOptionIds = Array.isArray(item.modifierOptionIds)
+        ? item.modifierOptionIds
+            .map((id: unknown) => Number(id))
+            .filter(Boolean)
+        : [];
+
+      if (!productId) {
+        return NextResponse.json(
+          { error: "Producto invalido en el pedido." },
+          { status: 400 }
+        );
+      }
+
+      const product = await prisma.product.findUnique({
+        where: {
+          id: productId,
+        },
+        include: {
+          category: true,
+        },
+      });
+
+      if (!product || !product.active) {
+        return NextResponse.json(
+          { error: "Uno de los productos no esta disponible." },
+          { status: 400 }
+        );
+      }
+
+      const selectedOptions =
+        modifierOptionIds.length > 0
+          ? await prisma.modifierOption.findMany({
+              where: {
+                id: {
+                  in: modifierOptionIds,
+                },
+                active: true,
+              },
+            })
+          : [];
+
+      const modifiersTotal = selectedOptions.reduce(
+        (sum, option) => sum + option.price,
+        0
+      );
+
+      const unitTotal = product.price + modifiersTotal;
+      const lineTotal = unitTotal * quantity;
+
+      orderTotal += lineTotal;
+
+      itemsMeta.push({
+        productId: product.id,
+        categoryId: product.categoryId || null,
+        lineTotal,
+      });
+
+      orderItemsData.push({
+        productId: product.id,
+        quantity,
+        unitPrice: product.price,
+        total: lineTotal,
+        modifiers: {
+          create: selectedOptions.map((option) => ({
+            optionId: option.id,
+            price: option.price,
+          })),
+        },
+      });
+
+      productStockDeductions.set(
+        product.id,
+        (productStockDeductions.get(product.id) || 0) + quantity
+      );
+
+      for (const option of selectedOptions) {
+        modifierStockDeductions.set(
+          option.id,
+          (modifierStockDeductions.get(option.id) || 0) + quantity
+        );
+      }
+    }
+
+    const subtotalAmount = orderTotal;
+    let discountAmount = 0;
+    let discountPercent = 0;
+    let discountCouponCode: string | null = null;
+
+    if (orderSource === "online" && requestedDiscountCouponCode) {
+      const coupon = await prisma.discountCoupon.findUnique({
+        where: {
+          code: requestedDiscountCouponCode,
+        },
+      });
+
+      if (!coupon || !coupon.active) {
+        return NextResponse.json(
+          { error: "Cupón inválido o inactivo." },
+          { status: 400 }
+        );
+      }
+
+      discountPercent = Math.max(1, Math.min(100, coupon.percent));
+      discountAmount = Math.round(subtotalAmount * (discountPercent / 100));
+      discountCouponCode = coupon.code;
+    }
+
+    const totalAfterDiscount = Math.max(0, subtotalAmount - discountAmount);
+
+    const walletBalance = customer
+      ? calculateWalletBreakdown(customer.walletTransactions).totalBalance
+      : 0;
+
+    const walletAmountUsed = customer
+      ? Math.min(requestedWalletAmount, walletBalance, totalAfterDiscount)
+      : 0;
+
+    const { cashbackEarned, expiresAt } = await calculateCashback({
+      customerId,
+      paymentMethod,
+      orderTotal: totalAfterDiscount,
+      walletAmountUsed,
+      itemsMeta,
+    });
+
+    const order = await prisma.$transaction(async (tx) => {
+      const orderData: any = {
+        orderNumber,
+        status: "pending",
+        total: totalAfterDiscount,
+        subtotalAmount,
+        discountAmount,
+        discountPercent,
+        discountCouponCode,
+        customerName,
+        customerComment,
+        walletAmountUsed,
+        cashbackEarned,
+        tipAmount,
+        totemCode,
+        paymentMethod,
+        orderSource,
+        fulfillmentType,
+        scheduledFor,
+        items: {
+          create: orderItemsData,
+        },
+      };
+
+      if (customerId) {
+        orderData.customer = {
+          connect: {
+            id: customerId,
+          },
+        };
+      }
+
+      const createdOrder = await tx.order.create({
+        data: orderData,
+        include: {
+          customer: true,
+          items: {
+            include: {
+              product: {
+                include: {
+                  category: true,
+                },
+              },
+              modifiers: {
+                include: {
+                  option: {
+                    include: {
+                      template: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const soldProductQuantities = new Map<number, number>();
+      const soldModifierOptionQuantities = new Map<number, number>();
+
+      for (const orderItem of createdOrder.items as any[]) {
+        soldProductQuantities.set(
+          orderItem.productId,
+          (soldProductQuantities.get(orderItem.productId) || 0) + orderItem.quantity
+        );
+
+        for (const modifier of orderItem.modifiers || []) {
+          soldModifierOptionQuantities.set(
+            modifier.optionId,
+            (soldModifierOptionQuantities.get(modifier.optionId) || 0) + orderItem.quantity
+          );
+        }
+      }
+
+      const stockProductIds = Array.from(soldProductQuantities.keys());
+      const stockModifierOptionIds = Array.from(soldModifierOptionQuantities.keys());
+
+      const stockOrFilters: any[] = [];
+
+      if (stockProductIds.length > 0) {
+        stockOrFilters.push({
+          productId: {
+            in: stockProductIds,
+          },
+        });
+      }
+
+      if (stockModifierOptionIds.length > 0) {
+        stockOrFilters.push({
+          modifierOptionId: {
+            in: stockModifierOptionIds,
+          },
+        });
+      }
+
+      if (stockOrFilters.length > 0) {
+        const stockItems = await tx.stockItem.findMany({
+          where: {
+            active: true,
+            OR: stockOrFilters,
+          },
+        });
+
+        for (const stockItem of stockItems) {
+          let quantityToDiscount = 0;
+
+          if (stockItem.modifierOptionId) {
+            quantityToDiscount =
+              soldModifierOptionQuantities.get(stockItem.modifierOptionId) || 0;
+          } else if (stockItem.productId) {
+            quantityToDiscount =
+              soldProductQuantities.get(stockItem.productId) || 0;
+          }
+
+          if (quantityToDiscount <= 0) continue;
+
+          const previousStock = stockItem.currentStock;
+          const newStock = Math.max(0, previousStock - quantityToDiscount);
+
+          await tx.stockItem.update({
+            where: {
+              id: stockItem.id,
+            },
+            data: {
+              currentStock: newStock,
+            },
+          });
+
+          await tx.stockMovement.create({
+            data: {
+              stockItemId: stockItem.id,
+              type: "sale",
+              quantity: quantityToDiscount,
+              previousStock,
+              newStock,
+              reason: `Venta pedido #${orderNumber}`,
+              orderId: createdOrder.id,
+            },
+          });
+        }
+      }
+
+      if (customerId && walletAmountUsed > 0) {
+        await tx.walletTransaction.create({
+          data: {
+            customer: {
+              connect: {
+                id: customerId,
+              },
+            },
+            type: "debit",
+            amount: walletAmountUsed,
+            reason: `Uso de saldo en pedido #${orderNumber}`,
+            source: "wallet_spend",
+          },
+        });
+      }
+
+      if (customerId && cashbackEarned > 0) {
+        const cashbackTransactionData: any = {
+          customer: {
+            connect: {
+              id: customerId,
+            },
+          },
+          type: "credit",
+          amount: cashbackEarned,
+          reason: `Cashback pedido #${orderNumber}`,
+            source: "cashback",
+            expiresAt,
+        };
+
+        await tx.walletTransaction.create({
+          data: cashbackTransactionData,
+        });
+      }
+
+      return createdOrder;
+    });
+
+    return NextResponse.json(order);
+  } catch (error) {
+    console.error("CREATE_ORDER_ERROR", error);
+
+    return NextResponse.json(
+      { error: "No se pudo crear el pedido." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const companyCustomerId = body.companyCustomerId ? Number(body.companyCustomerId) : null;
+
+    const id = Number(body.id);
+    const status = String(body.status || "");
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Falta el ID del pedido." },
+        { status: 400 }
+      );
+    }
+
+    if (!allowedStatuses.includes(status)) {
+      return NextResponse.json(
+        { error: "Estado de pedido invalido." },
+        { status: 400 }
+      );
+    }
+
+    const order = await prisma.order.update({
+      where: {
+        id,
+      },
+      data: {
+        status,
+      },
+      include: {
+        customer: true,
+        items: {
+          include: {
+            product: {
+              include: {
+                category: true,
+              },
+            },
+            modifiers: {
+              include: {
+                option: {
+                  include: {
+                    template: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return NextResponse.json(order);
+  } catch (error) {
+    console.error("UPDATE_ORDER_ERROR", error);
+
+    return NextResponse.json(
+      { error: "No se pudo actualizar el pedido." },
+      { status: 500 }
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+
+==============================
+API WORKER CREATE ORDER
+ARCHIVO: app\api\company-worker-auth\create-order\route.ts
+==============================
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+
+type CartItemInput = {
+  productId: number;
+  quantity: number;
+  modifierOptionIds?: number[];
+};
+
+function moneyNumber(value: unknown) {
+  const number = Number(value || 0);
+  return Number.isFinite(number) ? Math.round(number) : 0;
+}
+
+function isActive(value: unknown) {
+  return value !== false;
+}
+
+function optionExtraPrice(option: any) {
+  return moneyNumber(
+    option?.priceExtra ??
+      option?.extraPrice ??
+      option?.priceModifier ??
+      option?.price ??
+      0
+  );
+}
+
+function groupMin(group: any) {
+  return Number(group?.min ?? group?.minSelections ?? group?.minimum ?? 0);
+}
+
+function groupMax(group: any) {
+  const value = Number(group?.max ?? group?.maxSelections ?? group?.maximum ?? 0);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function groupRequired(group: any) {
+  return Boolean(group?.required ?? group?.isRequired ?? false);
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+
+    const workerId = Number(body.workerId || 0);
+    const items = Array.isArray(body.items) ? (body.items as CartItemInput[]) : [];
+
+    if (!workerId) {
+      return NextResponse.json(
+        { error: "Trabajador no informado." },
+        { status: 400 }
+      );
+    }
+
+    if (items.length === 0) {
+      return NextResponse.json(
+        { error: "Agrega productos al pedido." },
+        { status: 400 }
+      );
+    }
+
+    const worker = await prisma.companyWorker.findUnique({
+      where: { id: workerId },
+      include: {
+        companyCustomer: true,
+      },
+    });
+
+    if (!worker) {
+      return NextResponse.json(
+        { error: "Trabajador no encontrado." },
+        { status: 404 }
+      );
+    }
+
+    if (!worker.active) {
+      return NextResponse.json(
+        { error: "Trabajador inactivo." },
+        { status: 400 }
+      );
+    }
+
+    if (!worker.companyCustomer?.active) {
+      return NextResponse.json(
+        { error: "Empresa inactiva." },
+        { status: 400 }
+      );
+    }
+
+    const productIds = items.map((item) => Number(item.productId)).filter(Boolean);
+
+    const products = await prisma.product.findMany({
+      where: {
+        id: {
+          in: productIds,
+        },
+        active: true,
+      },
+      include: {
+        category: true,
+        modifierGroups: {
+          include: {
+            template: {
+              include: {
+                options: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const productMap = new Map(products.map((product) => [product.id, product as any]));
+
+    const orderItems = items.map((item) => {
+      const productId = Number(item.productId);
+      const quantity = Math.max(1, Number(item.quantity || 1));
+      const product = productMap.get(productId);
+
+      if (!product) {
+        throw new Error("Producto no disponible.");
+      }
+
+      const selectedOptionIds = Array.from(
+        new Set((item.modifierOptionIds || []).map(Number).filter(Boolean))
+      );
+
+      const selectedOptions: {
+        optionId: number;
+        price: number;
+        label: string;
+      }[] = [];
+
+      const groups = Array.isArray(product.modifierGroups)
+        ? product.modifierGroups.filter((group: any) => isActive(group.active))
+        : [];
+
+      for (const group of groups) {
+        const options = Array.isArray(group.template?.options)
+          ? group.template.options.filter((option: any) => {
+              return isActive(option.active) && isActive(option.available);
+            })
+          : [];
+
+        const optionIdsInGroup = options.map((option: any) => Number(option.id));
+
+        const selectedInGroup = selectedOptionIds.filter((optionId) =>
+          optionIdsInGroup.includes(optionId)
+        );
+
+        const min = groupRequired(group) ? Math.max(1, groupMin(group)) : groupMin(group);
+        const max = groupMax(group);
+
+        if (min > 0 && selectedInGroup.length < min) {
+          throw new Error(
+            `Debes seleccionar al menos ${min} opcion(es) en ${group.template?.name || "modificador"}.`
+          );
+        }
+
+        if (max > 0 && selectedInGroup.length > max) {
+          throw new Error(
+            `Solo puedes seleccionar ${max} opcion(es) en ${group.template?.name || "modificador"}.`
+          );
+        }
+
+        for (const optionId of selectedInGroup) {
+          const option = options.find((item: any) => Number(item.id) === optionId);
+
+          if (!option) {
+            throw new Error("Una opcion seleccionada ya no esta disponible.");
+          }
+
+          selectedOptions.push({
+            optionId: Number(option.id),
+            price: optionExtraPrice(option),
+            label: option.name || "Opcion",
+          });
+        }
+      }
+
+      const unitPrice =
+        moneyNumber(product.price) +
+        selectedOptions.reduce((sum, option) => sum + option.price, 0);
+
+      const total = unitPrice * quantity;
+
+      return {
+        productId,
+        quantity,
+        unitPrice,
+        total,
+        productName: product.name || "Producto",
+        selectedOptions,
+      };
+    });
+
+    const total = orderItems.reduce((sum, item) => sum + item.total, 0);
+
+    if (total <= 0) {
+      return NextResponse.json(
+        { error: "Total invalido." },
+        { status: 400 }
+      );
+    }
+
+    if ((worker.walletBalance || 0) < total) {
+      return NextResponse.json(
+        {
+          error: `Saldo insuficiente. Tu saldo es ${worker.walletBalance || 0} y el pedido cuesta ${total}.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const lastOrder = await tx.order.findFirst({
+        orderBy: {
+          orderNumber: "desc",
+        },
+        select: {
+          orderNumber: true,
+        },
+      });
+
+      const nextOrderNumber = (lastOrder?.orderNumber || 0) + 1;
+
+      const updatedWorker = await tx.companyWorker.update({
+        where: { id: worker.id },
+        data: {
+          walletBalance: {
+            decrement: total,
+          },
+        },
+      });
+
+      const order = await tx.order.create({
+        data: {
+          orderNumber: nextOrderNumber,
+          customerName: worker.companyCustomer.companyName,
+          customerComment: `Trabajador: ${worker.name}`,
+          total,
+          subtotalAmount: total,
+          walletAmountUsed: total,
+          paymentMethod: "worker_wallet",
+          orderSource: "company_worker",
+          fulfillmentType: "immediate",
+          companyCustomerId: worker.companyCustomerId,
+          items: {
+            create: orderItems.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              total: item.total,
+              modifiers: {
+                create: item.selectedOptions.map((option) => ({
+                  optionId: option.optionId,
+                  price: option.price,
+                })),
+              },
+            })),
+          },
+        },
+        include: {
+          items: {
+            include: {
+              product: true,
+              modifiers: {
+                include: {
+                  option: {
+                    include: {
+                      template: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const workerTransaction = await tx.companyWorkerWalletTransaction.create({
+        data: {
+          companyWorkerId: worker.id,
+          companyCustomerId: worker.companyCustomerId,
+          type: "debit",
+          amount: total,
+          workerBalanceAfter: updatedWorker.walletBalance,
+          companyBalanceAfter: worker.companyCustomer.walletBalance || 0,
+          reason: `Compra pedido #${nextOrderNumber}`,
+          source: "worker_order_payment",
+        },
+      });
+
+      return {
+        order,
+        worker: updatedWorker,
+        workerTransaction,
+      };
+    });
+
+    return NextResponse.json({
+      ok: true,
+      order: result.order,
+      worker: {
+        id: result.worker.id,
+        walletBalance: result.worker.walletBalance,
+      },
+    });
+  } catch (error) {
+    console.error("COMPANY_WORKER_CREATE_ORDER_ERROR", error);
+
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "No se pudo crear pedido trabajador.",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+
+==============================
+API TOTEM LOGIN WORKER
+ARCHIVO: app\api\company-worker-auth\totem-login\route.ts
+==============================
+import { NextResponse } from "next/server";
+import { scryptSync, timingSafeEqual } from "crypto";
+import { prisma } from "@/lib/prisma";
+
+export const runtime = "nodejs";
+
+function cleanText(value: unknown) {
+  return String(value || "").trim();
+}
+
+function normalizeRut(value: unknown) {
+  return cleanText(value)
+    .toLowerCase()
+    .replace(/\./g, "")
+    .replace(/\s/g, "")
+    .replace(/-/g, "");
+}
+
+function verifyPin(pin: string, storedHash: string | null) {
+  if (!storedHash) return false;
+
+  const [salt, hash] = storedHash.split(":");
+
+  if (!salt || !hash) return false;
+
+  const storedBuffer = Buffer.from(hash, "hex");
+  const attemptBuffer = scryptSync(pin, salt, 64);
+
+  if (storedBuffer.length !== attemptBuffer.length) return false;
+
+  return timingSafeEqual(storedBuffer, attemptBuffer);
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+
+    const rut = normalizeRut(body.rut);
+    const pin = cleanText(body.pin);
+
+    if (!rut) {
+      return NextResponse.json(
+        { error: "Ingresa RUT del trabajador." },
+        { status: 400 }
+      );
+    }
+
+    if (!pin) {
+      return NextResponse.json(
+        { error: "Ingresa PIN rapido del trabajador." },
+        { status: 400 }
+      );
+    }
+
+    const workers = await prisma.companyWorker.findMany({
+      include: {
+        companyCustomer: true,
+      },
+    });
+
+    const worker = workers.find((item) => normalizeRut(item.rut) === rut);
+
+    if (!worker) {
+      return NextResponse.json(
+        { error: "Trabajador no encontrado." },
+        { status: 404 }
+      );
+    }
+
+    if (!worker.totemPinHash) {
+      return NextResponse.json(
+        {
+          error:
+            "Este trabajador aun no tiene PIN rapido. Debe crearlo desde su perfil.",
+        },
+        { status: 403 }
+      );
+    }
+
+    const pinOk = verifyPin(pin, worker.totemPinHash);
+
+    if (!pinOk) {
+      return NextResponse.json(
+        { error: "PIN rapido incorrecto." },
+        { status: 401 }
+      );
+    }
+
+    if (!worker.active) {
+      return NextResponse.json(
+        { error: "Este trabajador esta inactivo." },
+        { status: 403 }
+      );
+    }
+
+    const company: any = worker.companyCustomer;
+
+    if (company?.active === false) {
+      return NextResponse.json(
+        { error: "La empresa esta inactiva." },
+        { status: 403 }
+      );
+    }
+
+    return NextResponse.json({
+      accountType: "company_worker_totem",
+      workerId: worker.id,
+      companyCustomerId: worker.companyCustomerId,
+      workerName: worker.name,
+      workerEmail: worker.email,
+      workerRut: worker.rut,
+      walletBalance: worker.walletBalance || 0,
+      companyName: worker.companyCustomer.companyName,
+      companyEmail: worker.companyCustomer.email,
+    });
+  } catch (error) {
+    console.error("COMPANY_WORKER_TOTEM_LOGIN_ERROR", error);
+
+    return NextResponse.json(
+      { error: "No se pudo ingresar con saldo empresa." },
+      { status: 500 }
+    );
+  }
+}
+
+
+==============================
+SCHEMA PRISMA
+ARCHIVO: prisma\schema.prisma
+==============================
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id                Int       @id @default(autoincrement())
+  name              String
+  slug              String    @unique
+  order             Int       @default(0)
+  active            Boolean   @default(true)
+  channelVisibility String    @default("all")
+  products          Product[]
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @default(now()) @updatedAt
+}
+
+model Product {
+  stockItems        StockItem[]
+  id                Int         @id @default(autoincrement())
+  name              String
+  description       String?
+  price             Int
+  imageUrl          String?
+  active            Boolean     @default(true)
+  channelVisibility String      @default("all")
+  order             Int         @default(0)
+
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  modifierGroups ProductModifierGroup[]
+  orderItems     OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model ModifierTemplate {
+  id     Int     @id @default(autoincrement())
+  name   String
+  order  Int     @default(0)
+  active Boolean @default(true)
+
+  channelVisibility String                 @default("all")
+  options           ModifierOption[]
+  products          ProductModifierGroup[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model ModifierOption {
+  stockItems        StockItem[]
+  id                Int         @id @default(autoincrement())
+  name              String
+  price             Int         @default(0)
+  imageUrl          String?
+  active            Boolean     @default(true)
+  channelVisibility String      @default("all")
+  order             Int         @default(0)
+
+  templateId Int
+  template   ModifierTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  orderItemModifiers OrderItemModifier[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model ProductModifierGroup {
+  id Int @id @default(autoincrement())
+
+  productId Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  templateId Int
+  template   ModifierTemplate @relation(fields: [templateId], references: [id])
+
+  min      Int     @default(0)
+  max      Int     @default(1)
+  required Boolean @default(false)
+  order    Int     @default(0)
+  active   Boolean @default(true)
+
+  channelVisibility String   @default("all")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now()) @updatedAt
+
+  @@unique([productId, templateId])
+}
+
+model Order {
+  stockMovements     StockMovement[]
+  id                 Int             @id @default(autoincrement())
+  orderNumber        Int
+  status             String          @default("pending")
+  total              Int             @default(0)
+  customerName       String?
+  customerComment    String?
+  customerId         Int?
+  companyCustomerId  Int?
+  walletAmountUsed   Int             @default(0)
+  cashbackEarned     Int             @default(0)
+  tipAmount          Int             @default(0)
+  subtotalAmount     Int             @default(0)
+  discountAmount     Int             @default(0)
+  discountPercent    Int             @default(0)
+  discountCouponCode String?
+  totemCode          String?
+  paymentMethod      String          @default("unknown")
+
+  orderSource     String           @default("totem")
+  fulfillmentType String           @default("immediate")
+  scheduledFor    DateTime?
+  items           OrderItem[]
+  customer        Customer?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  companyCustomer CompanyCustomer? @relation(fields: [companyCustomerId], references: [id], onDelete: SetNull)
+
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @default(now()) @updatedAt
+  businessSettings   BusinessSettings? @relation(fields: [businessSettingsId], references: [id])
+  businessSettingsId Int?
+  cashbackRule       CashbackRule?     @relation(fields: [cashbackRuleId], references: [id])
+  cashbackRuleId     Int?
+}
+
+model OrderItem {
+  id        Int @id @default(autoincrement())
+  quantity  Int @default(1)
+  unitPrice Int
+  total     Int
+
+  orderId Int
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+
+  modifiers OrderItemModifier[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model OrderItemModifier {
+  id Int @id @default(autoincrement())
+
+  orderItemId Int
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  optionId Int
+  option   ModifierOption @relation(fields: [optionId], references: [id])
+
+  price Int @default(0)
+
+  createdAt DateTime @default(now())
+}
+
+model BusinessSettings {
+  id                Int     @id
+  businessName      String  @default("Mi negocio")
+  logoUrl           String?
+  idleBackgroundUrl String?
+  primaryColor      String  @default("#10B557")
+  kioskSubtitle     String  @default("Autoservicio")
+  kioskTitle        String  @default("Elige tus productos")
+
+  tipsEnabled Boolean  @default(false)
+  tipPercent  Int      @default(10)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orders       Order[]
+  openingHours StoreOpeningHour[]
+}
+
+model Customer {
+  id                Int       @id @default(autoincrement())
+  name              String
+  email             String    @unique
+  passwordHash      String?
+  pinHash           String?
+  pinAttempts       Int       @default(0)
+  pinLockedUntil    DateTime?
+  active            Boolean   @default(true)
+  channelVisibility String    @default("all")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  orders Order[]
+
+  openingHours       StoreOpeningHour[]
+  walletTransactions WalletTransaction[]
+  totemSessions      TotemSession[]
+}
+
+model WalletTransaction {
+  id         Int       @id @default(autoincrement())
+  customerId Int
+  type       String
+  amount     Int
+  reason     String
+  source     String    @default("manual")
+  orderId    Int?
+  expiresAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model CashbackRule {
+  id                    Int       @id @default(autoincrement())
+  name                  String
+  active                Boolean   @default(false)
+  cashbackPercent       Float     @default(0)
+  minPurchase           Int       @default(0)
+  maxCashback           Int       @default(0)
+  allowedPaymentMethods String    @default("all")
+  includedCategoryIds   String    @default("all")
+  excludedProductIds    String    @default("")
+  validityDays          Int       @default(0)
+  commercialText        String    @default("")
+  priority              Int       @default(0)
+  startDate             DateTime?
+  endDate               DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  orders       Order[]
+  openingHours StoreOpeningHour[]
+}
+
+model StoreOpeningHour {
+  id                 Int              @id @default(autoincrement())
+  businessSettingsId Int
+  businessSettings   BusinessSettings @relation(fields: [businessSettingsId], references: [id], onDelete: Cascade)
+
+  dayOfWeek Int
+  enabled   Boolean @default(true)
+  openTime  String  @default("10:00")
+  closeTime String  @default("18:00")
+
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  customer       Customer?     @relation(fields: [customerId], references: [id])
+  customerId     Int?
+  cashbackRule   CashbackRule? @relation(fields: [cashbackRuleId], references: [id])
+  cashbackRuleId Int?
+
+  @@unique([businessSettingsId, dayOfWeek])
+}
+
+model DiscountCoupon {
+  id                Int      @id @default(autoincrement())
+  name              String
+  code              String   @unique
+  percent           Int      @default(10)
+  active            Boolean  @default(true)
+  channelVisibility String   @default("all")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model AdminUser {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  passwordHash String
+  permissions  String   @default("")
+  active       Boolean  @default(true)
+  isOwner      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model InventoryCategory {
+  id        Int      @id @default(autoincrement())
+  name      String
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subcategories InventorySubcategory[]
+  items         InventoryItem[]
+}
+
+model InventorySubcategory {
+  id         Int      @id @default(autoincrement())
+  categoryId Int
+  name       String
+  order      Int      @default(0)
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  category InventoryCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  items    InventoryItem[]
+}
+
+model InventoryItem {
+  id             Int      @id @default(autoincrement())
+  categoryId     Int
+  subcategoryId  Int?
+  name           String
+  unit           String   @default("")
+  wasteCostPerKg Int      @default(0)
+  order          Int      @default(0)
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  category     InventoryCategory     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  subcategory  InventorySubcategory? @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
+  entries      InventoryEntry[]
+  wasteEntries InventoryWasteEntry[]
+}
+
+model InventoryEntry {
+  id        Int      @id @default(autoincrement())
+  entryDate DateTime
+  itemId    Int
+  quantity  Float    @default(0)
+  comment   String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  item InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([entryDate, itemId])
+}
+
+model TotemSession {
+  id         Int      @id @default(autoincrement())
+  code       String   @unique
+  status     String   @default("waiting")
+  customerId Int?
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+}
+
+model InventoryWasteEntry {
+  id            Int      @id @default(autoincrement())
+  entryDate     DateTime
+  itemId        Int?
+  productName   String   @default("")
+  quantityGrams Float    @default(0)
+  amount        Int      @default(0)
+  comment       String   @default("")
+  source        String   @default("manual")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  item InventoryItem? @relation(fields: [itemId], references: [id], onDelete: SetNull)
+}
+
+model PurchaseImport {
+  id           Int      @id @default(autoincrement())
+  fileName     String   @default("")
+  status       String   @default("completed")
+  totalRows    Int      @default(0)
+  importedRows Int      @default(0)
+  skippedRows  Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  invoices PurchaseInvoice[]
+}
+
+model PurchaseInvoice {
+  id           Int      @id @default(autoincrement())
+  importId     Int?
+  issueDate    DateTime
+  supplierRut  String   @default("")
+  supplierName String   @default("")
+  documentType String   @default("")
+  folio        String   @default("")
+  netAmount    Int      @default(0)
+  exemptAmount Int      @default(0)
+  ivaAmount    Int      @default(0)
+  totalAmount  Int      @default(0)
+  category     String   @default("unclassified")
+  note         String   @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  import PurchaseImport? @relation(fields: [importId], references: [id], onDelete: SetNull)
+
+  @@index([issueDate])
+  @@index([category])
+  @@index([supplierRut])
+}
+
+model CompanyCustomer {
+  id           Int      @id @default(autoincrement())
+  companyName  String
+  rut          String   @unique
+  giro         String
+  address      String
+  contactName  String
+  phone        String
+  email        String   @unique
+  passwordHash String
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  orders Order[]
+  invoices CompanyInvoice[]
+  walletBalance Int @default(0)
+  walletTransactions CompanyWalletTransaction[]
+  workers CompanyWorker[]
+  workerWalletTransactions CompanyWorkerWalletTransaction[]
+}
+
+model CompanyBankSettings {
+  id            Int      @id @default(1)
+  businessName  String   @default("")
+  rut           String   @default("")
+  bank          String   @default("")
+  accountType   String   @default("")
+  accountNumber String   @default("")
+  email         String   @default("")
+  updatedAt     DateTime @updatedAt
+}
+
+model StockItem {
+  id Int @id @default(autoincrement())
+
+  name         String
+  currentStock Int     @default(0)
+  minStock     Int     @default(0)
+  active       Boolean @default(true)
+
+  productId Int?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  modifierOptionId Int?
+  modifierOption   ModifierOption? @relation(fields: [modifierOptionId], references: [id], onDelete: SetNull)
+
+  movements StockMovement[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId])
+  @@index([modifierOptionId])
+}
+
+model StockMovement {
+  id Int @id @default(autoincrement())
+
+  stockItemId Int
+  stockItem   StockItem @relation(fields: [stockItemId], references: [id], onDelete: Cascade)
+
+  type     String
+  quantity Int
+
+  previousStock Int
+  newStock      Int
+
+  reason String?
+
+  orderId Int?
+  order   Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([stockItemId])
+  @@index([orderId])
+}
+
+
+model CompanyInvoice {
+  id                Int      @id @default(autoincrement())
+  companyCustomerId Int
+  invoiceNumber     String
+  invoiceDate       DateTime?
+  amount            Int      @default(0)
+  fileUrl           String
+  fileName          String?
+  note              String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  companyCustomer CompanyCustomer @relation(fields: [companyCustomerId], references: [id], onDelete: Cascade)
+  walletTransactions CompanyWalletTransaction[]
+}
+
+
+model CompanyWalletTransaction {
+  id                Int      @id @default(autoincrement())
+  companyCustomerId Int
+  invoiceId         Int?
+  type              String
+  amount            Int
+  balanceAfter      Int
+  reason            String
+  source            String   @default("manual_admin")
+  createdBy         String?
+  createdAt         DateTime @default(now())
+
+  companyCustomer CompanyCustomer @relation(fields: [companyCustomerId], references: [id], onDelete: Cascade)
+  invoice         CompanyInvoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+}
+
+
+model CompanyWorker {
+  id                Int      @id @default(autoincrement())
+  companyCustomerId Int
+  name              String
+  email             String?
+  rut               String?
+  phone             String?
+  active            Boolean  @default(true)
+  walletBalance     Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  companyCustomer CompanyCustomer @relation(fields: [companyCustomerId], references: [id], onDelete: Cascade)
+  walletTransactions CompanyWorkerWalletTransaction[]
+  passwordHash String?
+  totemPinHash String?
+}
+
+
+model CompanyWorkerWalletTransaction {
+  id                  Int      @id @default(autoincrement())
+  companyWorkerId     Int
+  companyCustomerId   Int
+  type                String
+  amount              Int
+  workerBalanceAfter  Int
+  companyBalanceAfter Int
+  reason              String
+  source              String   @default("company_assignment")
+  createdAt           DateTime @default(now())
+
+  worker          CompanyWorker   @relation(fields: [companyWorkerId], references: [id], onDelete: Cascade)
+  companyCustomer CompanyCustomer @relation(fields: [companyCustomerId], references: [id], onDelete: Cascade)
+}
