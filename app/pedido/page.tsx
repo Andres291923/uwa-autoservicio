@@ -947,19 +947,19 @@ export default function PedidoPage() {
 
       const customerComment = buildOnlineOrderCustomerComment();
 
-      const response = await fetch("/api/orders", {
+      const response = await fetch("/api/mercadopago/create-preference", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          flow: "personal_order",
           customerId: loggedCustomer?.id || null,
           customerName: finalCustomerName,
-          customerComment,
+          customerEmail: loggedCustomer?.email || authEmail.trim() || null,
           discountCouponCode: appliedCoupon?.code || null,
+          customerComment,
           walletAmountUsed: walletAmountToUse,
-          totemCode: "online",
-          paymentMethod,
           orderSource: "online",
           fulfillmentType,
           scheduledFor: scheduledForValue
@@ -976,56 +976,31 @@ export default function PedidoPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        const errorText = String(data.error || "");
-
-        if (
-          errorText.includes("STORE_CLOSED_FOR_IMMEDIATE_ORDER") ||
-          errorText.includes("STORE_CLOSED_FOR_SCHEDULED_ORDER")
-        ) {
-          setMessage("");
-          switchToScheduled();
-          setClosedStoreModalVisible(true);
-          return;
-        }
-
-        setMessage(data.error || "No se pudo crear el pedido.");
+        setMessage(data.error || "No se pudo iniciar el pago con Mercado Pago.");
         return;
       }
 
-      setCart([]);
-      setGuestName(loggedCustomer?.name || "");
-      setFulfillmentType("immediate");
-      setScheduledDate(todayInputDate);
-      setScheduledTime("");
-      setPaymentMethod("debit_credit");
-      setUseWallet(false);
-      clearCoupon();
+      const paymentUrl =
+        data.checkoutUrl ||
+        (data.environment === "production"
+          ? data.initPoint
+          : data.sandboxInitPoint || data.initPoint);
 
-      if (loggedCustomer) {
-        await refreshCustomerWallet(loggedCustomer.id);
-        await loadWalletSummary(loggedCustomer.id);
+      if (!paymentUrl) {
+        setMessage("Mercado Pago no devolvió URL de pago.");
+        return;
       }
 
-      const cashbackText =
-        loggedCustomer && data.cashbackEarned > 0
-          ? ` Cashback ganado: ${formatPrice(data.cashbackEarned)}.`
-          : "";
-
-      const walletText =
-        walletAmountToUse > 0
-          ? ` Saldo usado: ${formatPrice(walletAmountToUse)}.`
-          : "";
-
-      setMessage(
-        `Pedido online #${data.orderNumber} enviado a cocina.${walletText}${cashbackText}`
-      );
+      setMessage("Redirigiendo a Mercado Pago...");
+      window.location.href = paymentUrl;
     } catch (error) {
       console.error(error);
-      setMessage("Error al crear pedido online.");
+      setMessage("Error al iniciar pago con Mercado Pago.");
     } finally {
       setLoadingOrder(false);
     }
   }
+
 
   return (
     <main className="min-h-screen bg-[#f5f6f8] text-zinc-950">
@@ -2243,6 +2218,8 @@ export default function PedidoPage() {
     </main>
   );
 }
+
+
 
 
 

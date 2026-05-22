@@ -580,14 +580,3 @@ model MercadoPagoPaymentIntent {
   @@index([companyCustomerId])
   @@index([paymentId])
 }
-
-model MercadoPagoSettings {
-  id            Int      @id @default(1)
-  enabled       Boolean  @default(false)
-  environment   String   @default("test")
-  publicKey     String   @default("")
-  accessToken   String   @default("")
-  webhookSecret String   @default("")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-}

@@ -1,11 +1,6 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
-import WorkerCreatePasswordModalButton from "./WorkerCreatePasswordModalButton";
-import CompanyWorkersButton from "./CompanyWorkersButton";
-import CompanyBalanceAmount from "./CompanyBalanceAmount";
-import CompanyInvoicesPublicButton from "./CompanyInvoicesPublicButton";
-import CompanyOrdersPublicModalButton from "./CompanyOrdersPublicModalButton";
 
 type Category = {
   id: number;
@@ -81,12 +76,6 @@ type LoggedCustomer = {
   cashbackCredits?: number;
   nextCashbackExpiration?: string | null;
   nextCashbackAmount?: number;
-  accountType?: "company" | "worker";
-  companyCustomerId?: number;
-  companyName?: string;
-  companyEmail?: string;
-  workerId?: number;
-  rut?: string | null;
 };
 
 type WalletSummary = {
@@ -168,7 +157,7 @@ type OpeningHour = {
 
 const defaultSettings: Settings = {
   businessName: "Mi negocio",
-  kioskTitle: "Pedido online empresas",
+  kioskTitle: "Pedido online",
   kioskSubtitle: "Compra online y retira en local",
   logoUrl: null,
   primaryColor: "#10B557",
@@ -217,8 +206,7 @@ function formatFulfillment(value: string) {
 
 function formatPaymentMethod(value: string) {
   if (value === "food_benefit") return "Beneficio alimentación";
-  if (value === "debit_credit") return "Tarjeta";
-  if (value === "bank_transfer") return "Transferencia";
+  if (value === "debit_credit") return "Débito / Crédito";
   return value || "No informado";
 }
 
@@ -324,17 +312,6 @@ function buildScheduleBanner(openingHours: OpeningHour[]) {
   return parts.join(" · ");
 }
 
-
-function tomorrowInputDate() {
-  const now = new Date();
-  now.setDate(now.getDate() + 1);
-
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-}
 export default function PedidoPage() {
   const todayInputDate = useMemo(() => getTodayInputDate(), []);
 
@@ -346,7 +323,7 @@ export default function PedidoPage() {
     "all"
   );
 
-  const [scheduledDate, setScheduledDate] = useState(tomorrowInputDate);
+  const [scheduledDate, setScheduledDate] = useState(todayInputDate);
   const [scheduledTime, setScheduledTime] = useState("");
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
 
@@ -363,18 +340,12 @@ export default function PedidoPage() {
   );
   const [walletSummary, setWalletSummary] = useState<WalletSummary | null>(null);
   const [cashbackDetailVisible, setCashbackDetailVisible] = useState(false);
-  const [authMode, setAuthMode] = useState<"login" | "worker" | "register">(
+  const [authMode, setAuthMode] = useState<"login" | "register" | "guest">(
     "login"
   );
   const [authName, setAuthName] = useState("");
-  const [companyRut, setCompanyRut] = useState("");
-  const [companyGiro, setCompanyGiro] = useState("");
-  const [companyAddress, setCompanyAddress] = useState("");
-  const [companyContactName, setCompanyContactName] = useState("");
-  const [companyPhone, setCompanyPhone] = useState("");
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
-  const [workerNewPassword, setWorkerNewPassword] = useState("");
   const [guestName, setGuestName] = useState("");
   const [useWallet, setUseWallet] = useState(false);
 
@@ -382,7 +353,7 @@ export default function PedidoPage() {
     "immediate" | "scheduled"
   >("immediate");
 
-  const [paymentMethod, setPaymentMethod] = useState<"debit_credit" | "bank_transfer">("debit_credit");
+  const [paymentMethod, setPaymentMethod] = useState<"debit_credit">("debit_credit");
 
   const [message, setMessage] = useState("");
   const [closedStoreModalVisible, setClosedStoreModalVisible] = useState(false);
@@ -516,9 +487,11 @@ export default function PedidoPage() {
     return cart.reduce((sum, item) => sum + item.total, 0);
   }, [cart]);
 
-  const couponDiscountAmount = 0;
+  const couponDiscountAmount = appliedCoupon
+    ? Math.min(cartTotal, Math.round(cartTotal * (appliedCoupon.percent / 100)))
+    : 0;
 
-  const subtotalAfterDiscount = cartTotal;
+  const subtotalAfterDiscount = Math.max(0, cartTotal - couponDiscountAmount);
 
   const walletAmountToUse = useMemo(() => {
     if (!loggedCustomer || !useWallet) return 0;
@@ -527,15 +500,11 @@ export default function PedidoPage() {
 
   const totalToPay = Math.max(0, subtotalAfterDiscount - walletAmountToUse);
 
-  const companyBowlCount = cart.length;
-  const minimumCompanyBowls = 5;
-  const hasMinimumCompanyBowls = companyBowlCount >= minimumCompanyBowls;
-
   function switchToScheduled() {
     setFulfillmentType("scheduled");
 
     if (!scheduledDate) {
-      setScheduledDate(tomorrowInputDate());
+      setScheduledDate(todayInputDate);
     }
   }
 
@@ -660,19 +629,6 @@ export default function PedidoPage() {
     setCart((current) => current.filter((item) => item.id !== id));
   }
 
-  function updateCartItemWorkerName(id: string, workerName: string) {
-    setCart((current) =>
-      current.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              customerComment: workerName.slice(0, 80),
-            }
-          : item
-      )
-    );
-  }
-
   async function loadWalletSummary(customerId: number) {
     try {
       const response = await fetch(
@@ -738,7 +694,7 @@ export default function PedidoPage() {
       setLoadingAuth(true);
       setAuthMessage("");
 
-      const response = await fetch("/api/company-auth/login", {
+      const response = await fetch("/api/customer-auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -756,109 +712,15 @@ export default function PedidoPage() {
         return;
       }
 
-      setLoggedCustomer({
-        ...data,
-        name: data.name || data.companyName,
-        walletBalance: data.walletBalance || 0,
-        accountType: "company",
-        companyCustomerId: data.id,
-        companyName: data.companyName || data.name,
-        companyEmail: data.email,
-      });
+      setLoggedCustomer(data);
       setGuestName(data.name);
       await loadWalletSummary(data.id);
       setAuthPassword("");
       setUseWallet(false);
-      setAuthMessage("Empresa ingresada correctamente.");
+      setAuthMessage("Cuenta ingresada correctamente.");
     } catch (error) {
       console.error(error);
       setAuthMessage("Error al ingresar.");
-    } finally {
-      setLoadingAuth(false);
-    }
-  }
-
-
-  async function loginWorker() {
-    try {
-      setLoadingAuth(true);
-      setAuthMessage("");
-
-      const response = await fetch("/api/company-worker-auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: authEmail.trim().toLowerCase(),
-          password: authPassword.trim(),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setAuthMessage(data.error || "No se pudo ingresar como trabajador.");
-        return;
-      }
-
-      setLoggedCustomer({
-        ...data,
-        id: data.companyCustomerId,
-        name: data.name,
-        email: data.email,
-        walletBalance: data.walletBalance || 0,
-        accountType: "worker",
-        companyCustomerId: data.companyCustomerId,
-        companyName: data.companyName,
-        companyEmail: data.companyEmail,
-        workerId: data.workerId,
-      });
-
-      setGuestName(data.companyName || data.name);
-      setAuthPassword("");
-      setUseWallet(false);
-      setAuthMessage("Trabajador ingresado correctamente.");
-    } catch (error) {
-      console.error(error);
-      setAuthMessage("Error al ingresar como trabajador.");
-    } finally {
-      setLoadingAuth(false);
-    }
-  }
-
-
-  async function createWorkerPassword() {
-    try {
-      setLoadingAuth(true);
-      setAuthMessage("");
-
-      const response = await fetch("/api/company-worker-auth/create-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: authEmail.trim().toLowerCase(),
-          password: authPassword.trim(),
-          password: workerNewPassword.trim(),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setAuthMessage(data.error || "No se pudo crear clave.");
-        return;
-      }
-
-      setAuthPassword("");
-      setWorkerNewPassword("");
-      setAuthMode("worker");
-      setAuthMessage("Clave creada correctamente. Ahora ingresa como trabajador.");
-    } catch (error) {
-      console.error(error);
-      setAuthMessage("Error al crear clave.");
     } finally {
       setLoadingAuth(false);
     }
@@ -869,19 +731,14 @@ export default function PedidoPage() {
       setLoadingAuth(true);
       setAuthMessage("");
 
-      const response = await fetch("/api/company-auth/register", {
+      const response = await fetch("/api/customer-auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          companyName: authName.trim(),
-          rut: companyRut.trim(),
-          giro: companyGiro.trim(),
-          address: companyAddress.trim(),
-          contactName: companyContactName.trim(),
-          phone: companyPhone.trim(),
-          email: authEmail.trim().toLowerCase(),
+          name: authName,
+          email: authEmail,
           password: authPassword,
         }),
       });
@@ -893,23 +750,15 @@ export default function PedidoPage() {
         return;
       }
 
-      setLoggedCustomer({
-        ...data,
-        name: data.name || data.companyName,
-        walletBalance: data.walletBalance || 0,
-        accountType: "company",
-        companyCustomerId: data.id,
-        companyName: data.companyName || data.name,
-        companyEmail: data.email,
-      });
+      setLoggedCustomer(data);
       setGuestName(data.name);
       await loadWalletSummary(data.id);
       setAuthPassword("");
       setUseWallet(false);
-      setAuthMessage("Empresa registrada correctamente.");
+      setAuthMessage("Cuenta creada correctamente.");
     } catch (error) {
       console.error(error);
-      setAuthMessage("Error al Registrar Empresa.");
+      setAuthMessage("Error al crear cuenta.");
     } finally {
       setLoadingAuth(false);
     }
@@ -957,7 +806,7 @@ export default function PedidoPage() {
       setOrderHistoryLoading(true);
       setOrderHistoryVisible(true);
 
-      const response = await fetch("/api/company-auth/order-history", {
+      const response = await fetch("/api/customer-auth/order-history", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1053,10 +902,8 @@ export default function PedidoPage() {
 
   function buildOnlineOrderCustomerComment() {
     return cart
-      .map((item) => {
-        const workerName = item.customerComment.trim() || "Sin nombre";
-        return `${item.productName}: ${workerName}`;
-      })
+      .filter((item) => item.customerComment.trim())
+      .map((item) => `${item.productName}: ${item.customerComment.trim()}`)
       .join(" | ");
   }
 
@@ -1067,22 +914,6 @@ export default function PedidoPage() {
 
       if (cart.length === 0) {
         setMessage("Agrega productos al pedido.");
-        return;
-      }
-
-      const missingWorkerName = cart.some(
-        (item) => !item.customerComment.trim()
-      );
-
-      if (missingWorkerName) {
-        setMessage("Debes ingresar el nombre del trabajador en cada bowl.");
-        return;
-      }
-
-      if (!hasMinimumCompanyBowls) {
-        setMessage(
-          `Pedido minimo para empresas con despacho: ${minimumCompanyBowls} bowls. Actualmente tienes ${companyBowlCount}.`
-        );
         return;
       }
 
@@ -1101,11 +932,6 @@ export default function PedidoPage() {
           return;
         }
 
-        if (scheduledDate < tomorrowInputDate()) {
-          setMessage("Los pedidos empresa deben programarse con 1 día de anticipación.");
-          return;
-        }
-
         if (!selectedDaySchedule) {
           setMessage("La tienda está cerrada ese día. Elige otra fecha.");
           return;
@@ -1119,24 +945,19 @@ export default function PedidoPage() {
         scheduledForValue = `${scheduledDate}T${scheduledTime}:00`;
       }
 
-      const customerComment = buildOnlineOrderCustomerComment();
-
-      const response = await fetch("/api/orders", {
+      const response = await fetch("/api/mercadopago/create-preference", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          customerId: null,
-          companyCustomerId: loggedCustomer?.companyCustomerId || loggedCustomer?.id || null,
+          flow: "personal_order",
+          customerId: loggedCustomer?.id || null,
           customerName: finalCustomerName,
-          customerComment,
-          discountCouponCode: null,
+          customerEmail: loggedCustomer?.email || authEmail.trim() || null,
+          discountCouponCode: appliedCoupon?.code || null,
           walletAmountUsed: walletAmountToUse,
-          totemCode: "empresa",
-          paymentMethod,
-          orderSource:
-            loggedCustomer?.accountType === "worker" ? "company_worker" : "company",
+          orderSource: "online",
           fulfillmentType,
           scheduledFor: scheduledForValue
             ? new Date(scheduledForValue).toISOString()
@@ -1152,56 +973,27 @@ export default function PedidoPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        const errorText = String(data.error || "");
-
-        if (
-          errorText.includes("STORE_CLOSED_FOR_IMMEDIATE_ORDER") ||
-          errorText.includes("STORE_CLOSED_FOR_SCHEDULED_ORDER")
-        ) {
-          setMessage("");
-          switchToScheduled();
-          setClosedStoreModalVisible(true);
-          return;
-        }
-
-        setMessage(data.error || "No se pudo crear el pedido.");
+        setMessage(data.error || "No se pudo iniciar el pago con Mercado Pago.");
         return;
       }
 
-      setCart([]);
-      setGuestName(loggedCustomer?.name || "");
-      setFulfillmentType("scheduled");
-      setScheduledDate(tomorrowInputDate());
-      setScheduledTime("");
-      setPaymentMethod("debit_credit");
-      setUseWallet(false);
-      clearCoupon();
+      const paymentUrl = data.sandboxInitPoint || data.initPoint;
 
-      if (loggedCustomer) {
-        await refreshCustomerWallet(loggedCustomer.id);
-        await loadWalletSummary(loggedCustomer.id);
+      if (!paymentUrl) {
+        setMessage("Mercado Pago no devolvió URL de pago.");
+        return;
       }
 
-      const cashbackText =
-        loggedCustomer && data.cashbackEarned > 0
-          ? ` Cashback ganado: ${formatPrice(data.cashbackEarned)}.`
-          : "";
-
-      const walletText =
-        walletAmountToUse > 0
-          ? ` Saldo usado: ${formatPrice(walletAmountToUse)}.`
-          : "";
-
-      setMessage(
-        `Pedido online empresas #${data.orderNumber} enviado a cocina.${walletText}${cashbackText}`
-      );
+      setMessage("Redirigiendo a Mercado Pago...");
+      window.location.href = paymentUrl;
     } catch (error) {
       console.error(error);
-      setMessage("Error al crear Pedido online empresas.");
+      setMessage("Error al iniciar pago con Mercado Pago.");
     } finally {
       setLoadingOrder(false);
     }
   }
+
 
   return (
     <main className="min-h-screen bg-[#f5f6f8] text-zinc-950">
@@ -1221,12 +1013,6 @@ export default function PedidoPage() {
                 <p className="mt-1 text-sm font-bold text-zinc-500">
                   {loggedCustomer.email}
                 </p>
-
-                  {loggedCustomer.accountType === "worker" && (
-                    <p className="mt-1 text-sm font-black text-zinc-700">
-                      Trabajador: {loggedCustomer.name}
-                    </p>
-                  )}
               </div>
 
               <button suppressHydrationWarning
@@ -1240,14 +1026,10 @@ export default function PedidoPage() {
 
             <div className="mb-5 rounded-3xl bg-zinc-50 p-4">
               <p className="text-xs font-black uppercase text-zinc-500">
-                Saldo disponible empresa
+                Saldo disponible
               </p>
               <p className="mt-1 text-4xl font-black text-[#10B557]">
-                <CompanyBalanceAmount
-                          companyId={loggedCustomer.companyCustomerId || loggedCustomer.id}
-                          initialBalance={Number(loggedCustomer.walletBalance || 0)}
-                          className="text-4xl font-black text-[#10B557]"
-                        />
+                {formatPrice(loggedCustomer.walletBalance)}
               </p>
             </div>
 
@@ -1376,7 +1158,7 @@ export default function PedidoPage() {
                 {settings.businessName}
               </p>
               <h1 className="text-xl font-black leading-tight">
-                Pedido online empresas
+                Pedido online
               </h1>
             </div>
           </div>
@@ -1514,13 +1296,11 @@ export default function PedidoPage() {
             {loggedCustomer ? (
               <div>
                 <p className="text-xs font-black uppercase text-[#10B557]">
-                  Empresa registrada
+                  Cliente registrado
                 </p>
 
                 <h3 className="mt-1 text-xl font-black">
-                  {loggedCustomer.accountType === "worker"
-                      ? "Empresa: " + (loggedCustomer.companyName || "")
-                      : "Empresa: " + loggedCustomer.name}
+                  Hola, {loggedCustomer.name}
                 </h3>
 
                 <p className="mt-1 text-sm font-bold text-zinc-500">
@@ -1533,14 +1313,10 @@ export default function PedidoPage() {
                   </p>
 
                   <p className="mt-1 text-3xl font-black text-[#10B557]">
-                    <CompanyBalanceAmount
-                          companyId={loggedCustomer.companyCustomerId || loggedCustomer.id}
-                          initialBalance={Number(loggedCustomer.walletBalance || 0)}
-                          className="text-4xl font-black text-[#10B557]"
-                        />
+                    {formatPrice(loggedCustomer.walletBalance)}
                   </p>
                   <div className="mt-4 grid gap-2">
-                    <div className="hidden">
+                    <div className="rounded-2xl bg-zinc-50 p-3">
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-xs font-black uppercase text-zinc-500">
                           Saldo recarga
@@ -1551,7 +1327,7 @@ export default function PedidoPage() {
                       </div>
                     </div>
 
-                    <div className="hidden">
+                    <div className="rounded-2xl bg-emerald-50 p-3">
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-xs font-black uppercase text-emerald-700">
                           Cashback disponible
@@ -1607,7 +1383,7 @@ export default function PedidoPage() {
                     </div>
 
                     {(walletSummary?.expiredCashback || loggedCustomer.expiredCashback || 0) > 0 && (
-                      <div className="hidden">
+                      <div className="rounded-2xl bg-red-50 p-3">
                         <div className="flex items-center justify-between gap-3">
                           <span className="text-xs font-black uppercase text-red-600">
                             Cashback vencido
@@ -1643,29 +1419,30 @@ export default function PedidoPage() {
                     Salir de la cuenta
                   </button>
 
-                  <CompanyOrdersPublicModalButton
-                    companyId={loggedCustomer.companyCustomerId || loggedCustomer.id}
-                    companyName={loggedCustomer.name}
-                    companyEmail={loggedCustomer.email}
-                    walletBalance={loggedCustomer.walletBalance}
-                  />
+                  <button suppressHydrationWarning
+                    type="button"
+                    onClick={openWalletHistory}
+                    className="rounded-xl bg-zinc-950 px-4 py-2 text-xs font-black text-white"
+                  >
+                    Ver historial
+                  </button>
 
-                  <CompanyInvoicesPublicButton
-                    companyId={loggedCustomer.companyCustomerId || loggedCustomer.id}
-                  />
-
-                  <CompanyWorkersButton
-                    companyId={loggedCustomer.companyCustomerId || loggedCustomer.id}
-                  />
+                  <button suppressHydrationWarning
+                    type="button"
+                    onClick={openOrderHistory}
+                    className="rounded-xl bg-[#10B557] px-4 py-2 text-xs font-black text-white"
+                  >
+                    Mis pedidos
+                  </button>
                 </div>
               </div>
             ) : (
               <div>
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button suppressHydrationWarning
                     type="button"
                     onClick={() => setAuthMode("login")}
-                    className={`rounded-xl px-2 py-3 text-[11px] font-black whitespace-nowrap text-center ${
+                    className={`rounded-xl px-3 py-2 text-xs font-black ${
                       authMode === "login"
                         ? "text-white"
                         : "bg-white text-zinc-600"
@@ -1675,118 +1452,64 @@ export default function PedidoPage() {
                         authMode === "login" ? settings.primaryColor : undefined,
                     }}
                   >
-                    Ingresar Empresa
+                    Ingresar
                   </button>
-
-                  <a
-                    href="/pedido-trabajador"
-                    className="rounded-xl bg-white px-2 py-3 text-center text-[11px] font-black whitespace-nowrap text-zinc-600"
-                  >
-                    Ingresar Trabajador
-                  </a>
 
                   <button suppressHydrationWarning
                     type="button"
                     onClick={() => setAuthMode("register")}
-                    className={`rounded-xl px-2 py-3 text-[11px] font-black whitespace-nowrap text-center ${
+                    className={`rounded-xl px-3 py-2 text-xs font-black ${
                       authMode === "register"
                         ? "text-white"
                         : "bg-white text-zinc-600"
                     }`}
                     style={{
                       background:
-                        authMode === "register" ? settings.primaryColor : undefined,
+                        authMode === "register"
+                          ? settings.primaryColor
+                          : undefined,
                     }}
                   >
-                    Registrar Empresa
+                    Crear cuenta
+                  </button>
+
+                  <button suppressHydrationWarning
+                    type="button"
+                    onClick={() => setAuthMode("guest")}
+                    className={`rounded-xl px-3 py-2 text-xs font-black ${
+                      authMode === "guest"
+                        ? "text-white"
+                        : "bg-white text-zinc-600"
+                    }`}
+                    style={{
+                      background:
+                        authMode === "guest" ? settings.primaryColor : undefined,
+                    }}
+                  >
+                    Invitado
                   </button>
                 </div>
 
                 {authMode === "register" && (
                   <label className="mt-4 block">
-                    <span className="text-xs font-black uppercase text-zinc-500">Nombre empresa</span>
+                    <span className="text-xs font-black uppercase text-zinc-500">
+                      Nombre
+                    </span>
                     <input suppressHydrationWarning
                       value={authName}
                       onChange={(event) => setAuthName(event.target.value)}
                       className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
-                      placeholder="Ej: Empresa SpA"
+                      placeholder="Ej: Andres"
                     />
                   </label>
-                )}
-
-                {authMode === "register" && (
-                  <>
-                    <label className="mt-4 block">
-                      <span className="text-xs font-black uppercase text-zinc-500">
-                        RUT empresa
-                      </span>
-                      <input
-                        suppressHydrationWarning
-                        value={companyRut}
-                        onChange={(event) => setCompanyRut(event.target.value)}
-                        placeholder="Ej: 76123456-7"
-                        className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-black outline-none focus:border-[#10B557]"
-                      />
-                    </label>
-
-                    <label className="mt-4 block">
-                      <span className="text-xs font-black uppercase text-zinc-500">
-                        Giro
-                      </span>
-                      <input
-                        suppressHydrationWarning
-                        value={companyGiro}
-                        onChange={(event) => setCompanyGiro(event.target.value)}
-                        placeholder="Ej: Servicios de alimentación"
-                        className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-black outline-none focus:border-[#10B557]"
-                      />
-                    </label>
-
-                    <label className="mt-4 block">
-                      <span className="text-xs font-black uppercase text-zinc-500">
-                        Dirección
-                      </span>
-                      <input
-                        suppressHydrationWarning
-                        value={companyAddress}
-                        onChange={(event) => setCompanyAddress(event.target.value)}
-                        placeholder="Ej: Av. Principal 123"
-                        className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-black outline-none focus:border-[#10B557]"
-                      />
-                    </label>
-
-                    <label className="mt-4 block">
-                      <span className="text-xs font-black uppercase text-zinc-500">
-                        Nombre encargado
-                      </span>
-                      <input
-                        suppressHydrationWarning
-                        value={companyContactName}
-                        onChange={(event) => setCompanyContactName(event.target.value)}
-                        placeholder="Ej: Andrés Matamala"
-                        className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-black outline-none focus:border-[#10B557]"
-                      />
-                    </label>
-
-                    <label className="mt-4 block">
-                      <span className="text-xs font-black uppercase text-zinc-500">
-                        Teléfono encargado
-                      </span>
-                      <input
-                        suppressHydrationWarning
-                        value={companyPhone}
-                        onChange={(event) => setCompanyPhone(event.target.value)}
-                        placeholder="Ej: +569 1234 5678"
-                        className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-black outline-none focus:border-[#10B557]"
-                      />
-                    </label>
-                  </>
                 )}
 
                 {authMode !== "guest" ? (
                   <>
                     <label className="mt-4 block">
-                      <span className="text-xs font-black uppercase text-zinc-500">Correo electrónico</span>
+                      <span className="text-xs font-black uppercase text-zinc-500">
+                        Correo
+                      </span>
                       <input suppressHydrationWarning
                         value={authEmail}
                         onChange={(event) => setAuthEmail(event.target.value)}
@@ -1797,26 +1520,22 @@ export default function PedidoPage() {
 
                     <label className="mt-4 block">
                       <span className="text-xs font-black uppercase text-zinc-500">
-                        {authMode === "worker" ? "Clave trabajador" : "Clave"}
+                        Clave
                       </span>
                       <input suppressHydrationWarning
                         type="password"
                         value={authPassword}
                         onChange={(event) => setAuthPassword(event.target.value)}
                         className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
-                        placeholder={authMode === "worker" ? "Clave trabajador" : "Clave"}
+                        placeholder="Clave"
                       />
                     </label>
 
-                  {authMode === "worker" && (
-                    <div className="rounded-2xl bg-zinc-50 p-4 text-sm font-bold text-zinc-600">
-                      <WorkerCreatePasswordModalButton />
-                    </div>
-                  )}
-
                     <button suppressHydrationWarning
                       type="button"
-                      onClick={authMode === "login" ? loginCustomer : authMode === "worker" ? loginWorker : registerCustomer}
+                      onClick={
+                        authMode === "login" ? loginCustomer : registerCustomer
+                      }
                       disabled={loadingAuth}
                       className="mt-4 w-full rounded-2xl py-3 text-sm font-black text-white disabled:bg-zinc-300"
                       style={{
@@ -1827,7 +1546,9 @@ export default function PedidoPage() {
                     >
                       {loadingAuth
                         ? "Procesando..."
-                        : authMode === "login" ? "Ingresar Empresa" : authMode === "worker" ? "Ingresar Trabajador" : "Registrar Empresa"}
+                        : authMode === "login"
+                        ? "Ingresar"
+                        : "Crear cuenta"}
                     </button>
                   </>
                 ) : (
@@ -1839,7 +1560,7 @@ export default function PedidoPage() {
                       value={guestName}
                       onChange={(event) => setGuestName(event.target.value)}
                       className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
-                      placeholder="Ej: Empresa SpA"
+                      placeholder="Ej: Andres"
                     />
                     <p className="mt-2 text-xs font-bold text-zinc-500">
                       Como invitado no acumulas cashback ni puedes usar saldo.
@@ -1902,23 +1623,7 @@ export default function PedidoPage() {
                     >
                       Quitar
                     </button>
-                  </div>                      <label className="mt-3 block">
-                        <span className="text-xs font-black uppercase text-zinc-500">
-                          Nombre trabajador
-                        </span>
-
-                        <input
-                          suppressHydrationWarning
-                          value={item.customerComment || ""}
-                          onChange={(event) =>
-                            updateCartItemWorkerName(item.id, event.target.value)
-                          }
-                          placeholder="Ej: Juan Perez"
-                          className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-black outline-none focus:border-[#10B557]"
-                        />
-                      </label>
-
-
+                  </div>
 
                   <p
                     className="mt-3 text-xl font-black"
@@ -1931,22 +1636,27 @@ export default function PedidoPage() {
             </div>
           )}
 
-          {cart.length > 0 && (
-            <div
-              className={`mt-4 rounded-2xl p-4 text-sm font-black ${
-                hasMinimumCompanyBowls
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "bg-yellow-50 text-yellow-700"
-              }`}
-            >
-              Pedido minimo despacho empresas: {companyBowlCount}/{minimumCompanyBowls} bowls.
-              {!hasMinimumCompanyBowls &&
-                " Agrega mas bowls para confirmar el pedido."}
-            </div>
-          )}
-
           <div className="mt-5 border-t border-zinc-200 pt-5">
-            <div className="grid grid-cols-2 gap-2"><button suppressHydrationWarning
+            <div className="grid grid-cols-2 gap-2">
+              <button suppressHydrationWarning
+                type="button"
+                onClick={() => setFulfillmentType("immediate")}
+                className={`rounded-2xl border px-3 py-3 text-sm font-black ${
+                  fulfillmentType === "immediate"
+                    ? "text-white"
+                    : "border-zinc-200 bg-white text-zinc-600"
+                }`}
+                style={{
+                  background:
+                    fulfillmentType === "immediate"
+                      ? settings.primaryColor
+                      : undefined,
+                }}
+              >
+                Retiro ahora
+              </button>
+
+              <button suppressHydrationWarning
                 type="button"
                 onClick={switchToScheduled}
                 className={`rounded-2xl border px-3 py-3 text-sm font-black ${
@@ -2025,20 +1735,69 @@ export default function PedidoPage() {
               </span>
               <select suppressHydrationWarning
                 value={paymentMethod}
-                onChange={(event) =>
-                  setPaymentMethod(
-                    event.target.value as "debit_credit" | "bank_transfer"
-                  )
-                }
+                onChange={() => setPaymentMethod("debit_credit")}
                 className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
               >
-                <option value="debit_credit">Tarjeta</option>
-                        <option value="bank_transfer">Transferencia</option>
+                <option value="debit_credit">Débito / Crédito</option>
               </select>
             </label>
           </div>
 
-          
+          <section className="mt-5 rounded-3xl border border-emerald-100 bg-emerald-50 p-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
+                Cupón de descuento
+              </p>
+              <p className="mt-1 text-xs font-bold text-zinc-600">
+                Solo disponible para pagos online con débito o crédito.
+              </p>
+            </div>
+
+            <div className="mt-3 flex gap-2">
+              <input suppressHydrationWarning
+                value={couponCode}
+                onChange={(event) => {
+                  setCouponCode(event.target.value.toUpperCase());
+                  if (appliedCoupon) {
+                    setAppliedCoupon(null);
+                  }
+                }}
+                placeholder="Ej: UWA10"
+                className="min-w-0 flex-1 rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm font-black uppercase outline-none focus:border-[#10B557]"
+              />
+
+              {appliedCoupon ? (
+                <button suppressHydrationWarning
+                  type="button"
+                  onClick={clearCoupon}
+                  className="rounded-2xl bg-zinc-950 px-4 py-3 text-sm font-black text-white"
+                >
+                  Quitar
+                </button>
+              ) : (
+                <button suppressHydrationWarning
+                  type="button"
+                  onClick={applyCoupon}
+                  disabled={validatingCoupon || cart.length === 0}
+                  className="rounded-2xl bg-[#10B557] px-4 py-3 text-sm font-black text-white disabled:bg-zinc-300"
+                >
+                  {validatingCoupon ? "Validando..." : "Aplicar"}
+                </button>
+              )}
+            </div>
+
+            {couponMessage && (
+              <p
+                className={`mt-3 rounded-2xl p-3 text-xs font-black ${
+                  appliedCoupon
+                    ? "bg-white text-emerald-700"
+                    : "bg-red-50 text-red-600"
+                }`}
+              >
+                {couponMessage}
+              </p>
+            )}
+          </section>
 
           {message && (
             <p className="mt-4 rounded-2xl bg-zinc-100 p-4 text-sm font-black">
@@ -2087,20 +1846,16 @@ export default function PedidoPage() {
 
           <button suppressHydrationWarning
             onClick={createOnlineOrder}
-            disabled={loadingOrder || cart.length === 0 || !hasMinimumCompanyBowls}
+            disabled={loadingOrder || cart.length === 0}
             className="mt-4 w-full rounded-2xl py-4 text-lg font-black text-white disabled:bg-zinc-300"
             style={{
               background:
-                !loadingOrder && cart.length > 0 && hasMinimumCompanyBowls
+                !loadingOrder && cart.length > 0
                   ? settings.primaryColor
                   : undefined,
             }}
           >
-            {loadingOrder
-              ? "Enviando..."
-              : cart.length > 0 && !hasMinimumCompanyBowls
-              ? `Minimo ${minimumCompanyBowls} bowls`
-              : "Confirmar Pedido online empresas"}
+            {loadingOrder ? "Enviando..." : "Confirmar pedido online"}
           </button>
         </aside>
       </div>
@@ -2138,9 +1893,9 @@ export default function PedidoPage() {
               </div>
             ) : orderHistoryOrders.length === 0 ? (
               <div className="rounded-3xl bg-zinc-50 p-8 text-center">
-                <p className="text-xl font-black">Aun no tienes pedidos empresa.</p>
+                <p className="text-xl font-black">Aún no tienes pedidos.</p>
                 <p className="mt-1 text-sm font-bold text-zinc-500">
-                  Cuando esta empresa realice pedidos, apareceran aqui.
+                  Cuando compres con tu cuenta, aparecerán aquí.
                 </p>
               </div>
             ) : (
@@ -2205,7 +1960,7 @@ export default function PedidoPage() {
                         </p>
                       </div>
 
-                      <div className="hidden">
+                      <div className="rounded-2xl bg-zinc-50 p-4">
                         <p className="text-xs font-black uppercase text-zinc-500">
                           Cashback
                         </p>
@@ -2456,22 +2211,6 @@ export default function PedidoPage() {
     </main>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

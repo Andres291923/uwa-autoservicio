@@ -69,14 +69,12 @@ function normalizePaymentMethod(value: unknown) {
   if (value === "debit_credit") return "debit_credit";
   if (value === "food_benefit") return "food_benefit";
   if (value === "online") return "online";
-  if (value === "mercado_pago") return "mercado_pago";
   if (value === "worker_wallet") return "worker_wallet";
   return "unknown";
 }
 
 function normalizeOrderSource(value: unknown) {
   if (value === "online") return "online";
-  if (value === "mercado_pago") return "mercado_pago";
   if (value === "company") return "company";
   if (value === "company_worker") return "company_worker";
   if (value === "company_worker_totem") return "company_worker_totem";
@@ -903,7 +901,6 @@ export async function PATCH(request: Request) {
     );
   }
 }
-
 
 
 

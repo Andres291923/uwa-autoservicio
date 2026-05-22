@@ -148,28 +148,6 @@ export default function SettingsPage() {
   if (!settings) {
     return (
       <main className="min-h-screen p-8 text-zinc-950">
-      <div className="mb-5 rounded-3xl border border-emerald-100 bg-white p-5 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#10B557]">
-              Pagos online
-            </p>
-            <h2 className="mt-1 text-2xl font-black">
-              Mercado Pago
-            </h2>
-            <p className="mt-1 text-sm font-bold text-zinc-500">
-              Configura credenciales de prueba o producción para pedidos y empresas.
-            </p>
-          </div>
-
-          <a
-            href="/admin/settings/mercadopago"
-            className="rounded-2xl bg-[#10B557] px-5 py-3 text-sm font-black text-white"
-          >
-            Configurar Mercado Pago
-          </a>
-        </div>
-      </div>
         <p className="font-black">Cargando configuracion...</p>
       </main>
     );
@@ -177,28 +155,6 @@ export default function SettingsPage() {
 
   return (
     <main className="min-h-screen text-zinc-950">
-      <div className="mb-5 rounded-3xl border border-emerald-100 bg-white p-5 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#10B557]">
-              Pagos online
-            </p>
-            <h2 className="mt-1 text-2xl font-black">
-              Mercado Pago
-            </h2>
-            <p className="mt-1 text-sm font-bold text-zinc-500">
-              Configura credenciales de prueba o producción para pedidos y empresas.
-            </p>
-          </div>
-
-          <a
-            href="/admin/settings/mercadopago"
-            className="rounded-2xl bg-[#10B557] px-5 py-3 text-sm font-black text-white"
-          >
-            Configurar Mercado Pago
-          </a>
-        </div>
-      </div>
       <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.25em] text-[#10B557]">
@@ -600,7 +556,6 @@ export default function SettingsPage() {
     </main>
   );
 }
-
 
 
 
