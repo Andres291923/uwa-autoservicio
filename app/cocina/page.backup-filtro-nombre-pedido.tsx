@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 
@@ -55,7 +55,7 @@ function formatPrice(price: number) {
 
 
 function getOrderSourceLabel(order: Order) {
-  return isOnlineOrder(order) ? "PEDIDO ONLINE" : "PEDIDO TÃ“TEM";
+  return isOnlineOrder(order) ? "PEDIDO ONLINE" : "PEDIDO TÓTEM";
 }
 
 function getFulfillmentLabel(order: Order) {
@@ -307,7 +307,7 @@ function printOrderTicket(order: Order) {
       <body>
         <div class="ticket">
           <div class="center">
-            <div class="brand">ÃœWA</div>
+            <div class="brand">ÜWA</div>
             <div class="title">PEDIDO #${String(order.orderNumber).padStart(3, "0")}</div>
             <div class="meta">${formatDate(order.createdAt)} - ${formatTime(order.createdAt)}</div>
             ${
@@ -337,7 +337,7 @@ function printOrderTicket(order: Order) {
           <div class="line"></div>
 
           <div class="footer">
-            Preparar segÃºn comanda
+            Preparar según comanda
           </div>
         </div>
 
@@ -354,7 +354,7 @@ function printOrderTicket(order: Order) {
   const printWindow = window.open("", "_blank", "width=420,height=700");
 
   if (!printWindow) {
-    alert("El navegador bloqueÃ³ la ventana de impresiÃ³n.");
+    alert("El navegador bloqueó la ventana de impresión.");
     return;
   }
 
@@ -436,34 +436,18 @@ const originalTitleRef = useRef("Cocina");
   const pendingOrders = orders.filter((order) => order.status === "pending");
 const readyOrders = orders.filter((order) => order.status === "ready");
 
-const cleanOrderNumberSearch = orderSearch.replace(/\D/g, "");
-
-function normalizeSearchText(value?: string | null) {
-  return String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
-}
+const cleanOrderSearch = orderSearch.replace(/\D/g, "");
 
 function orderMatchesSearch(order: Order) {
-  const cleanTextSearch = normalizeSearchText(orderSearch);
-
-  if (!cleanTextSearch && !cleanOrderNumberSearch) return true;
+  if (!cleanOrderSearch) return true;
 
   const rawOrderNumber = String(order.orderNumber);
   const paddedOrderNumber = String(order.orderNumber).padStart(3, "0");
-  const customerName = normalizeSearchText(order.customerName);
 
-  const matchesOrderNumber =
-    cleanOrderNumberSearch.length > 0 &&
-    (rawOrderNumber.includes(cleanOrderNumberSearch) ||
-      paddedOrderNumber.includes(cleanOrderNumberSearch));
-
-  const matchesCustomerName =
-    cleanTextSearch.length > 0 && customerName.includes(cleanTextSearch);
-
-  return matchesOrderNumber || matchesCustomerName;
+  return (
+    rawOrderNumber.includes(cleanOrderSearch) ||
+    paddedOrderNumber.includes(cleanOrderSearch)
+  );
 }
 
 const filteredPendingOrders = pendingOrders.filter(orderMatchesSearch);
@@ -585,7 +569,7 @@ useEffect(() => {
       <header className="mb-6 flex items-center justify-between">
         <div>
           <p className="text-sm font-black uppercase tracking-[0.25em] text-[#10B557]">
-            Cocina ÃœWA
+            Cocina ÜWA
           </p>
           <h1 className="mt-2 text-4xl font-black">Pedidos en cocina</h1>
         </div>
@@ -638,9 +622,9 @@ useEffect(() => {
         </div>
       ) : pendingOrders.length === 0 && readyOrders.length === 0 ? (
         <div className="rounded-3xl bg-white p-10 text-center shadow-sm">
-          <p className="text-2xl font-black">No hay pedidos todavÃ­a</p>
+          <p className="text-2xl font-black">No hay pedidos todavía</p>
           <p className="mt-2 text-zinc-500">
-            Cuando se confirme un pedido desde el tÃ³tem aparecerÃ¡ aquÃ­.
+            Cuando se confirme un pedido desde el tótem aparecerá aquí.
           </p>
         </div>
       ) : (
@@ -651,7 +635,7 @@ useEffect(() => {
     <div>
       <h2 className="text-xl font-black">Buscar pedido</h2>
       <p className="text-sm font-bold text-zinc-500">
-        Busca por número de orden o nombre del cliente. Ej: 8, 008, Andrés o Claudia.
+        Busca por numero de orden. Ej: 8, 008, 10 o 010.
       </p>
     </div>
 
@@ -659,7 +643,7 @@ useEffect(() => {
       <input
         value={orderSearch}
         onChange={(event) => setOrderSearch(event.target.value)}
-        placeholder="Buscar pedido # o nombre..."
+        placeholder="Buscar pedido #..."
         className="w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-lg font-black outline-none focus:border-[#10B557]"
       />
 
@@ -812,7 +796,7 @@ useEffect(() => {
             {readyOrders.length === 0 ? (
               <div className="rounded-2xl bg-white p-6 text-center shadow-sm">
                 <p className="font-bold text-zinc-500">
-                  TodavÃ­a no hay pedidos listos.
+                  Todavía no hay pedidos listos.
                 </p>
               </div>
             ) : (
