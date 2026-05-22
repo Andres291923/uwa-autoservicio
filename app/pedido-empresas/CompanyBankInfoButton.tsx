@@ -1,0 +1,150 @@
+﻿"use client";
+
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+
+type BankInfo = {
+  holderName: string;
+  rut: string;
+  bankName: string;
+  accountType: string;
+  accountNumber: string;
+  email: string;
+  notes: string;
+};
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  if (!value) return null;
+
+  return (
+    <div className="rounded-2xl bg-zinc-50 p-4">
+      <p className="text-[11px] font-black uppercase tracking-[0.12em] text-zinc-500">
+        {label}
+      </p>
+      <p className="mt-1 text-lg font-black text-zinc-950">{value}</p>
+    </div>
+  );
+}
+
+export default function CompanyBankInfoButton() {
+  const [mounted, setMounted] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [bank, setBank] = useState<BankInfo | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  async function openModal() {
+    try {
+      setOpen(true);
+      setLoading(true);
+      setMessage("");
+
+      const response = await fetch("/api/company-bank-settings/public", {
+        cache: "no-store",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(data.error || "No se pudieron cargar los datos bancarios.");
+        return;
+      }
+
+      if (!data.configured) {
+        setBank(null);
+        setMessage("Los datos bancarios aún no han sido configurados.");
+        return;
+      }
+
+      setBank(data.bank);
+    } catch (error) {
+      console.error(error);
+      setMessage("Error al cargar datos bancarios.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const modal = (
+    <div
+      className="fixed inset-0 flex items-center justify-center bg-black/60 p-4"
+      style={{ zIndex: 999999 }}
+    >
+      <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] bg-white p-6 shadow-2xl">
+        <div className="sticky top-0 z-20 -mx-6 -mt-6 mb-5 flex items-start justify-between gap-4 border-b border-zinc-100 bg-white/95 p-6 backdrop-blur">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-[#10B557]">
+              Transferencia empresa
+            </p>
+            <h2 className="mt-2 text-3xl font-black">Datos bancarios ÜWA</h2>
+            <p className="mt-1 text-sm font-bold text-zinc-500">
+              Usa estos datos para transferencias y compra de saldo empresa.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-black"
+          >
+            Cerrar
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="rounded-3xl bg-zinc-50 p-8 text-center font-black text-zinc-500">
+            Cargando datos bancarios...
+          </div>
+        ) : message ? (
+          <div className="rounded-3xl bg-zinc-50 p-8 text-center font-black text-zinc-600">
+            {message}
+          </div>
+        ) : bank ? (
+          <>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <InfoRow label="Titular" value={bank.holderName} />
+              <InfoRow label="RUT" value={bank.rut} />
+              <InfoRow label="Banco" value={bank.bankName} />
+              <InfoRow label="Tipo de cuenta" value={bank.accountType} />
+              <InfoRow label="Número de cuenta" value={bank.accountNumber} />
+              <InfoRow label="Correo comprobante" value={bank.email} />
+            </div>
+
+            {bank.notes && (
+              <div className="mt-4 rounded-3xl bg-emerald-50 p-5">
+                <p className="text-xs font-black uppercase text-emerald-700">
+                  Instrucciones
+                </p>
+                <p className="mt-2 text-sm font-bold text-zinc-700">
+                  {bank.notes}
+                </p>
+              </div>
+            )}
+
+            <p className="mt-5 rounded-3xl bg-yellow-50 p-5 text-sm font-black text-yellow-800">
+              Al transferir, envíanos el comprobante al correo indicado para validar la carga de saldo o autorizar el armado de bowls.
+            </p>
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={openModal}
+        className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-xs font-black"
+      >
+        Datos bancarios
+      </button>
+
+      {mounted && open ? createPortal(modal, document.body) : null}
+    </>
+  );
+}

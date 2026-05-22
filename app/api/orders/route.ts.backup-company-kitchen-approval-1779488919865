@@ -68,7 +68,6 @@ async function isStoreOpenNow() {
 function normalizePaymentMethod(value: unknown) {
   if (value === "debit_credit") return "debit_credit";
   if (value === "food_benefit") return "food_benefit";
-  if (value === "bank_transfer") return "bank_transfer";
   if (value === "online") return "online";
   if (value === "mercado_pago") return "mercado_pago";
   if (value === "worker_wallet") return "worker_wallet";
@@ -845,10 +844,10 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
+    const companyCustomerId = body.companyCustomerId ? Number(body.companyCustomerId) : null;
 
     const id = Number(body.id);
     const status = String(body.status || "");
-    const approvalPin = String(body.approvalPin || "").trim();
 
     if (!id) {
       return NextResponse.json(
@@ -864,46 +863,6 @@ export async function PATCH(request: Request) {
       );
     }
 
-    const existingOrder = await prisma.order.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        orderSource: true,
-        paymentMethod: true,
-        companyCustomerId: true,
-      },
-    });
-
-    if (!existingOrder) {
-      return NextResponse.json(
-        { error: "Pedido no encontrado." },
-        { status: 404 }
-      );
-    }
-
-    const requiresCompanyApproval =
-      status === "ready" &&
-      Boolean(
-        existingOrder.companyCustomerId ||
-          existingOrder.paymentMethod === "bank_transfer" ||
-          existingOrder.orderSource === "company" ||
-          existingOrder.orderSource === "company_worker" ||
-          existingOrder.orderSource === "company_worker_totem"
-      );
-
-    if (requiresCompanyApproval) {
-      const expectedPin = String(
-        process.env.COMPANY_ORDER_APPROVAL_PIN || "1234"
-      ).trim();
-
-      if (!approvalPin || approvalPin !== expectedPin) {
-        return NextResponse.json(
-          { error: "Clave incorrecta para autorizar pedido empresa." },
-          { status: 401 }
-        );
-      }
-    }
-
     const order = await prisma.order.update({
       where: {
         id,
@@ -913,7 +872,6 @@ export async function PATCH(request: Request) {
       },
       include: {
         customer: true,
-        companyCustomer: true,
         items: {
           include: {
             product: {
@@ -937,7 +895,7 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json(order);
   } catch (error) {
-    console.error("ORDER_PATCH_ERROR", error);
+    console.error("UPDATE_ORDER_ERROR", error);
 
     return NextResponse.json(
       { error: "No se pudo actualizar el pedido." },
@@ -945,3 +903,12 @@ export async function PATCH(request: Request) {
     );
   }
 }
+
+
+
+
+
+
+
+
+

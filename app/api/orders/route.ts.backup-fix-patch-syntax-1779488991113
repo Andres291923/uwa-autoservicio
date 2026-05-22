@@ -845,6 +845,7 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
+    const companyCustomerId = body.companyCustomerId ? Number(body.companyCustomerId) : null;
 
     const id = Number(body.id);
     const status = String(body.status || "");
@@ -864,6 +865,12 @@ export async function PATCH(request: Request) {
       );
     }
 
+    const order = await prisma.order.update({
+      where: {
+        id,
+      }
+
+    // COMPANY_ORDER_APPROVAL_REQUIRED
     const existingOrder = await prisma.order.findUnique({
       where: { id },
       select: {
@@ -874,21 +881,14 @@ export async function PATCH(request: Request) {
       },
     });
 
-    if (!existingOrder) {
-      return NextResponse.json(
-        { error: "Pedido no encontrado." },
-        { status: 404 }
-      );
-    }
-
     const requiresCompanyApproval =
       status === "ready" &&
       Boolean(
-        existingOrder.companyCustomerId ||
-          existingOrder.paymentMethod === "bank_transfer" ||
-          existingOrder.orderSource === "company" ||
-          existingOrder.orderSource === "company_worker" ||
-          existingOrder.orderSource === "company_worker_totem"
+        existingOrder?.companyCustomerId ||
+          existingOrder?.paymentMethod === "bank_transfer" ||
+          existingOrder?.orderSource === "company" ||
+          existingOrder?.orderSource === "company_worker" ||
+          existingOrder?.orderSource === "company_worker_totem"
       );
 
     if (requiresCompanyApproval) {
@@ -902,18 +902,12 @@ export async function PATCH(request: Request) {
           { status: 401 }
         );
       }
-    }
-
-    const order = await prisma.order.update({
-      where: {
-        id,
-      },
+    },
       data: {
         status,
       },
       include: {
         customer: true,
-        companyCustomer: true,
         items: {
           include: {
             product: {
@@ -937,7 +931,7 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json(order);
   } catch (error) {
-    console.error("ORDER_PATCH_ERROR", error);
+    console.error("UPDATE_ORDER_ERROR", error);
 
     return NextResponse.json(
       { error: "No se pudo actualizar el pedido." },
@@ -945,3 +939,12 @@ export async function PATCH(request: Request) {
     );
   }
 }
+
+
+
+
+
+
+
+
+
