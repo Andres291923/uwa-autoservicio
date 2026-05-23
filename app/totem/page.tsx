@@ -985,9 +985,9 @@ export default function TotemPage() {
         </div>
       )}
       {totemAuthVisible && (
-        <div className="fixed inset-0 z-[10000] flex items-start justify-center overflow-y-auto bg-black/50 px-4 py-4 sm:items-center">
-          <div className="my-auto w-full max-w-xl max-h-[calc(100dvh-32px)] overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl sm:p-7">
-            <div className="mb-5 flex items-start justify-between gap-4">
+        <div className="fixed inset-0 z-[10000] flex items-start justify-center overflow-y-auto bg-black/50 px-3 py-3 sm:px-5">
+          <div className="w-full max-w-xl max-h-[calc(100dvh-24px)] overflow-y-auto overscroll-contain rounded-[2rem] bg-white p-5 shadow-2xl sm:p-7">
+            <div className="sticky top-0 z-20 -mx-5 -mt-5 mb-4 flex items-start justify-between gap-4 border-b border-zinc-100 bg-white px-5 pb-3 pt-5 sm:-mx-7 sm:-mt-7 sm:px-7 sm:pt-7">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.25em] text-[#10B557]">
                   Cliente
@@ -1163,7 +1163,7 @@ export default function TotemPage() {
         </div>
       )}
       {closedModalVisible && (
-        <div className="fixed inset-0 z-[10000] flex items-start justify-center overflow-y-auto bg-black/50 px-4 py-4 sm:items-center">
+        <div className="fixed inset-0 z-[10000] flex items-start justify-center overflow-y-auto bg-black/50 px-3 py-3 sm:px-5">
           <div className="w-full max-w-xl rounded-[2rem] bg-white p-7 text-center shadow-2xl">
             <p className="text-xs font-black uppercase tracking-[0.25em] text-red-500">
               Tienda cerrada
@@ -2118,6 +2118,7 @@ export default function TotemPage() {
     </main>
   );
 }
+
 
 
 
