@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import CompanyTransferOrderSuccessModal from "./CompanyTransferOrderSuccessModal";
@@ -1828,6 +1828,19 @@ export default function PedidoPage() {
                       <WorkerCreatePasswordModalButton />
                     </div>
                   )}
+                    {(authMode === "login" || authMode === "worker") && (
+                      <a
+                        href={
+                          authMode === "worker"
+                            ? "/recuperar-clave?type=worker"
+                            : "/recuperar-clave?type=company"
+                        }
+                        className="mt-3 block text-center text-sm font-black text-[#10B557]"
+                      >
+                        Olvidaste tu clave?
+                      </a>
+                    )}
+
 
                     <button suppressHydrationWarning
                       type="button"

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -1538,6 +1538,14 @@ export default function PedidoPage() {
                       />
                     </label>
 
+                    {authMode === "login" && (
+                      <a
+                        href="/recuperar-clave?type=customer"
+                        className="mt-3 block text-center text-sm font-black text-[#10B557]"
+                      >
+                        Olvidaste tu clave?
+                      </a>
+                    )}
                     <button suppressHydrationWarning
                       type="button"
                       onClick={

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -637,6 +637,14 @@ export default function PedidoTrabajadorPage() {
                 />
               </label>
 
+              {mode === "login" && (
+                <a
+                  href="/recuperar-clave?type=worker"
+                  className="block text-center text-sm font-black text-[#10B557]"
+                >
+                  Olvidaste tu clave?
+                </a>
+              )}
               <button
                 type="button"
                 onClick={mode === "login" ? loginWorker : createPassword}
