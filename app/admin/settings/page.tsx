@@ -6,6 +6,7 @@ type BusinessSettings = {
   id: number;
   businessName: string;
   logoUrl: string | null;
+  faviconUrl: string | null;
   idleBackgroundUrl: string | null;
   primaryColor: string;
   kioskSubtitle: string;
@@ -18,6 +19,7 @@ const emptySettings: BusinessSettings = {
   id: 1,
   businessName: "Mi negocio",
   logoUrl: null,
+  faviconUrl: null,
   idleBackgroundUrl: null,
   primaryColor: "#10B557",
   kioskSubtitle: "Autoservicio",
@@ -31,6 +33,7 @@ export default function SettingsPage() {
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingFavicon, setUploadingFavicon] = useState(false);
   const [uploadingIdle, setUploadingIdle] = useState(false);
 
   async function loadSettings() {
@@ -51,7 +54,7 @@ export default function SettingsPage() {
 
   async function uploadImage(
     event: ChangeEvent<HTMLInputElement>,
-    target: "logoUrl" | "idleBackgroundUrl"
+    target: "logoUrl" | "faviconUrl" | "idleBackgroundUrl"
   ) {
     try {
       const file = event.target.files?.[0];
@@ -60,6 +63,8 @@ export default function SettingsPage() {
 
       if (target === "logoUrl") {
         setUploadingLogo(true);
+      } else if (target === "faviconUrl") {
+        setUploadingFavicon(true);
       } else {
         setUploadingIdle(true);
       }
@@ -90,13 +95,16 @@ export default function SettingsPage() {
       setMessage(
         target === "logoUrl"
           ? "Logo subido correctamente. Recuerda guardar configuracion."
-          : "Imagen de reposo subida correctamente. Recuerda guardar configuracion."
+          : target === "faviconUrl"
+            ? "Favicon subido correctamente. Recuerda guardar configuracion."
+            : "Imagen de reposo subida correctamente. Recuerda guardar configuracion."
       );
     } catch (error) {
       console.error(error);
       setMessage("Error al subir imagen.");
     } finally {
       setUploadingLogo(false);
+      setUploadingFavicon(false);
       setUploadingIdle(false);
       event.target.value = "";
     }
@@ -303,6 +311,55 @@ export default function SettingsPage() {
                 className="mt-3 block rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-black text-red-600"
               >
                 Quitar logo
+              </button>
+            )}
+          </div>
+
+          <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
+            <h2 className="text-2xl font-black">Favicon</h2>
+            <p className="mt-1 text-sm font-bold text-zinc-500">
+              Icono pequeño que aparece en la pestaña del navegador.
+            </p>
+
+            <div className="mt-4 flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl border border-zinc-200 bg-zinc-50">
+              {settings.faviconUrl ? (
+                <img
+                  src={settings.faviconUrl}
+                  alt="Favicon"
+                  className="h-full w-full object-contain p-3"
+                />
+              ) : (
+                <span className="text-xs font-black text-zinc-400">
+                  Sin favicon
+                </span>
+              )}
+            </div>
+
+            <label className="mt-4 block">
+              <span className="block rounded-2xl bg-zinc-950 px-5 py-4 text-center text-sm font-black text-white">
+                {uploadingFavicon ? "Subiendo favicon..." : "Subir favicon"}
+              </span>
+
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(event) => uploadImage(event, "faviconUrl")}
+                className="hidden"
+              />
+            </label>
+
+            {settings.faviconUrl && (
+              <button
+                type="button"
+                onClick={() =>
+                  setSettings({
+                    ...settings,
+                    faviconUrl: null,
+                  })
+                }
+                className="mt-3 block rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-black text-red-600"
+              >
+                Quitar favicon
               </button>
             )}
           </div>
@@ -600,6 +657,7 @@ export default function SettingsPage() {
     </main>
   );
 }
+
 
 
 

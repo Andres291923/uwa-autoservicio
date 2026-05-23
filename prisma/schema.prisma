@@ -1,4 +1,4 @@
-generator client {
+﻿generator client {
   provider = "prisma-client-js"
 }
 
@@ -166,6 +166,7 @@ model BusinessSettings {
   id                Int     @id
   businessName      String  @default("Mi negocio")
   logoUrl           String?
+  faviconUrl        String?
   idleBackgroundUrl String?
   primaryColor      String  @default("#10B557")
   kioskSubtitle     String  @default("Autoservicio")
@@ -593,4 +594,6 @@ model MercadoPagoSettings {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
+
+
 

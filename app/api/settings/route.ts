@@ -5,6 +5,7 @@ const defaultSettings = {
   id: 1,
   businessName: "Mi negocio",
   logoUrl: null,
+  faviconUrl: null,
   idleBackgroundUrl: null,
   primaryColor: "#10B557",
   kioskSubtitle: "Autoservicio",
@@ -52,6 +53,7 @@ export async function POST(request: Request) {
 
     const businessName = String(body.businessName || "Mi negocio").trim();
     const logoUrl = body.logoUrl ? String(body.logoUrl).trim() : null;
+    const faviconUrl = body.faviconUrl ? String(body.faviconUrl).trim() : null;
     const idleBackgroundUrl = body.idleBackgroundUrl
       ? String(body.idleBackgroundUrl).trim()
       : null;
@@ -68,6 +70,7 @@ export async function POST(request: Request) {
       update: {
         businessName,
         logoUrl,
+        faviconUrl,
         idleBackgroundUrl,
         primaryColor,
         kioskSubtitle,
@@ -79,6 +82,7 @@ export async function POST(request: Request) {
         id: 1,
         businessName,
         logoUrl,
+        faviconUrl,
         idleBackgroundUrl,
         primaryColor,
         kioskSubtitle,
@@ -98,4 +102,5 @@ export async function POST(request: Request) {
     );
   }
 }
+
 
