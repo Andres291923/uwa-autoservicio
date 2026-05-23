@@ -599,3 +599,16 @@ model MercadoPagoSettings {
 
 
 
+
+model PasswordResetToken {
+  id          Int       @id @default(autoincrement())
+  accountType String
+  email       String
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([accountType, email])
+}
