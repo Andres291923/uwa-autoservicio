@@ -1,7 +1,6 @@
 ﻿import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import OrientationLock from "./OrientationLock";
-import DynamicFavicon from "./DynamicFavicon";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -48,11 +47,13 @@ export default function RootLayout({
     >
       <body className="orientation-booting min-h-full flex flex-col">
         <OrientationLock />
-        <DynamicFavicon />
         {children}
       </body>
     </html>
   );
 }
+
+
+
 
 

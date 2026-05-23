@@ -6,7 +6,6 @@ type BusinessSettings = {
   id: number;
   businessName: string;
   logoUrl: string | null;
-  faviconUrl: string | null;
   idleBackgroundUrl: string | null;
   primaryColor: string;
   kioskSubtitle: string;
@@ -19,7 +18,6 @@ const emptySettings: BusinessSettings = {
   id: 1,
   businessName: "Mi negocio",
   logoUrl: null,
-  faviconUrl: null,
   idleBackgroundUrl: null,
   primaryColor: "#10B557",
   kioskSubtitle: "Autoservicio",
@@ -33,7 +31,6 @@ export default function SettingsPage() {
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [uploadingFavicon, setUploadingFavicon] = useState(false);
   const [uploadingIdle, setUploadingIdle] = useState(false);
 
   async function loadSettings() {
@@ -54,7 +51,7 @@ export default function SettingsPage() {
 
   async function uploadImage(
     event: ChangeEvent<HTMLInputElement>,
-    target: "logoUrl" | "faviconUrl" | "idleBackgroundUrl"
+    target: "logoUrl" | "idleBackgroundUrl"
   ) {
     try {
       const file = event.target.files?.[0];
@@ -62,10 +59,7 @@ export default function SettingsPage() {
       if (!file || !settings) return;
 
       if (target === "logoUrl") {
-        setUploadingLogo(true);
-      } else if (target === "faviconUrl") {
-        setUploadingFavicon(true);
-      } else {
+        setUploadingLogo(true);} else {
         setUploadingIdle(true);
       }
 
@@ -95,8 +89,6 @@ export default function SettingsPage() {
       setMessage(
         target === "logoUrl"
           ? "Logo subido correctamente. Recuerda guardar configuracion."
-          : target === "faviconUrl"
-            ? "Favicon subido correctamente. Recuerda guardar configuracion."
             : "Imagen de reposo subida correctamente. Recuerda guardar configuracion."
       );
     } catch (error) {
@@ -104,7 +96,6 @@ export default function SettingsPage() {
       setMessage("Error al subir imagen.");
     } finally {
       setUploadingLogo(false);
-      setUploadingFavicon(false);
       setUploadingIdle(false);
       event.target.value = "";
     }
@@ -314,263 +305,6 @@ export default function SettingsPage() {
               </button>
             )}
           </div>
-
-          <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <h2 className="text-2xl font-black">Favicon</h2>
-            <p className="mt-1 text-sm font-bold text-zinc-500">
-              Icono pequeño que aparece en la pestaña del navegador.
-            </p>
-
-            <div className="mt-4 flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl border border-zinc-200 bg-zinc-50">
-              {settings.faviconUrl ? (
-                <img
-                  src={settings.faviconUrl}
-                  alt="Favicon"
-                  className="h-full w-full object-contain p-3"
-                />
-              ) : (
-                <span className="text-xs font-black text-zinc-400">
-                  Sin favicon
-                </span>
-              )}
-            </div>
-
-            <label className="mt-4 block">
-              <span className="block rounded-2xl bg-zinc-950 px-5 py-4 text-center text-sm font-black text-white">
-                {uploadingFavicon ? "Subiendo favicon..." : "Subir favicon"}
-              </span>
-
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(event) => uploadImage(event, "faviconUrl")}
-                className="hidden"
-              />
-            </label>
-
-            {settings.faviconUrl && (
-              <button
-                type="button"
-                onClick={() =>
-                  setSettings({
-                    ...settings,
-                    faviconUrl: null,
-                  })
-                }
-                className="mt-3 block rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-black text-red-600"
-              >
-                Quitar favicon
-              </button>
-            )}
-          </div>
-
-          <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <h2 className="text-2xl font-black">Pantalla de reposo</h2>
-
-            <p className="mt-1 text-sm font-bold text-zinc-500">
-              Esta imagen cubre toda la pantalla inicial del totem. Recomendado:
-              2560 x 1600 px o similar.
-            </p>
-
-            <div className="mt-4 flex aspect-[16/10] w-full items-center justify-center overflow-hidden rounded-3xl border border-zinc-200 bg-zinc-950">
-              {settings.idleBackgroundUrl ? (
-                <img
-                  src={settings.idleBackgroundUrl}
-                  alt="Imagen de reposo"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <span className="text-sm font-black text-white/60">
-                  Sin imagen de reposo
-                </span>
-              )}
-            </div>
-
-            <label className="mt-4 block">
-              <span className="block rounded-2xl bg-[#10B557] px-5 py-4 text-center text-sm font-black text-white">
-                {uploadingIdle ? "Subiendo imagen..." : "Subir imagen de reposo"}
-              </span>
-
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(event) => uploadImage(event, "idleBackgroundUrl")}
-                className="hidden"
-              />
-            </label>
-
-            {settings.idleBackgroundUrl && (
-              <button
-                type="button"
-                onClick={() =>
-                  setSettings({
-                    ...settings,
-                    idleBackgroundUrl: null,
-                  })
-                }
-                className="mt-3 block rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-sm font-black text-red-600"
-              >
-                Quitar imagen de reposo
-              </button>
-            )}
-          </div>
-        </section>
-
-        <section className="space-y-6">
-          <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <h2 className="text-2xl font-black">Datos visuales</h2>
-
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <label className="block">
-                <span className="text-xs font-black uppercase text-zinc-500">
-                  Nombre del negocio
-                </span>
-
-                <input
-                  value={settings.businessName}
-                  onChange={(event) =>
-                    setSettings({
-                      ...settings,
-                      businessName: event.target.value,
-                    })
-                  }
-                  className="mt-2 w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
-                  placeholder="Ej: UWA, Cafe Central, Heladeria Sur"
-                />
-              </label>
-
-              <label className="block">
-                <span className="text-xs font-black uppercase text-zinc-500">
-                  Color principal
-                </span>
-
-                <div className="mt-2 flex gap-3">
-                  <input
-                    value={settings.primaryColor}
-                    onChange={(event) =>
-                      setSettings({
-                        ...settings,
-                        primaryColor: event.target.value,
-                      })
-                    }
-                    className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
-                    placeholder="#10B557"
-                  />
-
-                  <input
-                    type="color"
-                    value={settings.primaryColor}
-                    onChange={(event) =>
-                      setSettings({
-                        ...settings,
-                        primaryColor: event.target.value,
-                      })
-                    }
-                    className="h-12 w-20 rounded-xl border border-zinc-300 bg-white"
-                  />
-                </div>
-              </label>
-
-              <label className="block">
-                <span className="text-xs font-black uppercase text-zinc-500">
-                  Subtitulo del totem
-                </span>
-
-                <input
-                  value={settings.kioskSubtitle}
-                  onChange={(event) =>
-                    setSettings({
-                      ...settings,
-                      kioskSubtitle: event.target.value,
-                    })
-                  }
-                  className="mt-2 w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
-                  placeholder="Ej: Autoservicio"
-                />
-              </label>
-
-              <label className="block">
-                <span className="text-xs font-black uppercase text-zinc-500">
-                  Titulo del totem
-                </span>
-
-                <input
-                  value={settings.kioskTitle}
-                  onChange={(event) =>
-                    setSettings({
-                      ...settings,
-                      kioskTitle: event.target.value,
-                    })
-                  }
-                  className="mt-2 w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
-                  placeholder="Ej: Elige tus productos"
-                />
-              </label>
-              <div className="mt-6 rounded-3xl border border-zinc-200 bg-zinc-50 p-5">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-[0.2em] text-[#10B557]">
-                      Propina en tótem
-                    </p>
-
-                    <h3 className="mt-1 text-xl font-black">
-                      Activar propina sugerida
-                    </h3>
-
-                    <p className="mt-1 text-sm font-bold text-zinc-500">
-                      Si está desactivada, el cliente no verá opción de propina.
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setSettings({
-                        ...settings,
-                        tipsEnabled: !settings.tipsEnabled,
-                      })
-                    }
-                    className="rounded-2xl px-5 py-3 text-sm font-black text-white"
-                    style={{
-                      background: settings.tipsEnabled
-                        ? settings.primaryColor
-                        : "#18181b",
-                    }}
-                  >
-                    {settings.tipsEnabled ? "Activada" : "Desactivada"}
-                  </button>
-                </div>
-
-                {settings.tipsEnabled && (
-                  <label className="mt-5 block">
-                    <span className="text-xs font-black uppercase text-zinc-500">
-                      Porcentaje sugerido
-                    </span>
-
-                    <input
-                      type="number"
-                      min="0"
-                      value={settings.tipPercent}
-                      onChange={(event) =>
-                        setSettings({
-                          ...settings,
-                          tipPercent: Math.max(
-                            0,
-                            Math.round(Number(event.target.value || 0))
-                          ),
-                        })
-                      }
-                      className="mt-2 w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
-                      placeholder="10"
-                    />
-
-                    <p className="mt-2 text-xs font-bold text-zinc-500">
-                      Ejemplo: 10 significa 10% del total de la compra.
-                    </p>
-                  </label>
-                )}
-              </div>
-            </div>
           </div>
 
           <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
@@ -657,6 +391,9 @@ export default function SettingsPage() {
     </main>
   );
 }
+
+
+
 
 
 
