@@ -26,3 +26,5 @@ tsconfig.tsbuildinfo
 .env*
 
 .env.neon.txt
+
+.vercel/
