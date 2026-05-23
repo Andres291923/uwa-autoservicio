@@ -4,6 +4,8 @@ import { useEffect } from "react";
 
 export default function OrientationLock() {
   useEffect(() => {
+    let finished = false;
+
     async function lockPortrait() {
       try {
         const orientation = screen.orientation as ScreenOrientation & {
@@ -14,7 +16,15 @@ export default function OrientationLock() {
           await orientation.lock("portrait-primary");
         }
       } catch {
-        // Algunos Android/Chrome bloquean esto si no está como app instalada.
+        // Algunos Android solo permiten bloquear orientación en modo app instalada.
+      } finally {
+        if (!finished) {
+          finished = true;
+
+          window.setTimeout(() => {
+            document.body.classList.remove("orientation-booting");
+          }, 700);
+        }
       }
     }
 
@@ -22,13 +32,11 @@ export default function OrientationLock() {
 
     window.addEventListener("click", lockPortrait);
     window.addEventListener("touchstart", lockPortrait);
-    window.addEventListener("resize", lockPortrait);
     document.addEventListener("visibilitychange", lockPortrait);
 
     return () => {
       window.removeEventListener("click", lockPortrait);
       window.removeEventListener("touchstart", lockPortrait);
-      window.removeEventListener("resize", lockPortrait);
       document.removeEventListener("visibilitychange", lockPortrait);
     };
   }, []);
