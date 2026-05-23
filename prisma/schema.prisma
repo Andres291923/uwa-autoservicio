@@ -222,6 +222,8 @@ model CashbackRule {
   minPurchase           Int       @default(0)
   maxCashback           Int       @default(0)
   allowedPaymentMethods String    @default("all")
+  dailyStartTime        String    @default("")
+  dailyEndTime          String    @default("")
   includedCategoryIds   String    @default("all")
   excludedProductIds    String    @default("")
   validityDays          Int       @default(0)

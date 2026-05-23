@@ -562,20 +562,7 @@ function getAudioContext() {
   return audioContextRef.current;
 }
 
-function getAudioContext() {
-  if (typeof window === "undefined") return null;
 
-  const AudioContextConstructor =
-    window.AudioContext || (window as any).webkitAudioContext;
-
-  if (!AudioContextConstructor) return null;
-
-  if (!audioContextRef.current) {
-    audioContextRef.current = new AudioContextConstructor();
-  }
-
-  return audioContextRef.current;
-}
 
 function playNewOrderSound(force = false) {
   if (!force && !soundEnabled) return;
@@ -1023,3 +1010,4 @@ useEffect(() => {
 </main>
   );
 }
+

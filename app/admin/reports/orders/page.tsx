@@ -37,6 +37,7 @@ type OrderReportRow = {
 
 type ReportSummary = {
   totalOrders: number;
+  totalPurchaseAmount: number;
   totalpurchaseAmount: number;
   discountAmount: number;
   discountPercent: number;
@@ -79,6 +80,10 @@ export default function OrdersReportPage() {
   const [summary, setSummary] = useState<ReportSummary>({
     totalOrders: 0,
     totalPurchaseAmount: 0,
+    totalpurchaseAmount: 0,
+    discountAmount: 0,
+    discountPercent: 0,
+    discountCouponCode: "",
     totalTips: 0,
     totalDiscounts: 0,
     totalPaid: 0,
@@ -442,6 +447,7 @@ export default function OrdersReportPage() {
     </main>
   );
 }
+
 
 
 

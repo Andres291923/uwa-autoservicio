@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 
@@ -34,6 +34,8 @@ type CashbackRule = {
   minPurchase: number;
   maxCashback: number;
   allowedPaymentMethods: string;
+  dailyStartTime: string;
+  dailyEndTime: string;
   includedCategoryIds: string;
   excludedProductIds: string;
   validityDays: number;
@@ -128,6 +130,8 @@ const emptyRuleForm = {
   minPurchase: "3000",
   maxCashback: "0",
   allowedPaymentMethods: "all",
+  dailyStartTime: "",
+  dailyEndTime: "",
   includedCategoryIds: "all",
   excludedProductIds: "",
   validityDays: "0",
@@ -375,6 +379,8 @@ export default function CustomersPage() {
       minPurchase: String(rule.minPurchase),
       maxCashback: String(rule.maxCashback),
       allowedPaymentMethods: rule.allowedPaymentMethods,
+      dailyStartTime: rule.dailyStartTime || "",
+      dailyEndTime: rule.dailyEndTime || "",
       includedCategoryIds: rule.includedCategoryIds,
       excludedProductIds: rule.excludedProductIds,
       validityDays: String(rule.validityDays),
@@ -409,6 +415,8 @@ export default function CustomersPage() {
           minPurchase: Number(ruleForm.minPurchase),
           maxCashback: Number(ruleForm.maxCashback),
           allowedPaymentMethods: ruleForm.allowedPaymentMethods,
+          dailyStartTime: ruleForm.dailyStartTime,
+          dailyEndTime: ruleForm.dailyEndTime,
           includedCategoryIds: ruleForm.includedCategoryIds,
           excludedProductIds: ruleForm.excludedProductIds,
           validityDays: Number(ruleForm.validityDays),
@@ -992,6 +1000,48 @@ export default function CustomersPage() {
             </select>
           </label>
 
+          <div className="mt-4 rounded-3xl border border-emerald-100 bg-emerald-50 p-4">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
+              Horario automatico cashback
+            </p>
+
+            <p className="mt-1 text-xs font-bold text-zinc-600">
+              Si dejas los campos vacios, la regla aplica todo el dia. Ejemplo: 15:00 a 17:00.
+            </p>
+
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <label className="block">
+                <span className="text-xs font-black uppercase text-zinc-500">
+                  Hora inicio
+                </span>
+
+                <input suppressHydrationWarning
+                  value={ruleForm.dailyStartTime}
+                  onChange={(event) =>
+                    setRuleForm({ ...ruleForm, dailyStartTime: event.target.value })
+                  }
+                  type="time"
+                  className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-xs font-black uppercase text-zinc-500">
+                  Hora termino
+                </span>
+
+                <input suppressHydrationWarning
+                  value={ruleForm.dailyEndTime}
+                  onChange={(event) =>
+                    setRuleForm({ ...ruleForm, dailyEndTime: event.target.value })
+                  }
+                  type="time"
+                  className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-[#10B557]"
+                />
+              </label>
+            </div>
+          </div>
+
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <label className="block">
               <span className="text-xs font-black uppercase text-zinc-500">Categorías incluidas</span>
@@ -1106,6 +1156,13 @@ export default function CustomersPage() {
 
                   <p className="mt-3 text-sm text-zinc-500">
                     {rule.commercialText || "Sin texto comercial"}
+                  </p>
+
+                  <p className="mt-2 text-xs font-black text-zinc-500">
+                    Horario:{" "}
+                    {rule.dailyStartTime && rule.dailyEndTime
+                      ? `${rule.dailyStartTime} a ${rule.dailyEndTime}`
+                      : "Todo el dia"}
                   </p>
 
                   <div className="mt-4 flex flex-wrap gap-2">

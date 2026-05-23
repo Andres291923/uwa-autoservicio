@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { calculateWalletBreakdown } from "@/lib/wallet";
 
@@ -41,6 +41,33 @@ function getChileMinutes(date: Date) {
 function timeToMinutes(time: string) {
   const [hour, minute] = time.split(":").map(Number);
   return (hour || 0) * 60 + (minute || 0);
+}
+
+function isInsideDailyCashbackWindow(
+  startTime: string | null | undefined,
+  endTime: string | null | undefined,
+  date = new Date()
+) {
+  const start = String(startTime || "").trim();
+  const end = String(endTime || "").trim();
+
+  // Si no se configura horario, la regla aplica todo el dia.
+  if (!start || !end) return true;
+
+  const currentMinutes = getChileMinutes(date);
+  const startMinutes = timeToMinutes(start);
+  const endMinutes = timeToMinutes(end);
+
+  // Si inicio y termino son iguales, lo tomamos como todo el dia.
+  if (startMinutes === endMinutes) return true;
+
+  // Caso normal: 15:00 a 17:00
+  if (startMinutes < endMinutes) {
+    return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+  }
+
+  // Caso trasnoche: 22:00 a 02:00
+  return currentMinutes >= startMinutes || currentMinutes < endMinutes;
 }
 
 async function isStoreOpenNow() {
@@ -146,7 +173,13 @@ async function calculateCashback(params: {
       item.allowedPaymentMethods === "all" ||
       item.allowedPaymentMethods === paymentMethod;
 
-    return startsOk && endsOk && paymentOk;
+    const timeOk = isInsideDailyCashbackWindow(
+      item.dailyStartTime,
+      item.dailyEndTime,
+      now
+    );
+
+    return startsOk && endsOk && paymentOk && timeOk;
   });
 
   if (!rule) {

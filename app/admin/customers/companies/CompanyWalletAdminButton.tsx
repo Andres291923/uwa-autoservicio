@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 type Invoice = {
+  fileUrl?: string;
   id: number;
   invoiceNumber: string;
   amount: number;
@@ -318,3 +319,4 @@ export default function CompanyWalletAdminButton({
     </>
   );
 }
+

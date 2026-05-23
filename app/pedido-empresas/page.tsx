@@ -844,8 +844,7 @@ export default function PedidoPage() {
         },
         body: JSON.stringify({
           email: authEmail.trim().toLowerCase(),
-          password: authPassword.trim(),
-          password: workerNewPassword.trim(),
+        password: workerNewPassword.trim(),
         }),
       });
 
@@ -1799,7 +1798,7 @@ export default function PedidoPage() {
                   </>
                 )}
 
-                {authMode !== "guest" ? (
+                {true ? (
                   <>
                     <label className="mt-4 block">
                       <span className="text-xs font-black uppercase text-zinc-500">Correo electrónico</span>
@@ -2478,6 +2477,8 @@ export default function PedidoPage() {
 </main>
   );
 }
+
+
 
 
 

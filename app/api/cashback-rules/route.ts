@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
@@ -30,6 +30,8 @@ export async function POST(request: Request) {
         minPurchase: Math.round(Number(body.minPurchase || 0)),
         maxCashback: Math.round(Number(body.maxCashback || 0)),
         allowedPaymentMethods: String(body.allowedPaymentMethods || "all"),
+        dailyStartTime: String(body.dailyStartTime || "").trim(),
+        dailyEndTime: String(body.dailyEndTime || "").trim(),
         includedCategoryIds: String(body.includedCategoryIds || "all"),
         excludedProductIds: String(body.excludedProductIds || ""),
         validityDays: Math.round(Number(body.validityDays || 0)),
@@ -75,6 +77,8 @@ export async function PUT(request: Request) {
         minPurchase: Math.round(Number(body.minPurchase || 0)),
         maxCashback: Math.round(Number(body.maxCashback || 0)),
         allowedPaymentMethods: String(body.allowedPaymentMethods || "all"),
+        dailyStartTime: String(body.dailyStartTime || "").trim(),
+        dailyEndTime: String(body.dailyEndTime || "").trim(),
         includedCategoryIds: String(body.includedCategoryIds || "all"),
         excludedProductIds: String(body.excludedProductIds || ""),
         validityDays: Math.round(Number(body.validityDays || 0)),
