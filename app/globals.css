@@ -1,4 +1,4 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 
 :root {
   --background: #ffffff;
@@ -35,17 +35,14 @@ body.orientation-booting::before {
 }
 
 body.orientation-booting::after {
-  content: "ÜWA";
+  content: "";
   position: fixed;
   inset: 0;
   z-index: 2147483647;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #10B557;
-  font-size: 48px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  background: #ffffff;
+  background-color: #ffffff;
+  background-image: url("/icons/loading-logo.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: min(60vw, 360px) auto;
 }
 /* ORIENTATION_BOOT_COVER_END */
