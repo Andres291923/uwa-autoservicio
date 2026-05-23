@@ -14,17 +14,24 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ÜWA Autoservicio",
-  description: "Sistema de autoservicio ÜWA",
+  title: "ÃœWA Autoservicio",
+  description: "Sistema de autoservicio ÃœWA",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    title: "ÜWA",
+    title: "ÃœWA",
     statusBarStyle: "default",
   },
   icons: {
-    icon: "/icons/icon-192.png",
-    apple: "/icons/icon-192.png",
+    icon: [
+      {
+        url: "/icons/uwa-favicon-v3.png?v=3",
+        type: "image/png",
+        sizes: "192x192",
+      },
+    ],
+    shortcut: "/icons/uwa-favicon-v3.png?v=3",
+    apple: "/icons/uwa-app-icon-v3.png?v=3",
   },
 };
 
