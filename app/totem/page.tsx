@@ -985,8 +985,8 @@ export default function TotemPage() {
         </div>
       )}
       {totemAuthVisible && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 px-5">
-          <div className="w-full max-w-xl rounded-[2rem] bg-white p-7 shadow-2xl">
+        <div className="fixed inset-0 z-[10000] flex items-start justify-center overflow-y-auto bg-black/50 px-4 py-4 sm:items-center">
+          <div className="my-auto w-full max-w-xl max-h-[calc(100dvh-32px)] overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl sm:p-7">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.25em] text-[#10B557]">
@@ -1163,7 +1163,7 @@ export default function TotemPage() {
         </div>
       )}
       {closedModalVisible && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 px-5">
+        <div className="fixed inset-0 z-[10000] flex items-start justify-center overflow-y-auto bg-black/50 px-4 py-4 sm:items-center">
           <div className="w-full max-w-xl rounded-[2rem] bg-white p-7 text-center shadow-2xl">
             <p className="text-xs font-black uppercase tracking-[0.25em] text-red-500">
               Tienda cerrada
@@ -2118,6 +2118,7 @@ export default function TotemPage() {
     </main>
   );
 }
+
 
 
 
