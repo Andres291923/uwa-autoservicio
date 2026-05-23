@@ -1,7 +1,7 @@
 {
-  "name": "ÜWA Autoservicio",
-  "short_name": "ÜWA",
-  "description": "Sistema de autoservicio ÜWA",
+  "name": "UWA Autoservicio",
+  "short_name": "UWA",
+  "description": "Sistema de autoservicio UWA",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
