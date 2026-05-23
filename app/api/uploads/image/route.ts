@@ -1,12 +1,33 @@
 ﻿import { NextResponse } from "next/server";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
+import { put } from "@vercel/blob";
+import { randomUUID } from "crypto";
 
 export const runtime = "nodejs";
 
 function isAdmin(request: Request) {
+  if (process.env.NODE_ENV === "development") {
+    return true;
+  }
+
+  const sessionToken = process.env.ADMIN_SESSION_TOKEN || "";
   const cookie = request.headers.get("cookie") || "";
-  return cookie.includes("admin_session");
+
+  return Boolean(sessionToken && cookie.includes(`admin_session=${sessionToken}`));
+}
+
+function cleanFileName(name: string) {
+  const withoutExtension = name.replace(/\.[^/.]+$/, "");
+
+  return (
+    withoutExtension
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9-_]/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "")
+      .toLowerCase()
+      .slice(0, 60) || "imagen"
+  );
 }
 
 export async function POST(request: Request) {
@@ -43,21 +64,17 @@ export async function POST(request: Request) {
     }
 
     const extension = file.name.split(".").pop()?.toLowerCase() || "png";
-    const fileName = `image-${Date.now()}.${extension}`;
+    const baseName = cleanFileName(file.name);
+    const fileName = `uploads/${baseName}-${Date.now()}-${randomUUID()}.${extension}`;
 
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    const filePath = path.join(uploadDir, fileName);
-
-    await mkdir(uploadDir, { recursive: true });
-
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    await writeFile(filePath, buffer);
+    const blob = await put(fileName, file, {
+      access: "public",
+      contentType: file.type,
+    });
 
     return NextResponse.json({
       ok: true,
-      url: `/uploads/${fileName}`,
+      url: blob.url,
     });
   } catch (error) {
     console.error("UPLOAD_IMAGE_ERROR", error);
