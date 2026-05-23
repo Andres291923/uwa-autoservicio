@@ -2011,7 +2011,7 @@ export default function TotemPage() {
                     >
 <button
                         onClick={() => openProduct(product)}
-                        className="flex h-[315px] w-full flex-col text-left"
+                        className="flex h-[315px] w-full flex-col text-center"
                       >
                         <div className="flex h-[125px] min-h-[125px] w-full items-center justify-center overflow-hidden bg-white">
                           {product.imageUrl ? (
@@ -2118,6 +2118,7 @@ export default function TotemPage() {
     </main>
   );
 }
+
 
 
 
