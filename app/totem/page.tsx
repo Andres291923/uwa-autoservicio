@@ -2034,7 +2034,7 @@ export default function TotemPage() {
                         </div>
 
                         <div className="flex min-h-0 flex-1 flex-col p-3">
-                          <h2 className="min-h-[44px] text-[17px] font-black leading-[20px]">
+                          <h2 className="flex min-h-[44px] w-full items-center justify-center text-center text-[17px] font-black leading-[20px]">
                             {product.name}
                           </h2>
 
@@ -2118,6 +2118,7 @@ export default function TotemPage() {
     </main>
   );
 }
+
 
 
 
