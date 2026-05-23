@@ -1945,15 +1945,7 @@ export default function TotemPage() {
             <h2 className="mb-3 px-1 text-[9px] font-black uppercase tracking-[0.22em] text-zinc-400">
               Categorías
             </h2>
-
-            <button
-              type="button"
-              onClick={() => (window.location.href = "/")}
-              className="mb-4 w-full rounded-2xl bg-zinc-950 px-3 py-4 text-center text-[12px] font-black uppercase leading-tight tracking-[0.08em] text-white shadow-sm active:scale-95"
-            >
-              Volver al inicio
-            </button>
-            <div className="space-y-2">
+<div className="space-y-2">
               <button
                 onClick={() => setSelectedCategoryId("all")}
                 className="w-full rounded-2xl px-3 py-4 text-left text-[12px] font-black uppercase leading-tight"
@@ -2125,6 +2117,7 @@ export default function TotemPage() {
     </main>
   );
 }
+
 
 
 
