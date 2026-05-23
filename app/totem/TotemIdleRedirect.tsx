@@ -48,13 +48,5 @@ export default function TotemIdleRedirect() {
     };
   }, []);
 
-  return (
-    <button
-      type="button"
-      onClick={goToIdleScreen}
-      className="fixed left-3 top-[150px] z-[10000] w-[120px] rounded-2xl bg-zinc-950 px-3 py-3 text-center text-[11px] font-black uppercase leading-tight tracking-[0.06em] text-white shadow-xl active:scale-95"
-    >
-      Volver al inicio
-    </button>
-  );
+  return null;
 }

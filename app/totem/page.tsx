@@ -1946,6 +1946,13 @@ export default function TotemPage() {
               Categorías
             </h2>
 
+            <button
+              type="button"
+              onClick={() => (window.location.href = "/")}
+              className="mb-4 w-full rounded-2xl bg-zinc-950 px-3 py-4 text-center text-[12px] font-black uppercase leading-tight tracking-[0.08em] text-white shadow-sm active:scale-95"
+            >
+              Volver al inicio
+            </button>
             <div className="space-y-2">
               <button
                 onClick={() => setSelectedCategoryId("all")}
@@ -2118,6 +2125,7 @@ export default function TotemPage() {
     </main>
   );
 }
+
 
 
 
