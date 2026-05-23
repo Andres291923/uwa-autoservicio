@@ -1,11 +1,12 @@
 ﻿{
+  "id": "/totem",
   "name": "ÜWA Autoservicio",
   "short_name": "ÜWA",
   "description": "Sistema de autoservicio ÜWA",
   "start_url": "/totem",
   "scope": "/",
-  "display": "standalone",
-  "orientation": "portrait",
+  "display": "fullscreen",
+  "orientation": "portrait-primary",
   "background_color": "#ffffff",
   "theme_color": "#10B557",
   "icons": [
