@@ -52,9 +52,9 @@ export default function TotemIdleRedirect() {
     <button
       type="button"
       onClick={goToIdleScreen}
-      className="fixed right-3 bottom-[105px] z-[10000] rounded-2xl border border-zinc-200 bg-white/95 px-4 py-3 text-[12px] font-black uppercase tracking-[0.08em] text-zinc-600 shadow-xl backdrop-blur active:scale-95"
+      className="fixed left-3 top-[150px] z-[10000] w-[120px] rounded-2xl bg-zinc-950 px-3 py-3 text-center text-[11px] font-black uppercase leading-tight tracking-[0.06em] text-white shadow-xl active:scale-95"
     >
-      Reposo
+      Volver al inicio
     </button>
   );
 }
