@@ -960,6 +960,13 @@ export default function PedidoPage() {
   }
 
   async function loadWalletSummary(customerId: number) {
+    if (
+      loggedCustomer?.accountType === "company" ||
+      loggedCustomer?.accountType === "worker"
+    ) {
+      return;
+    }
+
     try {
       const response = await fetch(
         `/api/customer-wallet/summary?customerId=${customerId}`,
@@ -992,6 +999,13 @@ export default function PedidoPage() {
   }
 
   async function refreshCustomerWallet(customerId: number) {
+    if (
+      loggedCustomer?.accountType === "company" ||
+      loggedCustomer?.accountType === "worker"
+    ) {
+      return;
+    }
+
     try {
       const response = await fetch("/api/customer-auth/wallet", {
         method: "POST",
@@ -1334,7 +1348,8 @@ export default function PedidoPage() {
         return;
       }
 
-      const finalCustomerName = loggedCustomer?.name || guestName.trim();
+      const finalCustomerName =
+        loggedCustomer?.companyName || loggedCustomer?.name || guestName.trim();
 
       if (!finalCustomerName) {
         setMessage("Ingresa tu nombre o entra con tu cuenta.");
@@ -1428,11 +1443,11 @@ export default function PedidoPage() {
       setPaymentMethod("debit_credit");
       setUseWallet(false);
       clearCoupon();
-
-      if (loggedCustomer) {
-        await refreshCustomerWallet(loggedCustomer.id);
-        await loadWalletSummary(loggedCustomer.id);
-      }
+      // PEDIDO_EMPRESA_NO_USAR_WALLET_CLIENTE_PERSONA
+      // Esta pantalla usa cuentas empresa/trabajador.
+      // No refrescar con /api/customer-auth ni /api/customer-wallet,
+      // porque puede encontrar un cliente persona con el mismo ID
+      // y sobrescribir el nombre de la empresa logueada.
 
       if (paymentMethod === "bank_transfer" && createdCompanyTransferOrderNumber) {
         setTransferSuccessOrderNumber(createdCompanyTransferOrderNumber);
@@ -2784,6 +2799,7 @@ export default function PedidoPage() {
 </main>
   );
 }
+
 
 
 
