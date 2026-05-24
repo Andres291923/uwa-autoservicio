@@ -1433,6 +1433,68 @@ export default function PedidoPage() {
 
       const customerComment = buildOnlineOrderCustomerComment();
 
+      // EMPRESA_MERCADOPAGO_CHECKOUT
+      if (paymentMethod === "debit_credit") {
+        const companyCustomerId =
+          loggedCustomer?.companyCustomerId || loggedCustomer?.id || null;
+
+        if (!companyCustomerId) {
+          setMessage("Debes ingresar como empresa para pagar con tarjeta.");
+          return;
+        }
+
+        const response = await fetch("/api/mercadopago/create-preference", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            flow: "company_order",
+            companyCustomerId,
+            customerName: finalCustomerName,
+            customerEmail:
+              loggedCustomer?.companyEmail ||
+              loggedCustomer?.email ||
+              authEmail.trim() ||
+              null,
+            customerComment,
+            walletAmountUsed: walletAmountToUse,
+            orderSource:
+              loggedCustomer?.accountType === "worker" ? "company_worker" : "company",
+            fulfillmentType,
+            scheduledFor: scheduledForValue
+              ? new Date(scheduledForValue).toISOString()
+              : null,
+            items: cart.map((item) => ({
+              productId: item.productId,
+              quantity: 1,
+              modifierOptionIds: item.modifierOptionIds,
+            })),
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          setMessage(data.error || "No se pudo iniciar el pago con Mercado Pago.");
+          return;
+        }
+
+        const paymentUrl =
+          data.checkoutUrl ||
+          (data.environment === "production"
+            ? data.initPoint
+            : data.sandboxInitPoint || data.initPoint);
+
+        if (!paymentUrl) {
+          setMessage("Mercado Pago no devolvió URL de pago.");
+          return;
+        }
+
+        setMessage("Redirigiendo a Mercado Pago...");
+        window.location.href = paymentUrl;
+        return;
+      }
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: {
@@ -2418,7 +2480,7 @@ export default function PedidoPage() {
                 }
                 className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
               >
-                <option value="debit_credit">Tarjeta</option>
+                <option value="debit_credit">Tarjeta / Mercado Pago</option>
                         <option value="bank_transfer">Transferencia</option>
               </select>
             </label>
@@ -2488,7 +2550,9 @@ export default function PedidoPage() {
               ? "Enviando..."
               : cart.length > 0 && !hasMinimumCompanyBowls
               ? `Minimo ${minimumCompanyBowls} bowls`
-              : "Confirmar Pedido online empresas"}
+              : paymentMethod === "debit_credit"
+              ? "Pagar con tarjeta"
+              : "Confirmar pedido por transferencia"}
           </button>
         </aside>
       </div>
@@ -2850,6 +2914,7 @@ export default function PedidoPage() {
 </main>
   );
 }
+
 
 
 
