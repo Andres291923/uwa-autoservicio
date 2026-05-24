@@ -28,3 +28,15 @@ tsconfig.tsbuildinfo
 .env.neon.txt
 
 .vercel/
+
+print-agent/config.json
+
+print-agent/tickets/
+
+# Desktop print agent builds
+desktop-print-agent/dist/
+desktop-print-agent/node_modules/
+*.exe
+*.blockmap
+*.msi
+*.zip

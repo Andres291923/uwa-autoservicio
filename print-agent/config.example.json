@@ -1,0 +1,8 @@
+﻿{
+    "ticketFolder":  "print-agent/tickets",
+    "printerName":  "NOMBRE_EXACTO_IMPRESORA_WINDOWS",
+    "intervalSeconds":  3,
+    "baseUrl":  "https://uwa-autoservicio.vercel.app",
+    "token":  "PEGAR_PRINT_AGENT_TOKEN",
+    "agentId":  "cocina-principal"
+}

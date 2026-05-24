@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "print-agent": "node print-agent/uwa-print-agent.js"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

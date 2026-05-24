@@ -1,4 +1,4 @@
-generator client {
+﻿generator client {
   provider = "prisma-client-js"
 }
 
@@ -114,6 +114,12 @@ model Order {
   discountCouponCode String?
   totemCode          String?
   paymentMethod      String          @default("unknown")
+  printStatus       String          @default("pending")
+  printedAt         DateTime?
+  printCount        Int             @default(0)
+  lastPrintError    String?
+  claimedAt         DateTime?
+  printAgentId      String?
 
   orderSource     String           @default("totem")
   fulfillmentType String           @default("immediate")

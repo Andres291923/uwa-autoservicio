@@ -1,0 +1,197 @@
+﻿<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>UWA Print Agent</title>
+  <style>
+    body {
+      margin: 0;
+      background: #f4f4f5;
+      color: #18181b;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    main {
+      padding: 28px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 14px 40px rgba(0,0,0,.08);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 32px;
+      font-weight: 900;
+    }
+
+    .subtitle {
+      margin-top: 8px;
+      color: #52525b;
+      font-weight: 700;
+    }
+
+    label {
+      display: block;
+      margin-top: 18px;
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: #52525b;
+    }
+
+    input {
+      margin-top: 8px;
+      width: 100%;
+      border: 1px solid #d4d4d8;
+      border-radius: 16px;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      outline: none;
+      box-sizing: border-box;
+    }
+
+    input:focus {
+      border-color: #10B557;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 16px;
+      padding: 14px 18px;
+      font-size: 15px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .primary {
+      background: #10B557;
+      color: white;
+    }
+
+    .dark {
+      background: #18181b;
+      color: white;
+    }
+
+    .status {
+      margin-top: 22px;
+      border-radius: 18px;
+      background: #ecfdf5;
+      padding: 16px;
+      color: #166534;
+      font-weight: 900;
+    }
+
+    .note {
+      margin-top: 18px;
+      border-radius: 18px;
+      background: #fff7ed;
+      padding: 16px;
+      color: #9a3412;
+      font-weight: 800;
+      line-height: 1.4;
+    }
+
+    .small {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #71717a;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="card">
+      <h1>UWA Print Agent</h1>
+      <p class="subtitle">
+        Imprime comandas automáticamente usando la impresora predeterminada de Windows.
+      </p>
+
+      <label>URL del sistema</label>
+      <input id="baseUrl" placeholder="https://uwa-autoservicio.vercel.app" />
+
+      <label>Token del agente</label>
+      <input id="token" placeholder="Pegar token privado" />
+
+      <label>ID del agente</label>
+      <input id="agentId" placeholder="cocina-principal" />
+
+      <label>Intervalo en segundos</label>
+      <input id="intervalSeconds" type="number" min="1" />
+
+      <div class="row">
+        <input id="autoStartWithWindows" type="checkbox" style="width:auto; transform:scale(1.3);" />
+        <strong>Iniciar automáticamente con Windows</strong>
+      </div>
+
+      <div class="row">
+        <button class="primary" onclick="save()">Guardar y activar</button>
+        <button class="dark" onclick="testPrint()">Probar impresión</button>
+      </div>
+
+      <div class="note">
+        Este agente NO usa nombre de impresora. Imprime en la impresora predeterminada de Windows.
+        Si cambias de PC o de impresora, solo deja esa impresora como predeterminada.
+      </div>
+
+      <div class="status" id="status">Cargando agente...</div>
+      <div class="small" id="statusAt"></div>
+    </section>
+  </main>
+
+  <script>
+    async function load() {
+      const config = await window.agent.getConfig();
+
+      document.getElementById("baseUrl").value = config.baseUrl || "";
+      document.getElementById("token").value = config.token || "";
+      document.getElementById("agentId").value = config.agentId || "";
+      document.getElementById("intervalSeconds").value = config.intervalSeconds || 3;
+      document.getElementById("autoStartWithWindows").checked = Boolean(config.autoStartWithWindows);
+    }
+
+    async function save() {
+      await window.agent.saveConfig({
+        baseUrl: document.getElementById("baseUrl").value.trim(),
+        token: document.getElementById("token").value.trim(),
+        agentId: document.getElementById("agentId").value.trim(),
+        intervalSeconds: Number(document.getElementById("intervalSeconds").value || 3),
+        autoStartWithWindows: document.getElementById("autoStartWithWindows").checked
+      });
+
+      document.getElementById("status").innerText = "Configuración guardada. Agente activo.";
+    }
+
+    async function testPrint() {
+      document.getElementById("status").innerText = "Enviando impresión de prueba...";
+
+      try {
+        await window.agent.testPrint();
+        document.getElementById("status").innerText = "Prueba enviada a la impresora predeterminada.";
+      } catch (error) {
+        document.getElementById("status").innerText = "Error en prueba: " + error.message;
+      }
+    }
+
+    window.agent.onStatus((data) => {
+      document.getElementById("status").innerText = data.message;
+      document.getElementById("statusAt").innerText = data.at;
+    });
+
+    load();
+  </script>
+</body>
+</html>
