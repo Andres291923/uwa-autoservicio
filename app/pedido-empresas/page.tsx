@@ -210,7 +210,7 @@ function formatOrderStatus(value: string) {
 
 function formatOrderSource(value: string) {
   if (value === "online") return "Online";
-  return "TÃ³tem";
+  return "Tótem";
 }
 
 function formatFulfillment(value: string) {
@@ -219,7 +219,7 @@ function formatFulfillment(value: string) {
 }
 
 function formatPaymentMethod(value: string) {
-  if (value === "food_benefit") return "Beneficio alimentaciÃ³n";
+  if (value === "food_benefit") return "Beneficio alimentación";
   if (value === "debit_credit") return "Tarjeta";
   if (value === "bank_transfer") return "Transferencia";
   return value || "No informado";
@@ -307,7 +307,7 @@ function buildScheduleBanner(openingHours: OpeningHour[]) {
           : item.dayOfWeek === 2
           ? "Martes"
           : item.dayOfWeek === 3
-          ? "MiÃ©rcoles"
+          ? "Miércoles"
           : item.dayOfWeek === 4
           ? "Jueves"
           : "Viernes";
@@ -317,14 +317,14 @@ function buildScheduleBanner(openingHours: OpeningHour[]) {
   }
 
   if (saturday) {
-    parts.push(`SÃ¡bado ${saturday.openTime} a ${saturday.closeTime}`);
+    parts.push(`Sábado ${saturday.openTime} a ${saturday.closeTime}`);
   }
 
   if (sunday) {
     parts.push(`Domingo ${sunday.openTime} a ${sunday.closeTime}`);
   }
 
-  return parts.join(" Â· ");
+  return parts.join(" · ");
 }
 
 
@@ -418,14 +418,14 @@ export default function PedidoPage() {
     );
 
     if (cleanDetails.length === 0) {
-      return "Lo sentimos, una opcion ya no esta disponible. Elige otra opcion para continuar.";
+      return "Lo sentimos, una opción ya no esta disponible. Elige otra opción para continuar.";
     }
 
     if (cleanDetails.length === 1) {
-      return `Lo sentimos, ${cleanDetails[0]} ya no esta disponible. Elige otra opcion para continuar.`;
+      return `Lo sentimos, ${cleanDetails[0]} ya no esta disponible. Elige otra opción para continuar.`;
     }
 
-    return `Lo sentimos, estas opciones ya no estan disponibles: ${cleanDetails.join(", ")}. Elige otras opciones para continuar.`;
+    return `Lo sentimos, estas opciónes ya no estan disponibles: ${cleanDetails.join(", ")}. Elige otras opciónes para continuar.`;
   }
 
   function getCompanyProductFromCatalog(productId: number): Product | null {
@@ -490,7 +490,7 @@ export default function PedidoPage() {
       }
     } catch (error) {
       console.error(error);
-      setMessage("No se pudo cargar el catalogo.");
+      setMessage("No se pudo cargar el catálogo.");
     }
   }
 
@@ -559,7 +559,7 @@ export default function PedidoPage() {
 
         selectedOptionIds.forEach((optionId, index) => {
           if (!validOptionIds.includes(optionId)) {
-            removedDetails.push(item.modifiersText[index] || "Opcion");
+            removedDetails.push(item.modifiersText[index] || "Opción");
           }
         });
       }
@@ -693,7 +693,7 @@ export default function PedidoPage() {
 
             if (option) {
               removedSelectedDetails.push(
-                `${originalGroup?.template.name || "Opcion"}: ${option.name}`
+                `${originalGroup?.template.name || "Opción"}: ${option.name}`
               );
             }
           }
@@ -891,7 +891,7 @@ export default function PedidoPage() {
     if (!selectedProduct) return;
 
     if (!canAddSelectedProduct()) {
-      setMessage("Completa las opciones obligatorias.");
+      setMessage("Completa las opciónes obligatorias.");
       return;
     }
 
@@ -1276,14 +1276,14 @@ export default function PedidoPage() {
       setCouponMessage("");
 
       if (cart.length === 0) {
-        setCouponMessage("Agrega productos antes de usar un cupÃ³n.");
+        setCouponMessage("Agrega productos antes de usar un cupón.");
         return;
       }
 
       const cleanCode = couponCode.trim().toUpperCase().replace(/\s+/g, "");
 
       if (!cleanCode) {
-        setCouponMessage("Ingresa un cupÃ³n.");
+        setCouponMessage("Ingresa un cupón.");
         return;
       }
 
@@ -1304,7 +1304,7 @@ export default function PedidoPage() {
 
       if (!response.ok) {
         setAppliedCoupon(null);
-        setCouponMessage(data.error || "CupÃ³n invÃ¡lido.");
+        setCouponMessage(data.error || "Cupón inválido.");
         return;
       }
 
@@ -1315,10 +1315,10 @@ export default function PedidoPage() {
         percent: data.percent,
       });
       setCouponCode(data.code);
-      setCouponMessage(`CupÃ³n aplicado: ${data.name}`);
+      setCouponMessage(`Cupón aplicado: ${data.name}`);
     } catch (error) {
       console.error(error);
-      setCouponMessage("Error al validar el cupÃ³n.");
+      setCouponMessage("Error al validar el cupón.");
     } finally {
       setValidatingCoupon(false);
     }
@@ -1381,12 +1381,12 @@ export default function PedidoPage() {
         }
 
         if (scheduledDate < tomorrowInputDate()) {
-          setMessage("Los pedidos empresa deben programarse con 1 dÃ­a de anticipaciÃ³n.");
+          setMessage("Los pedidos empresa deben programarse con 1 día de anticipación.");
           return;
         }
 
         if (!selectedDaySchedule) {
-          setMessage("La tienda estÃ¡ cerrada ese dÃ­a. Elige otra fecha.");
+          setMessage("La tienda está cerrada ese día. Elige otra fecha.");
           return;
         }
 
@@ -1616,7 +1616,7 @@ export default function PedidoPage() {
 
             <p className="mt-3 text-base font-bold text-zinc-500">
               En este momento no estamos tomando pedidos inmediatos. Puedes
-              programar tu pedido para mÃ¡s tarde.
+              programar tu pedido para más tarde.
             </p>
 
             <button suppressHydrationWarning
@@ -1636,7 +1636,7 @@ export default function PedidoPage() {
               onClick={() => setClosedStoreModalVisible(false)}
               className="mt-3 w-full rounded-2xl border border-zinc-200 bg-white py-4 text-sm font-black text-zinc-700"
             >
-              Seguir viendo catÃ¡logo
+              Seguir viendo catálogo
             </button>
           </div>
         </div>
@@ -1684,7 +1684,7 @@ export default function PedidoPage() {
         {scheduleBanner && (
           <div className="border-t border-emerald-100 bg-emerald-50 px-4 py-3 text-center">
             <p className="text-[11px] font-black uppercase tracking-[0.25em] text-emerald-700">
-              Horario de atenciÃ³n
+              Horario de atención
             </p>
             <p className="mt-1 text-sm font-bold text-zinc-800">
               {scheduleBanner}
@@ -1698,11 +1698,11 @@ export default function PedidoPage() {
         <div className="fixed inset-0 z-[20000] flex items-center justify-center bg-black/60 px-5">
           <div className="w-full max-w-xl rounded-[2rem] bg-white p-7 text-center shadow-2xl">
             <p className="text-xs font-black uppercase tracking-[0.25em] text-red-500">
-              Catalogo actualizado
+              Catálogo actualizado
             </p>
 
             <h2 className="mt-3 text-3xl font-black text-zinc-950">
-              Opcion no disponible
+              Opción no disponible
             </h2>
 
             <p className="mt-4 text-lg font-bold leading-relaxed text-zinc-600">
@@ -1717,7 +1717,7 @@ export default function PedidoPage() {
               }}
               className="mt-7 w-full rounded-2xl bg-[#10B557] py-5 text-xl font-black text-white shadow-lg active:scale-[0.98]"
             >
-              Elegir otra opcion
+              Elegir otra opción
             </button>
           </div>
         </div>
@@ -1727,7 +1727,7 @@ export default function PedidoPage() {
           <div className="mb-5">
             <h2 className="text-3xl font-black">Elige tus productos</h2>
             <p className="mt-1 text-sm font-bold text-zinc-500">
-              Compra online usando el mismo catÃ¡logo del local.
+              Compra online usando el mismo catálogo del local.
             </p>
           </div>
 
@@ -1881,7 +1881,7 @@ export default function PedidoPage() {
 
                       {(walletSummary?.nextCashbackExpiration || loggedCustomer.nextCashbackExpiration) ? (
                         <p className="mt-1 text-xs font-bold text-emerald-700">
-                          PrÃ³ximo vencimiento: {formatPrice(walletSummary?.nextCashbackAmount ?? loggedCustomer.nextCashbackAmount ?? 0)} vence el {formatShortDate(walletSummary?.nextCashbackExpiration || loggedCustomer.nextCashbackExpiration)}
+                          Próximo vencimiento: {formatPrice(walletSummary?.nextCashbackAmount ?? loggedCustomer.nextCashbackAmount ?? 0)} vence el {formatShortDate(walletSummary?.nextCashbackExpiration || loggedCustomer.nextCashbackExpiration)}
                         </p>
                       ) : (
                         <p className="mt-1 text-xs font-bold text-zinc-500">
@@ -2057,14 +2057,14 @@ export default function PedidoPage() {
                         suppressHydrationWarning
                         value={companyGiro}
                         onChange={(event) => setCompanyGiro(event.target.value)}
-                        placeholder="Ej: Servicios de alimentaciÃ³n"
+                        placeholder="Ej: Servicios de alimentación"
                         className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-black outline-none focus:border-[#10B557]"
                       />
                     </label>
 
                     <label className="mt-4 block">
                       <span className="text-xs font-black uppercase text-zinc-500">
-                        DirecciÃ³n
+                        Dirección
                       </span>
                       <input
                         suppressHydrationWarning
@@ -2083,14 +2083,14 @@ export default function PedidoPage() {
                         suppressHydrationWarning
                         value={companyContactName}
                         onChange={(event) => setCompanyContactName(event.target.value)}
-                        placeholder="Ej: AndrÃ©s Matamala"
+                        placeholder="Ej: Andrés Matamala"
                         className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-black outline-none focus:border-[#10B557]"
                       />
                     </label>
 
                     <label className="mt-4 block">
                       <span className="text-xs font-black uppercase text-zinc-500">
-                        TelÃ©fono encargado
+                        Teléfono encargado
                       </span>
                       <input
                         suppressHydrationWarning
@@ -2106,7 +2106,7 @@ export default function PedidoPage() {
                 {true ? (
                   <>
                     <label className="mt-4 block">
-                      <span className="text-xs font-black uppercase text-zinc-500">Correo electrÃ³nico</span>
+                      <span className="text-xs font-black uppercase text-zinc-500">Correo electrónico</span>
                       <input suppressHydrationWarning
                         value={authEmail}
                         onChange={(event) => setAuthEmail(event.target.value)}
@@ -2191,7 +2191,7 @@ export default function PedidoPage() {
 
           {cart.length === 0 ? (
             <p className="mt-4 rounded-2xl bg-zinc-50 p-4 text-sm font-bold text-zinc-500">
-              AÃºn no agregas productos.
+              Aún no agregas productos.
             </p>
           ) : (
             <div className="mt-4 space-y-3">
@@ -2339,7 +2339,7 @@ export default function PedidoPage() {
 
                 {scheduledDate && !selectedDaySchedule && (
                   <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
-                    Tienda cerrada ese dÃ­a. Elige otra fecha.
+                    Tienda cerrada ese día. Elige otra fecha.
                   </div>
                 )}
 
@@ -2561,12 +2561,12 @@ export default function PedidoPage() {
                       <div className="mt-3 grid gap-3 md:grid-cols-2">
                         <div className="rounded-2xl bg-red-50 p-4">
                           <p className="text-xs font-black uppercase text-red-600">
-                            CupÃ³n
+                            Cupón
                           </p>
                           <p className="mt-1 text-sm font-black text-red-600">
                             {order.discountCouponCode
-                              ? `${order.discountCouponCode} Â· ${formatPrice(order.discountAmount)} (${order.discountPercent}%)`
-                              : "Sin cupÃ³n"}
+                              ? `${order.discountCouponCode} · ${formatPrice(order.discountAmount)} (${order.discountPercent}%)`
+                              : "Sin cupón"}
                           </p>
                         </div>
 
@@ -2766,7 +2766,7 @@ export default function PedidoPage() {
                 />
 
                 <p className="mt-2 text-xs font-bold text-zinc-500">
-                  Este comentario aparecerÃ¡ en cocina y en la comanda.
+                  Este comentario aparecerá en cocina y en la comanda.
                 </p>
               </label>
             </div>
@@ -2795,6 +2795,7 @@ export default function PedidoPage() {
 </main>
   );
 }
+
 
 
 
