@@ -165,7 +165,7 @@ const defaultSettings: Settings = {
 };
 
 const instagramUrl = "https://www.instagram.com/uwa_chile/";
-const whatsappUrl = "https://api.whatsapp.com/send?phone=56997971213&text=Hola%20%C3%9CWA%2C%20quiero%20hacer%20una%20consulta%20sobre%20pedido%20online.";
+const whatsappUrl = "https://api.whatsapp.com/send?phone=56997971213&text=Hola%2C%20vengo%20de%20pedidos%20online%2C%20necesito%20ayuda.";
 // SOCIAL_LINKS_UWA
 
 function formatPrice(value: number) {
@@ -2572,6 +2572,7 @@ export default function PedidoPage() {
     </main>
   );
 }
+
 
 
 
