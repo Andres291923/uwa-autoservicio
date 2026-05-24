@@ -1123,6 +1123,14 @@ export default function TotemPage() {
     };
   }, []);
 
+  const catalogModalMessage =
+    catalogChangeMessage ||
+    (orderMessage.includes("Lo sentimos") ||
+    orderMessage.includes("Actualizamos el catalogo") ||
+    orderMessage.includes("ya no esta disponible")
+      ? orderMessage
+      : "");
+
   return (
     <main className="min-h-screen overflow-x-hidden bg-white pb-[112px] text-zinc-950">
 
@@ -1208,6 +1216,35 @@ export default function TotemPage() {
         </div>
       </header>
 
+      {/* CATALOG_MODAL_CENTER_FORCE */}
+      {catalogModalMessage && (
+        <div className="fixed inset-0 z-[20000] flex items-center justify-center bg-black/60 px-5">
+          <div className="w-full max-w-xl rounded-[2rem] bg-white p-7 text-center shadow-2xl">
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-red-500">
+              Catálogo actualizado
+            </p>
+
+            <h2 className="mt-3 text-3xl font-black text-zinc-950">
+              Opción no disponible
+            </h2>
+
+            <p className="mt-4 text-lg font-bold leading-relaxed text-zinc-600">
+              {catalogModalMessage}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                setCatalogChangeMessage("");
+                setOrderMessage("");
+              }}
+              className="mt-7 w-full rounded-2xl bg-[#10B557] py-5 text-xl font-black text-white shadow-lg active:scale-[0.98]"
+            >
+              Elegir otra opción
+            </button>
+          </div>
+        </div>
+      )}
       {orderMessage && (
         <div className="mx-3 mt-3 rounded-2xl border border-green-200 bg-green-50 p-3 text-sm font-black text-green-700">
           {orderMessage}
@@ -2346,6 +2383,8 @@ export default function TotemPage() {
     </main>
   );
 }
+
+
 
 
 
