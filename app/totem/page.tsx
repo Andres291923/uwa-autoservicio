@@ -195,6 +195,7 @@ export default function TotemPage() {
   const [customerName, setCustomerName] = useState("");
   const [confirmingOrder, setConfirmingOrder] = useState(false);
   const [orderMessage, setOrderMessage] = useState("");
+  const [catalogChangeMessage, setCatalogChangeMessage] = useState("");
   const [customerMessage, setCustomerMessage] = useState("");
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<PaymentMethod | null>(null);
@@ -219,6 +220,11 @@ export default function TotemPage() {
   const [totemAuthMessage, setTotemAuthMessage] = useState("");
 
   const loggedCustomerName = identifiedCustomer?.name || "";
+
+  function showCatalogChangeMessage(message: string) {
+    setOrderMessage(message);
+    setCatalogChangeMessage(message);
+  }
 
 
   function openTotemAuth(mode: TotemAuthMode = "login") {
@@ -1021,10 +1027,10 @@ export default function TotemPage() {
     if (!changed) return;
 
     setCart(nextCart);
-    setOrderMessage(
+    showCatalogChangeMessage(
       removedSomething
-        ? "Actualizamos el catalogo: quitamos un producto u opcion obligatoria que ya no esta disponible."
-        : "Actualizamos el catalogo: quitamos opciones que ya no estan disponibles."
+        ? "Lo sentimos, un producto u opcion obligatoria ya no esta disponible. Revisa tu pedido y elige otra opcion para continuar."
+        : "Lo sentimos, una opcion ya no esta disponible. Revisa tu producto y elige otra opcion para continuar."
     );
 
     if (nextCart.length === 0) {
@@ -1047,7 +1053,7 @@ export default function TotemPage() {
     if (!latestProduct) {
       setSelectedProduct(null);
       setSelectedOptionsByGroup({});
-      setOrderMessage("Este producto ya no esta disponible.");
+      showCatalogChangeMessage("Lo sentimos, este producto ya no esta disponible. Elige otro producto para continuar.");
       return;
     }
 
@@ -1092,8 +1098,8 @@ export default function TotemPage() {
 
     if (changed) {
       setSelectedOptionsByGroup(nextOptionsByGroup);
-      setOrderMessage(
-        "Actualizamos las opciones de este producto porque el catalogo cambio."
+      showCatalogChangeMessage(
+        "Lo sentimos, una opcion ya no esta disponible. Revisa tu producto y elige otra opcion para continuar."
       );
     }
   }, [products]);
@@ -2340,6 +2346,7 @@ export default function TotemPage() {
     </main>
   );
 }
+
 
 
 
