@@ -1021,9 +1021,11 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-lg font-black">{template.name}</h3>
+                                {/* CONTADOR_OPCIONES_ACTIVAS_DESACTIVADAS */}
                 <p className="mt-1 text-sm text-zinc-500">
                   {template.options.length} opciones -{" "}
-                  {template.active ? "Activo" : "Inactivo"}
+                  {template.options.filter((option) => option.active).length} activas -{" "}
+                  {template.options.filter((option) => !option.active).length} desactivadas
                 </p>
               </div>
 
@@ -2130,5 +2132,6 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
     </main>
   );
 }
+
 
 
