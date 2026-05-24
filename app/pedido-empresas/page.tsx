@@ -177,6 +177,10 @@ const defaultSettings: Settings = {
   primaryColor: "#10B557",
 };
 
+const instagramUrl = "https://www.instagram.com/uwa_chile/";
+const whatsappUrl = "https://api.whatsapp.com/send?phone=56997971213&text=Hola%20%C3%9CWA%2C%20quiero%20hacer%20una%20consulta%20sobre%20pedidos%20para%20empresas.";
+// SOCIAL_LINKS_UWA
+
 function formatPrice(value: number) {
   return new Intl.NumberFormat("es-CL", {
     style: "currency",
@@ -1591,6 +1595,34 @@ export default function PedidoPage() {
 
   return (
     <main className="min-h-screen bg-[#f5f6f8] text-zinc-950">
+      {/* SOCIAL_FLOATING_BUTTONS_UWA */}
+      <div className="fixed bottom-5 right-5 z-[9000] flex flex-col gap-3">
+        <a
+          href={instagramUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Instagram ÜWA"
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-zinc-950 shadow-2xl ring-1 ring-zinc-200 transition hover:scale-105 active:scale-95"
+        >
+          <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="18" height="18" rx="5" />
+            <circle cx="12" cy="12" r="4" />
+            <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+          </svg>
+        </a>
+
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="WhatsApp ÜWA"
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-2xl transition hover:scale-105 active:scale-95"
+        >
+          <svg viewBox="0 0 32 32" className="h-8 w-8" fill="currentColor">
+            <path d="M16.04 4C9.43 4 4.05 9.28 4.05 15.78c0 2.08.56 4.11 1.63 5.9L4 28l6.48-1.64a12.2 12.2 0 0 0 5.56 1.36c6.61 0 11.99-5.28 11.99-11.78S22.65 4 16.04 4Zm0 21.67c-1.78 0-3.52-.47-5.04-1.36l-.36-.21-3.84.97.99-3.65-.24-.38a9.67 9.67 0 0 1-1.48-5.26c0-5.36 4.47-9.73 9.97-9.73 5.49 0 9.96 4.37 9.96 9.73s-4.47 9.89-9.96 9.89Zm5.46-7.31c-.3-.15-1.77-.86-2.05-.96-.27-.1-.47-.15-.67.15-.2.29-.77.96-.95 1.16-.17.19-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.46-.89-.78-1.49-1.75-1.66-2.04-.17-.29-.02-.45.13-.6.13-.13.3-.34.45-.51.15-.17.2-.29.3-.49.1-.19.05-.36-.02-.51-.08-.15-.67-1.59-.92-2.18-.24-.57-.49-.49-.67-.5h-.57c-.2 0-.52.07-.8.36-.27.29-1.05 1.01-1.05 2.47s1.08 2.87 1.23 3.07c.15.19 2.13 3.2 5.16 4.49.72.31 1.28.49 1.72.63.72.23 1.38.2 1.9.12.58-.09 1.77-.71 2.02-1.4.25-.69.25-1.28.17-1.4-.07-.12-.27-.19-.57-.34Z" />
+          </svg>
+        </a>
+      </div>
       {walletHistoryVisible && loggedCustomer && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 px-4">
           <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-[2rem] bg-white p-6 shadow-2xl">
@@ -2914,6 +2946,7 @@ export default function PedidoPage() {
 </main>
   );
 }
+
 
 
 
