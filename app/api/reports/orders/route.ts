@@ -1,8 +1,12 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 function formatOrderSource(value: string | null | undefined) {
-  if (value === "online") return "Web";
+  if (value === "online") return "Online";
+  if (value === "company") return "Empresa";
+  if (value === "company_worker") return "Trabajador empresa";
+  if (value === "company_worker_totem") return "Trabajador empresa tótem";
+  if (value === "mercado_pago") return "Mercado Pago";
   if (value === "totem") return "Tótem";
   return "Tótem";
 }
@@ -10,17 +14,56 @@ function formatOrderSource(value: string | null | undefined) {
 function formatPaymentMethod(value: string | null | undefined) {
   if (value === "debit_credit") return "Débito / Crédito";
   if (value === "food_benefit") return "Beneficio alimentación";
+  if (value === "bank_transfer") return "Transferencia";
   if (value === "online") return "Online";
+  if (value === "mercado_pago") return "Mercado Pago";
+  if (value === "worker_wallet") return "Saldo trabajador";
   return "Sin definir";
 }
 
-function startOfDay(dateText: string) {
-  const date = new Date(`${dateText}T00:00:00`);
-  return date;
-}
+function chileDateToUtcRange(dateText: string, endOfDay = false) {
+  const time = endOfDay ? "23:59:59.999" : "00:00:00.000";
 
-function endOfDay(dateText: string) {
-  const date = new Date(`${dateText}T23:59:59.999`);
+  const utcGuess = new Date(`${dateText}T${time}Z`);
+
+  const chileParts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Santiago",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(utcGuess);
+
+  const get = (type: string) =>
+    Number(chileParts.find((part) => part.type === type)?.value || 0);
+
+  const chileAsUtc = Date.UTC(
+    get("year"),
+    get("month") - 1,
+    get("day"),
+    get("hour"),
+    get("minute"),
+    get("second"),
+    endOfDay ? 999 : 0
+  );
+
+  const desiredAsUtc = Date.UTC(
+    Number(dateText.slice(0, 4)),
+    Number(dateText.slice(5, 7)) - 1,
+    Number(dateText.slice(8, 10)),
+    endOfDay ? 23 : 0,
+    endOfDay ? 59 : 0,
+    endOfDay ? 59 : 0,
+    endOfDay ? 999 : 0
+  );
+
+  const offsetMs = chileAsUtc - utcGuess.getTime();
+
+  return new Date(desiredAsUtc - offsetMs);
+}T23:59:59.999`);
   return date;
 }
 
@@ -38,11 +81,11 @@ export async function GET(request: Request) {
       where.createdAt = {};
 
       if (startDate) {
-        where.createdAt.gte = startOfDay(startDate);
+        where.createdAt.gte = chileDateToUtcRange(startDate, false);
       }
 
       if (endDate) {
-        where.createdAt.lte = endOfDay(endDate);
+        where.createdAt.lte = chileDateToUtcRange(endDate, true);
       }
     }
 

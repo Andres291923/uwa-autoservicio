@@ -1,8 +1,73 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+
+function chileDateToUtcRange(dateText: string, endOfDay = false) {
+  const time = endOfDay ? "23:59:59.999" : "00:00:00.000";
+
+  const utcGuess = new Date(`${dateText}T${time}Z`);
+
+  const chileParts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Santiago",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(utcGuess);
+
+  const get = (type: string) =>
+    Number(chileParts.find((part) => part.type === type)?.value || 0);
+
+  const chileAsUtc = Date.UTC(
+    get("year"),
+    get("month") - 1,
+    get("day"),
+    get("hour"),
+    get("minute"),
+    get("second"),
+    endOfDay ? 999 : 0
+  );
+
+  const desiredAsUtc = Date.UTC(
+    Number(dateText.slice(0, 4)),
+    Number(dateText.slice(5, 7)) - 1,
+    Number(dateText.slice(8, 10)),
+    endOfDay ? 23 : 0,
+    endOfDay ? 59 : 0,
+    endOfDay ? 59 : 0,
+    endOfDay ? 999 : 0
+  );
+
+  const offsetMs = chileAsUtc - utcGuess.getTime();
+
+  return new Date(desiredAsUtc - offsetMs);
+}
 
 function getDateRange(url: string) {
   const { searchParams } = new URL(url);
+
+  const from = searchParams.get("from");
+  const to = searchParams.get("to");
+
+  const now = new Date();
+
+  const chileToday = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Santiago",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+
+  const startText = from || chileToday;
+  const endText = to || chileToday;
+
+  return {
+    start: chileDateToUtcRange(startText, false),
+    end: chileDateToUtcRange(endText, true),
+  };
+} = new URL(url);
 
   const from = searchParams.get("from");
   const to = searchParams.get("to");
@@ -21,6 +86,10 @@ function getDateRange(url: string) {
 function getPaymentLabel(paymentMethod: string | null | undefined) {
   if (paymentMethod === "debit_credit") return "Débito / Crédito";
   if (paymentMethod === "food_benefit") return "Beneficio alimentación";
+  if (paymentMethod === "bank_transfer") return "Transferencia";
+  if (paymentMethod === "online") return "Online";
+  if (paymentMethod === "mercado_pago") return "Mercado Pago";
+  if (paymentMethod === "worker_wallet") return "Saldo trabajador";
   return "No informado";
 }
 
