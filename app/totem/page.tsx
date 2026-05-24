@@ -10,6 +10,7 @@ type Category = {
   name: string;
   slug: string;
   order?: number;
+  active?: boolean;
 };
 
 type ModifierOption = {
@@ -890,6 +891,212 @@ export default function TotemPage() {
       setUseWalletBalance(false);
     }
   }, [identifiedCustomer, walletBalance, finalTotal]);
+
+  // CATALOG_CART_SYNC_TOTEM
+  useEffect(() => {
+    if (cart.length === 0 || products.length === 0) return;
+
+    let changed = false;
+    let removedSomething = false;
+    const nextCart: CartItem[] = [];
+
+    for (const item of cart) {
+      const product = products.find(
+        (candidate) =>
+          candidate.id === item.productId &&
+          candidate.active &&
+          candidate.category?.active !== false
+      );
+
+      if (!product) {
+        changed = true;
+        removedSomething = true;
+        continue;
+      }
+
+      const activeGroups = getActiveModifierGroups(product);
+      const optionContext = new Map<
+        number,
+        { groupId: number; groupName: string; option: ModifierOption }
+      >();
+
+      for (const group of activeGroups) {
+        for (const option of group.template.options) {
+          optionContext.set(option.id, {
+            groupId: group.id,
+            groupName: group.template.name,
+            option,
+          });
+        }
+      }
+
+      const selectedOptionIds = item.modifiers.flatMap((group) =>
+        group.options.map((option) => option.id)
+      );
+
+      const validOptionIds = selectedOptionIds.filter((optionId) =>
+        optionContext.has(optionId)
+      );
+
+      if (validOptionIds.length !== selectedOptionIds.length) {
+        changed = true;
+      }
+
+      let invalidRequiredGroup = false;
+
+      for (const group of activeGroups) {
+        const min = getEffectiveMin(group);
+        const max = group.max;
+
+        const selectedCount = validOptionIds.filter((optionId) =>
+          group.template.options.some((option) => option.id === optionId)
+        ).length;
+
+        if (selectedCount < min) {
+          invalidRequiredGroup = true;
+          break;
+        }
+
+        if (max > 0 && selectedCount > max) {
+          invalidRequiredGroup = true;
+          break;
+        }
+      }
+
+      if (invalidRequiredGroup) {
+        changed = true;
+        removedSomething = true;
+        continue;
+      }
+
+      const grouped = new Map<string, CartModifierOption[]>();
+
+      for (const optionId of validOptionIds) {
+        const context = optionContext.get(optionId);
+        if (!context) continue;
+
+        if (!grouped.has(context.groupName)) {
+          grouped.set(context.groupName, []);
+        }
+
+        grouped.get(context.groupName)?.push({
+          id: context.option.id,
+          name: context.option.name,
+          price: context.option.price,
+        });
+      }
+
+      const modifiers: CartModifierGroup[] = Array.from(grouped.entries()).map(
+        ([groupName, options]) => ({
+          groupName,
+          options,
+        })
+      );
+
+      const modifiersTotal = validOptionIds.reduce((sum, optionId) => {
+        const context = optionContext.get(optionId);
+        return sum + Number(context?.option.price || 0);
+      }, 0);
+
+      const nextItem: CartItem = {
+        ...item,
+        name: product.name,
+        basePrice: product.price,
+        total: product.price + modifiersTotal,
+        modifiers,
+      };
+
+      if (
+        item.name !== nextItem.name ||
+        item.basePrice !== nextItem.basePrice ||
+        item.total !== nextItem.total ||
+        JSON.stringify(item.modifiers) !== JSON.stringify(nextItem.modifiers)
+      ) {
+        changed = true;
+      }
+
+      nextCart.push(nextItem);
+    }
+
+    if (!changed) return;
+
+    setCart(nextCart);
+    setOrderMessage(
+      removedSomething
+        ? "Actualizamos el catalogo: quitamos un producto u opcion obligatoria que ya no esta disponible."
+        : "Actualizamos el catalogo: quitamos opciones que ya no estan disponibles."
+    );
+
+    if (nextCart.length === 0) {
+      setSelectedProduct(null);
+      setSelectedOptionsByGroup({});
+      setStep("catalog");
+    }
+  }, [products]);
+
+  useEffect(() => {
+    if (!selectedProduct || products.length === 0) return;
+
+    const latestProduct = products.find(
+      (candidate) =>
+        candidate.id === selectedProduct.id &&
+        candidate.active &&
+        candidate.category?.active !== false
+    );
+
+    if (!latestProduct) {
+      setSelectedProduct(null);
+      setSelectedOptionsByGroup({});
+      setOrderMessage("Este producto ya no esta disponible.");
+      return;
+    }
+
+    const activeGroups = getActiveModifierGroups(latestProduct);
+    const allowedByGroup = new Map<number, Set<number>>();
+
+    for (const group of activeGroups) {
+      allowedByGroup.set(
+        group.id,
+        new Set(group.template.options.map((option) => option.id))
+      );
+    }
+
+    let changed = false;
+    const nextOptionsByGroup: Record<number, number[]> = {};
+
+    for (const [groupIdText, selectedIds] of Object.entries(
+      selectedOptionsByGroup
+    )) {
+      const groupId = Number(groupIdText);
+      const allowedOptions = allowedByGroup.get(groupId);
+
+      if (!allowedOptions) {
+        changed = true;
+        continue;
+      }
+
+      const validIds = selectedIds.filter((optionId) =>
+        allowedOptions.has(optionId)
+      );
+
+      if (validIds.length !== selectedIds.length) {
+        changed = true;
+      }
+
+      if (validIds.length > 0) {
+        nextOptionsByGroup[groupId] = validIds;
+      }
+    }
+
+    setSelectedProduct(latestProduct);
+
+    if (changed) {
+      setSelectedOptionsByGroup(nextOptionsByGroup);
+      setOrderMessage(
+        "Actualizamos las opciones de este producto porque el catalogo cambio."
+      );
+    }
+  }, [products]);
 
   useEffect(() => {
     loadSettings();
@@ -2133,6 +2340,7 @@ export default function TotemPage() {
     </main>
   );
 }
+
 
 
 
