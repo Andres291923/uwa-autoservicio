@@ -356,6 +356,7 @@ export default function PedidoPage() {
   const [paymentMethod, setPaymentMethod] = useState<"debit_credit">("debit_credit");
 
   const [message, setMessage] = useState("");
+  const [catalogChangeMessage, setCatalogChangeMessage] = useState("");
   const [closedStoreModalVisible, setClosedStoreModalVisible] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const [loadingOrder, setLoadingOrder] = useState(false);
@@ -372,6 +373,64 @@ export default function PedidoPage() {
   const [couponMessage, setCouponMessage] = useState("");
   const [validatingCoupon, setValidatingCoupon] = useState(false);
   const [couponsVisible, setCouponsVisible] = useState(true);
+
+  function showCatalogChangeMessage(message: string) {
+    setMessage(message);
+    setCatalogChangeMessage(message);
+  }
+
+  function buildCatalogChangeMessage(details: string[]) {
+    const cleanDetails = Array.from(
+      new Set(details.map((item) => item.trim()).filter(Boolean))
+    );
+
+    if (cleanDetails.length === 0) {
+      return "Lo sentimos, una opcion ya no esta disponible. Elige otra opcion para continuar.";
+    }
+
+    if (cleanDetails.length === 1) {
+      return `Lo sentimos, ${cleanDetails[0]} ya no esta disponible. Elige otra opcion para continuar.`;
+    }
+
+    return `Lo sentimos, estas opciones ya no estan disponibles: ${cleanDetails.join(", ")}. Elige otras opciones para continuar.`;
+  }
+
+  function getOnlineProductFromCatalog(productId: number): Product | null {
+    const product = products.find(
+      (candidate) =>
+        candidate.id === productId &&
+        candidate.active !== false &&
+        candidate.category?.active !== false
+    );
+
+    if (!product) return null;
+
+    const modifierGroups = (product.modifierGroups || [])
+      .filter((group) => group.active !== false)
+      .filter(
+        (group) =>
+          !group.channelVisibility ||
+          group.channelVisibility === "all" ||
+          group.channelVisibility === "online"
+      )
+      .filter((group) => group.template)
+      .map((group) => ({
+        ...group,
+        template: {
+          ...group.template,
+          options: (group.template.options || [])
+            .filter((option) => option.active !== false)
+            .sort((a, b) => a.order - b.order || a.id - b.id),
+        },
+      }))
+      .filter((group) => group.template.options.length > 0)
+      .sort((a, b) => a.order - b.order || a.id - b.id);
+
+    return {
+      ...product,
+      modifierGroups,
+    };
+  }
 
   async function loadInitialData() {
     try {
@@ -432,6 +491,202 @@ export default function PedidoPage() {
     return () => window.clearInterval(productsInterval);
   }, []);
 
+  // PEDIDO_CART_SYNC_CATALOG
+  useEffect(() => {
+    if (cart.length === 0 || products.length === 0) return;
+
+    let changed = false;
+    let removedSomething = false;
+    const removedDetails: string[] = [];
+    const nextCart: CartItem[] = [];
+
+    for (const item of cart) {
+      const product = getOnlineProductFromCatalog(item.productId);
+
+      if (!product) {
+        changed = true;
+        removedSomething = true;
+        removedDetails.push(item.productName);
+        continue;
+      }
+
+      const optionContext = new Map<
+        number,
+        { groupId: number; groupName: string; option: ModifierOption }
+      >();
+
+      for (const group of product.modifierGroups || []) {
+        for (const option of group.template.options || []) {
+          optionContext.set(option.id, {
+            groupId: group.id,
+            groupName: group.template.name,
+            option,
+          });
+        }
+      }
+
+      const selectedOptionIds = item.modifierOptionIds || [];
+      const validOptionIds = selectedOptionIds.filter((optionId) =>
+        optionContext.has(optionId)
+      );
+
+      if (validOptionIds.length !== selectedOptionIds.length) {
+        changed = true;
+
+        selectedOptionIds.forEach((optionId, index) => {
+          if (!validOptionIds.includes(optionId)) {
+            removedDetails.push(item.modifiersText[index] || "Opcion");
+          }
+        });
+      }
+
+      let invalidRequiredGroup = false;
+
+      for (const group of product.modifierGroups || []) {
+        const selectedCount = validOptionIds.filter((optionId) =>
+          group.template.options.some((option) => option.id === optionId)
+        ).length;
+
+        if (group.required && selectedCount < group.min) {
+          invalidRequiredGroup = true;
+          break;
+        }
+
+        if (group.max > 0 && selectedCount > group.max) {
+          invalidRequiredGroup = true;
+          break;
+        }
+      }
+
+      if (invalidRequiredGroup) {
+        changed = true;
+        removedSomething = true;
+
+        if (!removedDetails.length) {
+          removedDetails.push(item.productName);
+        }
+
+        continue;
+      }
+
+      const modifiersText = validOptionIds.map((optionId) => {
+        const context = optionContext.get(optionId);
+        return context
+          ? `${context.groupName}: ${context.option.name}`
+          : "";
+      }).filter(Boolean);
+
+      const modifiersTotal = validOptionIds.reduce((sum, optionId) => {
+        const context = optionContext.get(optionId);
+        return sum + Number(context?.option.price || 0);
+      }, 0);
+
+      const nextItem: CartItem = {
+        ...item,
+        productName: product.name,
+        total: product.price + modifiersTotal,
+        modifierOptionIds: validOptionIds,
+        modifiersText,
+      };
+
+      if (
+        item.productName !== nextItem.productName ||
+        item.total !== nextItem.total ||
+        JSON.stringify(item.modifierOptionIds) !==
+          JSON.stringify(nextItem.modifierOptionIds) ||
+        JSON.stringify(item.modifiersText) !== JSON.stringify(nextItem.modifiersText)
+      ) {
+        changed = true;
+      }
+
+      nextCart.push(nextItem);
+    }
+
+    if (!changed) return;
+
+    setCart(nextCart);
+    setAppliedCoupon(null);
+    setCouponCode("");
+    setCouponMessage("");
+    showCatalogChangeMessage(buildCatalogChangeMessage(removedDetails));
+  }, [products]);
+
+  useEffect(() => {
+    if (!selectedProduct || products.length === 0) return;
+
+    const latestProduct = getOnlineProductFromCatalog(selectedProduct.id);
+
+    if (!latestProduct) {
+      setSelectedProduct(null);
+      setSelectedOptionsByGroup({});
+      showCatalogChangeMessage(
+        "Lo sentimos, este producto ya no esta disponible. Elige otro producto para continuar."
+      );
+      return;
+    }
+
+    const allowedByGroup = new Map<number, Set<number>>();
+
+    for (const group of latestProduct.modifierGroups || []) {
+      allowedByGroup.set(
+        group.id,
+        new Set(group.template.options.map((option) => option.id))
+      );
+    }
+
+    let changed = false;
+    const removedSelectedDetails: string[] = [];
+    const nextOptionsByGroup: Record<number, number[]> = {};
+
+    for (const [groupIdText, selectedIds] of Object.entries(
+      selectedOptionsByGroup
+    )) {
+      const groupId = Number(groupIdText);
+      const allowedOptions = allowedByGroup.get(groupId);
+
+      if (!allowedOptions) {
+        changed = true;
+        continue;
+      }
+
+      const validIds = selectedIds.filter((optionId) =>
+        allowedOptions.has(optionId)
+      );
+
+      if (validIds.length !== selectedIds.length) {
+        changed = true;
+
+        const originalGroup = selectedProduct.modifierGroups?.find(
+          (group) => group.id === groupId
+        );
+
+        selectedIds.forEach((optionId) => {
+          if (!validIds.includes(optionId)) {
+            const option = originalGroup?.template.options.find(
+              (item) => item.id === optionId
+            );
+
+            if (option) {
+              removedSelectedDetails.push(
+                `${originalGroup?.template.name || "Opcion"}: ${option.name}`
+              );
+            }
+          }
+        });
+      }
+
+      if (validIds.length > 0) {
+        nextOptionsByGroup[groupId] = validIds;
+      }
+    }
+
+    setSelectedProduct(latestProduct);
+
+    if (changed) {
+      setSelectedOptionsByGroup(nextOptionsByGroup);
+      showCatalogChangeMessage(buildCatalogChangeMessage(removedSelectedDetails));
+    }
+  }, [products]);
   const scheduleBanner = useMemo(() => {
     return buildScheduleBanner(openingHours);
   }, [openingHours]);
@@ -1220,6 +1475,35 @@ export default function PedidoPage() {
         )}
       </header>
 
+      {/* PEDIDO_CATALOG_CHANGE_MODAL */}
+      {catalogChangeMessage && (
+        <div className="fixed inset-0 z-[20000] flex items-center justify-center bg-black/60 px-5">
+          <div className="w-full max-w-xl rounded-[2rem] bg-white p-7 text-center shadow-2xl">
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-red-500">
+              Catalogo actualizado
+            </p>
+
+            <h2 className="mt-3 text-3xl font-black text-zinc-950">
+              Opcion no disponible
+            </h2>
+
+            <p className="mt-4 text-lg font-bold leading-relaxed text-zinc-600">
+              {catalogChangeMessage}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                setCatalogChangeMessage("");
+                setMessage("");
+              }}
+              className="mt-7 w-full rounded-2xl bg-[#10B557] py-5 text-xl font-black text-white shadow-lg active:scale-[0.98]"
+            >
+              Elegir otra opcion
+            </button>
+          </div>
+        </div>
+      )}
       <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[1fr_410px]">
         <section>
           <div className="mb-5">
@@ -2255,6 +2539,7 @@ export default function PedidoPage() {
     </main>
   );
 }
+
 
 
 
