@@ -1030,8 +1030,8 @@ export default function PedidoPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: authEmail,
-          password: authPassword,
+          email: authEmail.trim().toLowerCase(),
+          password: authPassword.trim(),
         }),
       });
 
@@ -1040,26 +1040,32 @@ export default function PedidoPage() {
       if (!response.ok) {
         setAuthMessage(data.error || "No se pudo ingresar.");
         return;
-      }      setLoggedCustomer(null);
-      setGuestName("");
-      setUseWallet(false);
+      }
+
+      setLoggedCustomer({
+        ...data,
+        id: data.id,
+        name: data.companyName || data.name || "Empresa",
+        email: data.email,
+        active: data.active,
+        walletBalance: data.walletBalance || 0,
+        accountType: "company",
+        companyCustomerId: data.id,
+        companyName: data.companyName || data.name,
+        companyEmail: data.email,
+      });
+
+      setGuestName(data.companyName || data.name || "Empresa");
       setAuthPassword("");
-      setCompanyRut("");
-      setCompanyGiro("");
-      setCompanyAddress("");
-      setCompanyContactName("");
-      setCompanyPhone("");
-      setAuthName("");
-      setAuthMode("login");
-      setAuthMessage("Empresa registrada correctamente. Ahora ingresa con correo y clave.");
+      setUseWallet(false);
+      setAuthMessage("Empresa ingresada correctamente.");
     } catch (error) {
       console.error(error);
-      setAuthMessage("Error al Registrar Empresa.");
+      setAuthMessage("Error al ingresar empresa.");
     } finally {
       setLoadingAuth(false);
     }
   }
-
   async function openWalletHistory() {
     if (!loggedCustomer) return;
 
@@ -1218,7 +1224,7 @@ export default function PedidoPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name: authName.trim(),
+          companyName: authName.trim(),
           rut: companyRut.trim(),
           giro: companyGiro.trim(),
           address: companyAddress.trim(),
@@ -2778,6 +2784,7 @@ export default function PedidoPage() {
 </main>
   );
 }
+
 
 
 
