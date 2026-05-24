@@ -809,14 +809,20 @@ export default function PedidoPage() {
 
   const companyBowlCount = cart.length;
   const minimumCompanyBowls = 5;
-  const hasMinimumCompanyBowls = companyBowlCount >= minimumCompanyBowls;
+    const requiresCompanyMinimum = fulfillmentType === "scheduled";
+  const hasMinimumCompanyBowls =
+    !requiresCompanyMinimum || companyBowlCount >= minimumCompanyBowls;
+
+  function switchToImmediatePickup() {
+    setFulfillmentType("immediate");
+    setScheduledTime("");
+    setMessage("");
+  }
 
   function switchToScheduled() {
     setFulfillmentType("scheduled");
-
-    if (!scheduledDate) {
-      setScheduledDate(tomorrowInputDate());
-    }
+    setScheduledDate(tomorrowInputDate());
+    setMessage("");
   }
 
   function openProduct(product: Product) {
@@ -1376,12 +1382,12 @@ export default function PedidoPage() {
 
       if (fulfillmentType === "scheduled") {
         if (!scheduledDate || !scheduledTime) {
-          setMessage("Selecciona fecha y hora para programar el pedido.");
+          setMessage("Selecciona fecha y hora para programar el envío.");
           return;
         }
 
         if (scheduledDate < tomorrowInputDate()) {
-          setMessage("Los pedidos empresa deben programarse con 1 día de anticipación.");
+          setMessage("Los envíos empresa deben programarse desde el día siguiente.");
           return;
         }
 
@@ -2279,7 +2285,26 @@ export default function PedidoPage() {
           )}
 
           <div className="mt-5 border-t border-zinc-200 pt-5">
-            <div className="grid grid-cols-2 gap-2"><button suppressHydrationWarning
+            <div className="grid grid-cols-2 gap-2">
+              <button suppressHydrationWarning
+                type="button"
+                onClick={switchToImmediatePickup}
+                className={`rounded-2xl border px-3 py-3 text-sm font-black ${
+                  fulfillmentType === "immediate"
+                    ? "text-white"
+                    : "border-zinc-200 bg-white text-zinc-600"
+                }`}
+                style={{
+                  background:
+                    fulfillmentType === "immediate"
+                      ? settings.primaryColor
+                      : undefined,
+                }}
+              >
+                Retirar ahora
+              </button>
+
+              <button suppressHydrationWarning
                 type="button"
                 onClick={switchToScheduled}
                 className={`rounded-2xl border px-3 py-3 text-sm font-black ${
@@ -2294,7 +2319,7 @@ export default function PedidoPage() {
                       : undefined,
                 }}
               >
-                Programar
+                Programar envío
               </button>
             </div>
 
@@ -2307,7 +2332,7 @@ export default function PedidoPage() {
 
                   <input suppressHydrationWarning
                     type="date"
-                    min={todayInputDate}
+                    min={tomorrowInputDate()}
                     value={scheduledDate}
                     onChange={(event) => setScheduledDate(event.target.value)}
                     className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
@@ -2420,11 +2445,13 @@ export default function PedidoPage() {
 
           <button suppressHydrationWarning
             onClick={createOnlineOrder}
-            disabled={loadingOrder || cart.length === 0 || !hasMinimumCompanyBowls}
+            disabled={loadingOrder || cart.length === 0 || (requiresCompanyMinimum && !hasMinimumCompanyBowls)}
             className="mt-4 w-full rounded-2xl py-4 text-lg font-black text-white disabled:bg-zinc-300"
             style={{
               background:
-                !loadingOrder && cart.length > 0 && hasMinimumCompanyBowls
+                !loadingOrder &&
+                cart.length > 0 &&
+                (!requiresCompanyMinimum || hasMinimumCompanyBowls)
                   ? settings.primaryColor
                   : undefined,
             }}
@@ -2795,6 +2822,9 @@ export default function PedidoPage() {
 </main>
   );
 }
+
+
+
 
 
 
