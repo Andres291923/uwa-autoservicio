@@ -391,6 +391,17 @@ export default function PedidoPage() {
   const [catalogChangeMessage, setCatalogChangeMessage] = useState("");
   const [transferSuccessOrderNumber, setTransferSuccessOrderNumber] =
     useState<number | null>(null);
+  const [transferSuccessOrderTotal, setTransferSuccessOrderTotal] =
+    useState<number | null>(null);
+  const [transferSuccessOrderItems, setTransferSuccessOrderItems] = useState<
+    {
+      id: string | number;
+      productName: string;
+      total: number;
+      modifiersText: string[];
+      customerComment: string;
+    }[]
+  >([]);
   const [closedStoreModalVisible, setClosedStoreModalVisible] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const [loadingOrder, setLoadingOrder] = useState(false);
@@ -1356,6 +1367,19 @@ export default function PedidoPage() {
         return;
       }
 
+      const companyTransferSummaryItems = cart.map((item) => ({
+        id: item.id,
+        productName: item.productName,
+        total: Number(item.total || 0),
+        modifiersText: item.modifiersText || [],
+        customerComment: item.customerComment || "",
+      }));
+
+      const companyTransferSummaryTotal = companyTransferSummaryItems.reduce(
+        (sum, item) => sum + item.total,
+        0
+      );
+
       let scheduledForValue: string | null = null;
 
       if (fulfillmentType === "scheduled") {
@@ -1451,6 +1475,8 @@ export default function PedidoPage() {
 
       if (paymentMethod === "bank_transfer" && createdCompanyTransferOrderNumber) {
         setTransferSuccessOrderNumber(createdCompanyTransferOrderNumber);
+        setTransferSuccessOrderTotal(companyTransferSummaryTotal);
+        setTransferSuccessOrderItems(companyTransferSummaryItems);
         setMessage("");
         return;
       }
@@ -2799,6 +2825,8 @@ export default function PedidoPage() {
 </main>
   );
 }
+
+
 
 
 
