@@ -14,6 +14,7 @@ type ModifierOption = {
   price: number;
   imageUrl: string | null;
   active: boolean;
+  available?: boolean;
   order: number;
 };
 
@@ -419,7 +420,7 @@ export default function PedidoPage() {
         template: {
           ...group.template,
           options: (group.template.options || [])
-            .filter((option) => option.active !== false)
+            .filter((option) => option.active !== false && option.available !== false)
             .sort((a, b) => a.order - b.order || a.id - b.id),
         },
       }))
@@ -757,7 +758,7 @@ export default function PedidoPage() {
         template: {
           ...group.template,
           options: (group.template.options || [])
-            .filter((option) => option.active !== false)
+            .filter((option) => option.active !== false && option.available !== false)
             .sort((a, b) => a.order - b.order || a.id - b.id),
         },
       }))
@@ -2539,6 +2540,8 @@ export default function PedidoPage() {
     </main>
   );
 }
+
+
 
 
 
