@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
@@ -556,7 +556,7 @@ const [loadingGlobalModifier, setLoadingGlobalModifier] = useState(false);
     }
 
     const confirmDelete = window.confirm(
-      `¿Eliminar el modificador "${group.template.name}" de este producto?`
+      `Â¿Eliminar el modificador "${group.template.name}" de este producto?`
     );
 
     if (!confirmDelete) {
@@ -680,7 +680,7 @@ async function saveGlobalModifier(event: FormEvent<HTMLFormElement>) {
 
 async function deleteGlobalModifier(template: ModifierTemplate) {
   const ok = window.confirm(
-    `¿Eliminar el modificador "${template.name}"? Esto tambien lo quitara de los productos donde este importado.`
+    `Â¿Eliminar el modificador "${template.name}"? Esto tambien lo quitara de los productos donde este importado.`
   );
 
   if (!ok) return;
@@ -788,7 +788,7 @@ async function saveGlobalOption(event: FormEvent<HTMLFormElement>) {
 }
 
 async function deleteGlobalOption(option: ModifierOption) {
-  const ok = window.confirm(`¿Eliminar la opcion "${option.name}"?`);
+  const ok = window.confirm(`Â¿Eliminar la opcion "${option.name}"?`);
 
   if (!ok) return;
 
@@ -890,7 +890,7 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
       <div className="mb-6 flex flex-wrap items-center gap-3 rounded-3xl border border-green-200 bg-green-50 p-4">
         <div className="flex-1">
           <p className="text-sm font-black uppercase tracking-wide text-green-700">
-            Inventario rápido
+            Inventario rÃ¡pido
           </p>
           <p className="text-sm text-slate-600">
             Controla stock de bebidas, jugos y aguas conectadas a productos o modificadores.
@@ -1313,6 +1313,22 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
                         className="rounded-xl bg-red-500 px-3 py-2 text-xs font-black text-white disabled:bg-zinc-300"
                       >
                         Eliminar
+                      </button>
+
+                      {/* BOTON_ACTIVAR_DESACTIVAR_OPCION_GLOBAL */}
+                      <button
+                        type="button"
+                        onClick={() => toggleGlobalOptionActive(option)}
+                        disabled={loadingGlobalModifier}
+                        className={`rounded-xl px-3 py-2 text-xs font-black text-white disabled:bg-zinc-300 ${
+                          option.active ? "bg-orange-500" : "bg-[#10B557]"
+                        }`}
+                      >
+                        {loadingGlobalModifier
+                          ? "Actualizando..."
+                          : option.active
+                          ? "Desactivar"
+                          : "Activar"}
                       </button>
                     </div>
                   </article>
@@ -2114,4 +2130,5 @@ async function toggleGlobalOptionActive(option: ModifierOption) {
     </main>
   );
 }
+
 
