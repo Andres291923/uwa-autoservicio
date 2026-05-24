@@ -2738,7 +2738,7 @@ export default function PedidoPage() {
                                   : "2px solid #d4d4d8",
                               }}
                             >
-                              {isSelected ? "âœ“" : ""}
+                              {isSelected ? "\u2713" : ""}
                             </div>
                           </button>
                         );
@@ -2795,6 +2795,7 @@ export default function PedidoPage() {
 </main>
   );
 }
+
 
 
 
