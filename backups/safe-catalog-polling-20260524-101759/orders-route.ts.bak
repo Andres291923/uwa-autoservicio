@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { calculateWalletBreakdown } from "@/lib/wallet";
 
@@ -501,7 +501,7 @@ export async function POST(request: Request) {
         },
       });
 
-      if (!product || !product.active || product.category?.active === false) {
+      if (!product || !product.active) {
         return NextResponse.json(
           { error: "Uno de los productos no esta disponible." },
           { status: 400 }
@@ -519,13 +519,6 @@ export async function POST(request: Request) {
               },
             })
           : [];
-
-      if (selectedOptions.length !== modifierOptionIds.length) {
-        return NextResponse.json(
-          { error: "Una opcion seleccionada ya no esta disponible. Actualiza el pedido." },
-          { status: 400 }
-        );
-      }
 
       const modifiersTotal = selectedOptions.reduce(
         (sum, option) => sum + option.price,
@@ -583,7 +576,7 @@ export async function POST(request: Request) {
 
       if (!coupon || !coupon.active) {
         return NextResponse.json(
-          { error: "CupÃ³n invÃ¡lido o inactivo." },
+          { error: "Cupón inválido o inactivo." },
           { status: 400 }
         );
       }
@@ -843,7 +836,7 @@ export async function POST(request: Request) {
               amount: walletAmountUsed,
               workerBalanceAfter: updatedWorker.walletBalance,
               companyBalanceAfter: companyWorker.companyCustomer?.walletBalance || 0,
-              reason: `Compra tÃ³tem pedido #${orderNumber}`,
+              reason: `Compra tótem pedido #${orderNumber}`,
               source: "worker_order_payment_totem",
             },
           });
@@ -985,4 +978,3 @@ export async function PATCH(request: Request) {
     );
   }
 }
-

@@ -418,28 +418,19 @@ export default function TotemPage() {
     }
   }
 
-  async function loadProducts(showLoading = true) {
+  async function loadProducts() {
     try {
-      if (showLoading) {
-        setLoading(true);
-      }
+      setLoading(true);
 
-      const response = await fetch("/api/products", {
-        cache: "no-store",
-      });
+      const response = await fetch("/api/products");
       const data = await response.json();
 
       setProducts(Array.isArray(data) ? data.filter((p) => p.active) : []);
     } catch (error) {
       console.error(error);
-
-      if (showLoading) {
-        setProducts([]);
-      }
+      setProducts([]);
     } finally {
-      if (showLoading) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   }
 
@@ -896,18 +887,11 @@ export default function TotemPage() {
     loadProducts();
     loadStoreStatus();
 
-    const statusInterval = window.setInterval(() => {
+    const interval = window.setInterval(() => {
       loadStoreStatus();
     }, 60000);
 
-    const productsInterval = window.setInterval(() => {
-      loadProducts(false);
-    }, 3000);
-
-    return () => {
-      window.clearInterval(statusInterval);
-      window.clearInterval(productsInterval);
-    };
+    return () => window.clearInterval(interval);
   }, []);
 
   return (
@@ -2133,8 +2117,6 @@ export default function TotemPage() {
     </main>
   );
 }
-
-
 
 
 

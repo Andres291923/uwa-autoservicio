@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import CompanyTransferOrderSuccessModal from "./CompanyTransferOrderSuccessModal";
@@ -209,7 +209,7 @@ function formatOrderStatus(value: string) {
 
 function formatOrderSource(value: string) {
   if (value === "online") return "Online";
-  return "Tótem";
+  return "TÃ³tem";
 }
 
 function formatFulfillment(value: string) {
@@ -218,7 +218,7 @@ function formatFulfillment(value: string) {
 }
 
 function formatPaymentMethod(value: string) {
-  if (value === "food_benefit") return "Beneficio alimentación";
+  if (value === "food_benefit") return "Beneficio alimentaciÃ³n";
   if (value === "debit_credit") return "Tarjeta";
   if (value === "bank_transfer") return "Transferencia";
   return value || "No informado";
@@ -306,7 +306,7 @@ function buildScheduleBanner(openingHours: OpeningHour[]) {
           : item.dayOfWeek === 2
           ? "Martes"
           : item.dayOfWeek === 3
-          ? "Miércoles"
+          ? "MiÃ©rcoles"
           : item.dayOfWeek === 4
           ? "Jueves"
           : "Viernes";
@@ -316,14 +316,14 @@ function buildScheduleBanner(openingHours: OpeningHour[]) {
   }
 
   if (saturday) {
-    parts.push(`Sábado ${saturday.openTime} a ${saturday.closeTime}`);
+    parts.push(`SÃ¡bado ${saturday.openTime} a ${saturday.closeTime}`);
   }
 
   if (sunday) {
     parts.push(`Domingo ${sunday.openTime} a ${sunday.closeTime}`);
   }
 
-  return parts.join(" · ");
+  return parts.join(" Â· ");
 }
 
 
@@ -410,7 +410,7 @@ export default function PedidoPage() {
       const [settingsResponse, productsResponse, hoursResponse] =
         await Promise.all([
           fetch("/api/settings"),
-          fetch("/api/products"),
+          fetch("/api/products", { cache: "no-store" }),
           fetch("/api/settings/hours"),
         ]);
 
@@ -436,6 +436,23 @@ export default function PedidoPage() {
 
   useEffect(() => {
     loadInitialData();
+
+    const productsInterval = window.setInterval(async () => {
+      try {
+        const response = await fetch("/api/products", {
+          cache: "no-store",
+        });
+
+        if (!response.ok) return;
+
+        const productsData = await response.json();
+        setProducts(Array.isArray(productsData) ? productsData : []);
+      } catch (error) {
+        console.error(error);
+      }
+    }, 3000);
+
+    return () => window.clearInterval(productsInterval);
   }, []);
 
   const scheduleBanner = useMemo(() => {
@@ -1000,14 +1017,14 @@ export default function PedidoPage() {
       setCouponMessage("");
 
       if (cart.length === 0) {
-        setCouponMessage("Agrega productos antes de usar un cupón.");
+        setCouponMessage("Agrega productos antes de usar un cupÃ³n.");
         return;
       }
 
       const cleanCode = couponCode.trim().toUpperCase().replace(/\s+/g, "");
 
       if (!cleanCode) {
-        setCouponMessage("Ingresa un cupón.");
+        setCouponMessage("Ingresa un cupÃ³n.");
         return;
       }
 
@@ -1028,7 +1045,7 @@ export default function PedidoPage() {
 
       if (!response.ok) {
         setAppliedCoupon(null);
-        setCouponMessage(data.error || "Cupón inválido.");
+        setCouponMessage(data.error || "CupÃ³n invÃ¡lido.");
         return;
       }
 
@@ -1039,10 +1056,10 @@ export default function PedidoPage() {
         percent: data.percent,
       });
       setCouponCode(data.code);
-      setCouponMessage(`Cupón aplicado: ${data.name}`);
+      setCouponMessage(`CupÃ³n aplicado: ${data.name}`);
     } catch (error) {
       console.error(error);
-      setCouponMessage("Error al validar el cupón.");
+      setCouponMessage("Error al validar el cupÃ³n.");
     } finally {
       setValidatingCoupon(false);
     }
@@ -1105,12 +1122,12 @@ export default function PedidoPage() {
         }
 
         if (scheduledDate < tomorrowInputDate()) {
-          setMessage("Los pedidos empresa deben programarse con 1 día de anticipación.");
+          setMessage("Los pedidos empresa deben programarse con 1 dÃ­a de anticipaciÃ³n.");
           return;
         }
 
         if (!selectedDaySchedule) {
-          setMessage("La tienda está cerrada ese día. Elige otra fecha.");
+          setMessage("La tienda estÃ¡ cerrada ese dÃ­a. Elige otra fecha.");
           return;
         }
 
@@ -1340,7 +1357,7 @@ export default function PedidoPage() {
 
             <p className="mt-3 text-base font-bold text-zinc-500">
               En este momento no estamos tomando pedidos inmediatos. Puedes
-              programar tu pedido para más tarde.
+              programar tu pedido para mÃ¡s tarde.
             </p>
 
             <button suppressHydrationWarning
@@ -1360,7 +1377,7 @@ export default function PedidoPage() {
               onClick={() => setClosedStoreModalVisible(false)}
               className="mt-3 w-full rounded-2xl border border-zinc-200 bg-white py-4 text-sm font-black text-zinc-700"
             >
-              Seguir viendo catálogo
+              Seguir viendo catÃ¡logo
             </button>
           </div>
         </div>
@@ -1408,7 +1425,7 @@ export default function PedidoPage() {
         {scheduleBanner && (
           <div className="border-t border-emerald-100 bg-emerald-50 px-4 py-3 text-center">
             <p className="text-[11px] font-black uppercase tracking-[0.25em] text-emerald-700">
-              Horario de atención
+              Horario de atenciÃ³n
             </p>
             <p className="mt-1 text-sm font-bold text-zinc-800">
               {scheduleBanner}
@@ -1422,7 +1439,7 @@ export default function PedidoPage() {
           <div className="mb-5">
             <h2 className="text-3xl font-black">Elige tus productos</h2>
             <p className="mt-1 text-sm font-bold text-zinc-500">
-              Compra online usando el mismo catálogo del local.
+              Compra online usando el mismo catÃ¡logo del local.
             </p>
           </div>
 
@@ -1576,7 +1593,7 @@ export default function PedidoPage() {
 
                       {(walletSummary?.nextCashbackExpiration || loggedCustomer.nextCashbackExpiration) ? (
                         <p className="mt-1 text-xs font-bold text-emerald-700">
-                          Próximo vencimiento: {formatPrice(walletSummary?.nextCashbackAmount ?? loggedCustomer.nextCashbackAmount ?? 0)} vence el {formatShortDate(walletSummary?.nextCashbackExpiration || loggedCustomer.nextCashbackExpiration)}
+                          PrÃ³ximo vencimiento: {formatPrice(walletSummary?.nextCashbackAmount ?? loggedCustomer.nextCashbackAmount ?? 0)} vence el {formatShortDate(walletSummary?.nextCashbackExpiration || loggedCustomer.nextCashbackExpiration)}
                         </p>
                       ) : (
                         <p className="mt-1 text-xs font-bold text-zinc-500">
@@ -1752,14 +1769,14 @@ export default function PedidoPage() {
                         suppressHydrationWarning
                         value={companyGiro}
                         onChange={(event) => setCompanyGiro(event.target.value)}
-                        placeholder="Ej: Servicios de alimentación"
+                        placeholder="Ej: Servicios de alimentaciÃ³n"
                         className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-black outline-none focus:border-[#10B557]"
                       />
                     </label>
 
                     <label className="mt-4 block">
                       <span className="text-xs font-black uppercase text-zinc-500">
-                        Dirección
+                        DirecciÃ³n
                       </span>
                       <input
                         suppressHydrationWarning
@@ -1778,14 +1795,14 @@ export default function PedidoPage() {
                         suppressHydrationWarning
                         value={companyContactName}
                         onChange={(event) => setCompanyContactName(event.target.value)}
-                        placeholder="Ej: Andrés Matamala"
+                        placeholder="Ej: AndrÃ©s Matamala"
                         className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-black outline-none focus:border-[#10B557]"
                       />
                     </label>
 
                     <label className="mt-4 block">
                       <span className="text-xs font-black uppercase text-zinc-500">
-                        Teléfono encargado
+                        TelÃ©fono encargado
                       </span>
                       <input
                         suppressHydrationWarning
@@ -1801,7 +1818,7 @@ export default function PedidoPage() {
                 {true ? (
                   <>
                     <label className="mt-4 block">
-                      <span className="text-xs font-black uppercase text-zinc-500">Correo electrónico</span>
+                      <span className="text-xs font-black uppercase text-zinc-500">Correo electrÃ³nico</span>
                       <input suppressHydrationWarning
                         value={authEmail}
                         onChange={(event) => setAuthEmail(event.target.value)}
@@ -1886,7 +1903,7 @@ export default function PedidoPage() {
 
           {cart.length === 0 ? (
             <p className="mt-4 rounded-2xl bg-zinc-50 p-4 text-sm font-bold text-zinc-500">
-              Aún no agregas productos.
+              AÃºn no agregas productos.
             </p>
           ) : (
             <div className="mt-4 space-y-3">
@@ -2034,7 +2051,7 @@ export default function PedidoPage() {
 
                 {scheduledDate && !selectedDaySchedule && (
                   <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
-                    Tienda cerrada ese día. Elige otra fecha.
+                    Tienda cerrada ese dÃ­a. Elige otra fecha.
                   </div>
                 )}
 
@@ -2256,12 +2273,12 @@ export default function PedidoPage() {
                       <div className="mt-3 grid gap-3 md:grid-cols-2">
                         <div className="rounded-2xl bg-red-50 p-4">
                           <p className="text-xs font-black uppercase text-red-600">
-                            Cupón
+                            CupÃ³n
                           </p>
                           <p className="mt-1 text-sm font-black text-red-600">
                             {order.discountCouponCode
-                              ? `${order.discountCouponCode} · ${formatPrice(order.discountAmount)} (${order.discountPercent}%)`
-                              : "Sin cupón"}
+                              ? `${order.discountCouponCode} Â· ${formatPrice(order.discountAmount)} (${order.discountPercent}%)`
+                              : "Sin cupÃ³n"}
                           </p>
                         </div>
 
@@ -2433,7 +2450,7 @@ export default function PedidoPage() {
                                   : "2px solid #d4d4d8",
                               }}
                             >
-                              {isSelected ? "✓" : ""}
+                              {isSelected ? "âœ“" : ""}
                             </div>
                           </button>
                         );
@@ -2461,7 +2478,7 @@ export default function PedidoPage() {
                 />
 
                 <p className="mt-2 text-xs font-bold text-zinc-500">
-                  Este comentario aparecerá en cocina y en la comanda.
+                  Este comentario aparecerÃ¡ en cocina y en la comanda.
                 </p>
               </label>
             </div>
@@ -2490,6 +2507,8 @@ export default function PedidoPage() {
 </main>
   );
 }
+
+
 
 
 
