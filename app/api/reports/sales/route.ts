@@ -45,50 +45,68 @@ function chileDateToUtcRange(dateText: string, endOfDay = false) {
   return new Date(desiredAsUtc - offsetMs);
 }
 
+const CHILE_TZ = "America/Santiago";
+
+function getChileOffsetMs(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: CHILE_TZ,
+    timeZoneName: "shortOffset",
+  }).formatToParts(date);
+
+  const tz = parts.find((part) => part.type === "timeZoneName")?.value || "GMT-4";
+  const match = tz.match(/GMT([+-]\d{1,2})(?::(\d{2}))?/);
+
+  if (!match) return -4 * 60 * 60 * 1000;
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2] || 0);
+  const sign = hours < 0 ? -1 : 1;
+
+  return (hours * 60 + sign * minutes) * 60 * 1000;
+}
+
+function chileDateToUtc(dateText: string, endOfDay = false) {
+  const year = Number(dateText.slice(0, 4));
+  const month = Number(dateText.slice(5, 7)) - 1;
+  const day = Number(dateText.slice(8, 10));
+
+  const hour = endOfDay ? 23 : 0;
+  const minute = endOfDay ? 59 : 0;
+  const second = endOfDay ? 59 : 0;
+  const ms = endOfDay ? 999 : 0;
+
+  const utcGuess = new Date(Date.UTC(year, month, day, hour, minute, second, ms));
+  const offsetMs = getChileOffsetMs(utcGuess);
+
+  return new Date(utcGuess.getTime() - offsetMs);
+}
+
 function getDateRange(url: string) {
   const { searchParams } = new URL(url);
 
-  const from = searchParams.get("from");
-  const to = searchParams.get("to");
-
   const now = new Date();
-
   const chileToday = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Santiago",
+    timeZone: CHILE_TZ,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
   }).format(now);
 
-  const startText = from || chileToday;
-  const endText = to || chileToday;
+  const from = searchParams.get("from") || chileToday;
+  const to = searchParams.get("to") || chileToday;
 
   return {
-    start: chileDateToUtcRange(startText, false),
-    end: chileDateToUtcRange(endText, true),
+    start: chileDateToUtc(from, false),
+    end: chileDateToUtc(to, true),
   };
-} = new URL(url);
-
-  const from = searchParams.get("from");
-  const to = searchParams.get("to");
-
-  const now = new Date();
-
-  const start = from ? new Date(`${from}T00:00:00`) : new Date(now);
-  start.setHours(0, 0, 0, 0);
-
-  const end = to ? new Date(`${to}T23:59:59.999`) : new Date(now);
-  end.setHours(23, 59, 59, 999);
-
-  return { start, end };
 }
 
 function getPaymentLabel(paymentMethod: string | null | undefined) {
   if (paymentMethod === "debit_credit") return "Débito / Crédito";
   if (paymentMethod === "food_benefit") return "Beneficio alimentación";
   if (paymentMethod === "bank_transfer") return "Transferencia";
-  if (paymentMethod === "online") return "Online";
   if (paymentMethod === "mercado_pago") return "Mercado Pago";
+  if (paymentMethod === "online") return "Online";
   if (paymentMethod === "worker_wallet") return "Saldo trabajador";
   return "No informado";
 }
@@ -207,7 +225,7 @@ export async function GET(request: Request) {
       for (const item of order.items) {
         const quantity = item.quantity;
         const itemTotal = item.total;
-        const categoryName = item.product.category?.name || "Sin categoría";
+        const categoryName = item.product.category?.name || "Sin categorÃ­a";
         const productName = item.product.name;
 
         totalItems += quantity;

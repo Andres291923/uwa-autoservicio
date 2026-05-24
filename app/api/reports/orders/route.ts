@@ -1,12 +1,47 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+
+const CHILE_TZ = "America/Santiago";
+
+function getChileOffsetMs(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: CHILE_TZ,
+    timeZoneName: "shortOffset",
+  }).formatToParts(date);
+
+  const tz = parts.find((part) => part.type === "timeZoneName")?.value || "GMT-4";
+  const match = tz.match(/GMT([+-]\d{1,2})(?::(\d{2}))?/);
+
+  if (!match) return -4 * 60 * 60 * 1000;
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2] || 0);
+  const sign = hours < 0 ? -1 : 1;
+
+  return (hours * 60 + sign * minutes) * 60 * 1000;
+}
+
+function chileDateToUtc(dateText: string, endOfDay = false) {
+  const year = Number(dateText.slice(0, 4));
+  const month = Number(dateText.slice(5, 7)) - 1;
+  const day = Number(dateText.slice(8, 10));
+
+  const hour = endOfDay ? 23 : 0;
+  const minute = endOfDay ? 59 : 0;
+  const second = endOfDay ? 59 : 0;
+  const ms = endOfDay ? 999 : 0;
+
+  const utcGuess = new Date(Date.UTC(year, month, day, hour, minute, second, ms));
+  const offsetMs = getChileOffsetMs(utcGuess);
+
+  return new Date(utcGuess.getTime() - offsetMs);
+}
 
 function formatOrderSource(value: string | null | undefined) {
   if (value === "online") return "Online";
   if (value === "company") return "Empresa";
   if (value === "company_worker") return "Trabajador empresa";
   if (value === "company_worker_totem") return "Trabajador empresa tótem";
-  if (value === "mercado_pago") return "Mercado Pago";
   if (value === "totem") return "Tótem";
   return "Tótem";
 }
@@ -15,56 +50,10 @@ function formatPaymentMethod(value: string | null | undefined) {
   if (value === "debit_credit") return "Débito / Crédito";
   if (value === "food_benefit") return "Beneficio alimentación";
   if (value === "bank_transfer") return "Transferencia";
-  if (value === "online") return "Online";
   if (value === "mercado_pago") return "Mercado Pago";
+  if (value === "online") return "Online";
   if (value === "worker_wallet") return "Saldo trabajador";
   return "Sin definir";
-}
-
-function chileDateToUtcRange(dateText: string, endOfDay = false) {
-  const time = endOfDay ? "23:59:59.999" : "00:00:00.000";
-
-  const utcGuess = new Date(`${dateText}T${time}Z`);
-
-  const chileParts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Santiago",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  }).formatToParts(utcGuess);
-
-  const get = (type: string) =>
-    Number(chileParts.find((part) => part.type === type)?.value || 0);
-
-  const chileAsUtc = Date.UTC(
-    get("year"),
-    get("month") - 1,
-    get("day"),
-    get("hour"),
-    get("minute"),
-    get("second"),
-    endOfDay ? 999 : 0
-  );
-
-  const desiredAsUtc = Date.UTC(
-    Number(dateText.slice(0, 4)),
-    Number(dateText.slice(5, 7)) - 1,
-    Number(dateText.slice(8, 10)),
-    endOfDay ? 23 : 0,
-    endOfDay ? 59 : 0,
-    endOfDay ? 59 : 0,
-    endOfDay ? 999 : 0
-  );
-
-  const offsetMs = chileAsUtc - utcGuess.getTime();
-
-  return new Date(desiredAsUtc - offsetMs);
-}T23:59:59.999`);
-  return date;
 }
 
 export async function GET(request: Request) {
@@ -81,11 +70,11 @@ export async function GET(request: Request) {
       where.createdAt = {};
 
       if (startDate) {
-        where.createdAt.gte = chileDateToUtcRange(startDate, false);
+        where.createdAt.gte = chileDateToUtc(startDate, false);
       }
 
       if (endDate) {
-        where.createdAt.lte = chileDateToUtcRange(endDate, true);
+        where.createdAt.lte = chileDateToUtc(endDate, true);
       }
     }
 
@@ -192,5 +181,3 @@ export async function GET(request: Request) {
     );
   }
 }
-
-
