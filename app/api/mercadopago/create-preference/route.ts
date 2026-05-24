@@ -269,9 +269,9 @@ export async function POST(request: Request) {
         flow,
       },
       back_urls: {
-        success: `${appUrl}/pago/mercadopago/retorno?intent=${publicId}&result=success`,
-        failure: `${appUrl}/pago/mercadopago/retorno?intent=${publicId}&result=failure`,
-        pending: `${appUrl}/pago/mercadopago/retorno?intent=${publicId}&result=pending`,
+        success: `${appUrl}/pago/mercadopago/retorno?intent=${publicId}&result=success&flow=${flow}`,
+        failure: `${appUrl}/pago/mercadopago/retorno?intent=${publicId}&result=failure&flow=${flow}`,
+        pending: `${appUrl}/pago/mercadopago/retorno?intent=${publicId}&result=pending&flow=${flow}`,
       },
     };
 
@@ -358,5 +358,6 @@ export async function POST(request: Request) {
     );
   }
 }
+
 
 
