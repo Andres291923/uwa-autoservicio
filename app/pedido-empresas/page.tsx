@@ -1406,6 +1406,31 @@ export default function PedidoPage() {
         scheduledForValue = `${scheduledDate}T${scheduledTime}:00`;
       }
 
+      // COMPANY_TRANSFER_SNAPSHOT_TOTAL
+      const companyTransferSnapshotItems = cart.map((item) => ({
+        id: item.id,
+        productName: item.productName,
+        total: Number(item.total || 0),
+        modifiersText: item.modifiersText || [],
+        customerComment: item.customerComment || "",
+      }));
+
+      const companyTransferSnapshotTotal = Math.max(
+        0,
+        Number(totalToPay || cartTotal || 0)
+      );
+
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem(
+          "companyTransferSnapshotTotal",
+          String(companyTransferSnapshotTotal)
+        );
+        window.sessionStorage.setItem(
+          "companyTransferSnapshotItems",
+          JSON.stringify(companyTransferSnapshotItems)
+        );
+      }
+
       const customerComment = buildOnlineOrderCustomerComment();
 
       const response = await fetch("/api/orders", {
@@ -1475,8 +1500,8 @@ export default function PedidoPage() {
 
       if (paymentMethod === "bank_transfer" && createdCompanyTransferOrderNumber) {
         setTransferSuccessOrderNumber(createdCompanyTransferOrderNumber);
-        setTransferSuccessOrderTotal(companyTransferSummaryTotal);
-        setTransferSuccessOrderItems(companyTransferSummaryItems);
+        setTransferSuccessOrderTotal(companyTransferSnapshotTotal);
+        setTransferSuccessOrderItems(companyTransferSnapshotItems);
         setMessage("");
         return;
       }
@@ -2825,6 +2850,7 @@ export default function PedidoPage() {
 </main>
   );
 }
+
 
 
 

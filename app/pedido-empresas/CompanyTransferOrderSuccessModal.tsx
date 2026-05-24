@@ -47,17 +47,32 @@ export default function CompanyTransferOrderSuccessModal({
   onClose,
 }: Props) {
   const [bankSettings, setBankSettings] = useState<BankSettings | null>(null);
+  const [storedSnapshotTotal, setStoredSnapshotTotal] = useState(0);
 
   const summaryTotal = useMemo(() => {
     return orderItems.reduce((sum, item) => sum + Number(item.total || 0), 0);
   }, [orderItems]);
 
-  const displayTotal = Number(orderTotal || 0) > 0 ? Number(orderTotal) : summaryTotal;
+  const displayTotal =
+    Number(orderTotal || 0) > 0
+      ? Number(orderTotal)
+      : summaryTotal > 0
+      ? summaryTotal
+      : storedSnapshotTotal;
 
   useEffect(() => {
     if (!open) return;
 
     let active = true;
+
+    try {
+      const rawTotal = window.sessionStorage.getItem(
+        "companyTransferSnapshotTotal"
+      );
+      setStoredSnapshotTotal(Number(rawTotal || 0));
+    } catch {
+      setStoredSnapshotTotal(0);
+    }
 
     async function loadBankSettings() {
       try {
@@ -226,3 +241,4 @@ export default function CompanyTransferOrderSuccessModal({
     </div>
   );
 }
+
