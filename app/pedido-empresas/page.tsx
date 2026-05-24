@@ -215,7 +215,7 @@ function formatOrderSource(value: string) {
 
 function formatFulfillment(value: string) {
   if (value === "scheduled") return "Programado";
-  return "Retiro ahora";
+  return "Retirar ahora";
 }
 
 function formatPaymentMethod(value: string) {
@@ -1040,158 +1040,18 @@ export default function PedidoPage() {
       if (!response.ok) {
         setAuthMessage(data.error || "No se pudo ingresar.");
         return;
-      }
-
-      setLoggedCustomer({
-        ...data,
-        name: data.name || data.companyName,
-        walletBalance: data.walletBalance || 0,
-        accountType: "company",
-        companyCustomerId: data.id,
-        companyName: data.companyName || data.name,
-        companyEmail: data.email,
-      });
-      setGuestName(data.name);
-      await loadWalletSummary(data.id);
-      setAuthPassword("");
+      }      setLoggedCustomer(null);
+      setGuestName("");
       setUseWallet(false);
-      setAuthMessage("Empresa ingresada correctamente.");
-    } catch (error) {
-      console.error(error);
-      setAuthMessage("Error al ingresar.");
-    } finally {
-      setLoadingAuth(false);
-    }
-  }
-
-
-  async function loginWorker() {
-    try {
-      setLoadingAuth(true);
-      setAuthMessage("");
-
-      const response = await fetch("/api/company-worker-auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: authEmail.trim().toLowerCase(),
-          password: authPassword.trim(),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setAuthMessage(data.error || "No se pudo ingresar como trabajador.");
-        return;
-      }
-
-      setLoggedCustomer({
-        ...data,
-        id: data.companyCustomerId,
-        name: data.name,
-        email: data.email,
-        walletBalance: data.walletBalance || 0,
-        accountType: "worker",
-        companyCustomerId: data.companyCustomerId,
-        companyName: data.companyName,
-        companyEmail: data.companyEmail,
-        workerId: data.workerId,
-      });
-
-      setGuestName(data.companyName || data.name);
       setAuthPassword("");
-      setUseWallet(false);
-      setAuthMessage("Trabajador ingresado correctamente.");
-    } catch (error) {
-      console.error(error);
-      setAuthMessage("Error al ingresar como trabajador.");
-    } finally {
-      setLoadingAuth(false);
-    }
-  }
-
-
-  async function createWorkerPassword() {
-    try {
-      setLoadingAuth(true);
-      setAuthMessage("");
-
-      const response = await fetch("/api/company-worker-auth/create-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: authEmail.trim().toLowerCase(),
-        password: workerNewPassword.trim(),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setAuthMessage(data.error || "No se pudo crear clave.");
-        return;
-      }
-
-      setAuthPassword("");
-      setWorkerNewPassword("");
-      setAuthMode("worker");
-      setAuthMessage("Clave creada correctamente. Ahora ingresa como trabajador.");
-    } catch (error) {
-      console.error(error);
-      setAuthMessage("Error al crear clave.");
-    } finally {
-      setLoadingAuth(false);
-    }
-  }
-
-  async function registerCustomer() {
-    try {
-      setLoadingAuth(true);
-      setAuthMessage("");
-
-      const response = await fetch("/api/company-auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          companyName: authName.trim(),
-          rut: companyRut.trim(),
-          giro: companyGiro.trim(),
-          address: companyAddress.trim(),
-          contactName: companyContactName.trim(),
-          phone: companyPhone.trim(),
-          email: authEmail.trim().toLowerCase(),
-          password: authPassword,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setAuthMessage(data.error || "No se pudo crear la cuenta.");
-        return;
-      }
-
-      setLoggedCustomer({
-        ...data,
-        name: data.name || data.companyName,
-        walletBalance: data.walletBalance || 0,
-        accountType: "company",
-        companyCustomerId: data.id,
-        companyName: data.companyName || data.name,
-        companyEmail: data.email,
-      });
-      setGuestName(data.name);
-      await loadWalletSummary(data.id);
-      setAuthPassword("");
-      setUseWallet(false);
-      setAuthMessage("Empresa registrada correctamente.");
+      setCompanyRut("");
+      setCompanyGiro("");
+      setCompanyAddress("");
+      setCompanyContactName("");
+      setCompanyPhone("");
+      setAuthName("");
+      setAuthMode("login");
+      setAuthMessage("Empresa registrada correctamente. Ahora ingresa con correo y clave.");
     } catch (error) {
       console.error(error);
       setAuthMessage("Error al Registrar Empresa.");
@@ -1345,6 +1205,105 @@ export default function PedidoPage() {
       .join(" | ");
   }
 
+
+
+  async function registerCustomer() {
+    try {
+      setLoadingAuth(true);
+      setAuthMessage("");
+
+      const response = await fetch("/api/company-auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: authName.trim(),
+          rut: companyRut.trim(),
+          giro: companyGiro.trim(),
+          address: companyAddress.trim(),
+          contactName: companyContactName.trim(),
+          phone: companyPhone.trim(),
+          email: authEmail.trim().toLowerCase(),
+          password: authPassword.trim(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setAuthMessage(data.error || "No se pudo registrar la empresa.");
+        return;
+      }
+
+      setLoggedCustomer(null);
+      setGuestName("");
+      setUseWallet(false);
+
+      setCompanyRut("");
+      setCompanyGiro("");
+      setCompanyAddress("");
+      setCompanyContactName("");
+      setCompanyPhone("");
+      setAuthName("");
+      setAuthPassword("");
+
+      setAuthMode("login");
+      setAuthMessage("Empresa registrada correctamente. Ahora ingresa con correo y clave.");
+    } catch (error) {
+      console.error(error);
+      setAuthMessage("Error al registrar la empresa.");
+    } finally {
+      setLoadingAuth(false);
+    }
+  }
+  async function loginWorker() {
+    try {
+      setLoadingAuth(true);
+      setAuthMessage("");
+
+      const response = await fetch("/api/company-worker-auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: authEmail.trim().toLowerCase(),
+          password: authPassword.trim(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setAuthMessage(data.error || "No se pudo ingresar como trabajador.");
+        return;
+      }
+
+      setLoggedCustomer({
+        ...data,
+        id: data.companyCustomerId || data.id,
+        name: data.name || data.companyName || "Empresa",
+        email: data.email || data.companyEmail || authEmail.trim().toLowerCase(),
+        walletBalance: data.walletBalance || 0,
+        accountType: "worker",
+        companyCustomerId: data.companyCustomerId || data.id,
+        companyName: data.companyName || data.name,
+        companyEmail: data.companyEmail || data.email,
+        workerId: data.workerId || null,
+      });
+
+      setGuestName(data.companyName || data.name || "");
+      setAuthPassword("");
+      setUseWallet(false);
+      setAuthMessage("Trabajador ingresado correctamente.");
+    } catch (error) {
+      console.error(error);
+      setAuthMessage("Error al ingresar como trabajador.");
+    } finally {
+      setLoadingAuth(false);
+    }
+  }
   async function createOnlineOrder() {
     try {
       setLoadingOrder(true);
@@ -1362,11 +1321,9 @@ export default function PedidoPage() {
       if (missingWorkerName) {
         setMessage("Debes ingresar el nombre del trabajador en cada bowl.");
         return;
-      }
-
-      if (!hasMinimumCompanyBowls) {
+      }      if (requiresCompanyMinimum && !hasMinimumCompanyBowls) {
         setMessage(
-          `Pedido minimo para empresas con despacho: ${minimumCompanyBowls} bowls. Actualmente tienes ${companyBowlCount}.`
+          `Pedido mínimo para envío empresas: ${minimumCompanyBowls} bowls. Actualmente tienes ${companyBowlCount}.`
         );
         return;
       }
@@ -1634,7 +1591,7 @@ export default function PedidoPage() {
               }}
               className="mt-6 w-full rounded-2xl bg-[#10B557] py-4 text-lg font-black text-white"
             >
-              Programar pedido
+              Programar envío
             </button>
 
             <button suppressHydrationWarning
@@ -2270,17 +2227,16 @@ export default function PedidoPage() {
             </div>
           )}
 
-          {cart.length > 0 && (
-            <div
+          {requiresCompanyMinimum && cart.length > 0 && (<div
               className={`mt-4 rounded-2xl p-4 text-sm font-black ${
                 hasMinimumCompanyBowls
                   ? "bg-emerald-50 text-emerald-700"
                   : "bg-yellow-50 text-yellow-700"
               }`}
             >
-              Pedido minimo despacho empresas: {companyBowlCount}/{minimumCompanyBowls} bowls.
+              Pedido mínimo para envío empresas: {companyBowlCount}/{minimumCompanyBowls} bowls.
               {!hasMinimumCompanyBowls &&
-                " Agrega mas bowls para confirmar el pedido."}
+                " Agrega más bowls para programar el envío."}
             </div>
           )}
 
@@ -2822,6 +2778,10 @@ export default function PedidoPage() {
 </main>
   );
 }
+
+
+
+
 
 
 
