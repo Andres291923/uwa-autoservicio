@@ -226,6 +226,22 @@ export default function TotemPage() {
     setCatalogChangeMessage(message);
   }
 
+  function buildCatalogChangeMessage(details: string[]) {
+    const cleanDetails = Array.from(
+      new Set(details.map((item) => item.trim()).filter(Boolean))
+    );
+
+    if (cleanDetails.length === 0) {
+      return "Lo sentimos, una opcion ya no esta disponible. Elige otra opcion para continuar.";
+    }
+
+    if (cleanDetails.length === 1) {
+      return `Lo sentimos, ${cleanDetails[0]} ya no esta disponible. Elige otra opcion para continuar.`;
+    }
+
+    return `Lo sentimos, estas opciones ya no estan disponibles: ${cleanDetails.join(", ")}. Elige otras opciones para continuar.`;
+  }
+
 
   function openTotemAuth(mode: TotemAuthMode = "login") {
     setTotemAuthMode(mode);
@@ -904,6 +920,7 @@ export default function TotemPage() {
 
     let changed = false;
     let removedSomething = false;
+    const removedDetails: string[] = [];
     const nextCart: CartItem[] = [];
 
     for (const item of cart) {
@@ -917,6 +934,7 @@ export default function TotemPage() {
       if (!product) {
         changed = true;
         removedSomething = true;
+        removedDetails.push(item.name);
         continue;
       }
 
@@ -946,6 +964,14 @@ export default function TotemPage() {
 
       if (validOptionIds.length !== selectedOptionIds.length) {
         changed = true;
+
+        const removedOptionLabels = item.modifiers.flatMap((group) =>
+          group.options
+            .filter((option) => !validOptionIds.includes(option.id))
+            .map((option) => `${group.groupName}: ${option.name}`)
+        );
+
+        removedDetails.push(...removedOptionLabels);
       }
 
       let invalidRequiredGroup = false;
@@ -972,6 +998,11 @@ export default function TotemPage() {
       if (invalidRequiredGroup) {
         changed = true;
         removedSomething = true;
+
+        if (!removedDetails.includes(item.name)) {
+          removedDetails.push(item.name);
+        }
+
         continue;
       }
 
@@ -1027,11 +1058,7 @@ export default function TotemPage() {
     if (!changed) return;
 
     setCart(nextCart);
-    showCatalogChangeMessage(
-      removedSomething
-        ? "Lo sentimos, un producto u opcion obligatoria ya no esta disponible. Revisa tu pedido y elige otra opcion para continuar."
-        : "Lo sentimos, una opcion ya no esta disponible. Revisa tu producto y elige otra opcion para continuar."
-    );
+    showCatalogChangeMessage(buildCatalogChangeMessage(removedDetails));
 
     if (nextCart.length === 0) {
       setSelectedProduct(null);
@@ -1068,6 +1095,7 @@ export default function TotemPage() {
     }
 
     let changed = false;
+    const removedSelectedDetails: string[] = [];
     const nextOptionsByGroup: Record<number, number[]> = {};
 
     for (const [groupIdText, selectedIds] of Object.entries(
@@ -1087,6 +1115,25 @@ export default function TotemPage() {
 
       if (validIds.length !== selectedIds.length) {
         changed = true;
+
+        const originalGroup = selectedProduct.modifierGroups.find(
+          (group) => group.id === groupId
+        );
+
+        const removedNames = selectedIds
+          .filter((optionId) => !validIds.includes(optionId))
+          .map((optionId) => {
+            const option = originalGroup?.template.options.find(
+              (item) => item.id === optionId
+            );
+
+            return option
+              ? `${originalGroup?.template.name || "Opcion"}: ${option.name}`
+              : "";
+          })
+          .filter(Boolean);
+
+        removedSelectedDetails.push(...removedNames);
       }
 
       if (validIds.length > 0) {
@@ -1098,9 +1145,7 @@ export default function TotemPage() {
 
     if (changed) {
       setSelectedOptionsByGroup(nextOptionsByGroup);
-      showCatalogChangeMessage(
-        "Lo sentimos, una opcion ya no esta disponible. Revisa tu producto y elige otra opcion para continuar."
-      );
+      showCatalogChangeMessage(buildCatalogChangeMessage(removedSelectedDetails));
     }
   }, [products]);
 
@@ -2383,6 +2428,7 @@ export default function TotemPage() {
     </main>
   );
 }
+
 
 
 
