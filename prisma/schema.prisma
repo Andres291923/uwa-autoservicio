@@ -1,9 +1,10 @@
-﻿generator client {
+generator client {
   provider = "prisma-client-js"
 }
+
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Category {
@@ -113,12 +114,12 @@ model Order {
   discountCouponCode String?
   totemCode          String?
   paymentMethod      String          @default("unknown")
-  printStatus       String          @default("pending")
-  printedAt         DateTime?
-  printCount        Int             @default(0)
-  lastPrintError    String?
-  claimedAt         DateTime?
-  printAgentId      String?
+  printStatus        String          @default("pending")
+  printedAt          DateTime?
+  printCount         Int             @default(0)
+  lastPrintError     String?
+  claimedAt          DateTime?
+  printAgentId       String?
 
   orderSource     String           @default("totem")
   fulfillmentType String           @default("immediate")
@@ -420,11 +421,11 @@ model CompanyCustomer {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  orders Order[]
-  invoices CompanyInvoice[]
-  walletBalance Int @default(0)
-  walletTransactions CompanyWalletTransaction[]
-  workers CompanyWorker[]
+  orders                   Order[]
+  invoices                 CompanyInvoice[]
+  walletBalance            Int                              @default(0)
+  walletTransactions       CompanyWalletTransaction[]
+  workers                  CompanyWorker[]
   workerWalletTransactions CompanyWorkerWalletTransaction[]
 }
 
@@ -485,23 +486,21 @@ model StockMovement {
   @@index([orderId])
 }
 
-
 model CompanyInvoice {
-  id                Int      @id @default(autoincrement())
+  id                Int       @id @default(autoincrement())
   companyCustomerId Int
   invoiceNumber     String
   invoiceDate       DateTime?
-  amount            Int      @default(0)
+  amount            Int       @default(0)
   fileUrl           String
   fileName          String?
   note              String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  companyCustomer CompanyCustomer @relation(fields: [companyCustomerId], references: [id], onDelete: Cascade)
+  companyCustomer    CompanyCustomer            @relation(fields: [companyCustomerId], references: [id], onDelete: Cascade)
   walletTransactions CompanyWalletTransaction[]
 }
-
 
 model CompanyWalletTransaction {
   id                Int      @id @default(autoincrement())
@@ -519,7 +518,6 @@ model CompanyWalletTransaction {
   invoice         CompanyInvoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
 }
 
-
 model CompanyWorker {
   id                Int      @id @default(autoincrement())
   companyCustomerId Int
@@ -532,12 +530,11 @@ model CompanyWorker {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  companyCustomer CompanyCustomer @relation(fields: [companyCustomerId], references: [id], onDelete: Cascade)
+  companyCustomer    CompanyCustomer                  @relation(fields: [companyCustomerId], references: [id], onDelete: Cascade)
   walletTransactions CompanyWorkerWalletTransaction[]
-  passwordHash String?
-  totemPinHash String?
+  passwordHash       String?
+  totemPinHash       String?
 }
-
 
 model CompanyWorkerWalletTransaction {
   id                  Int      @id @default(autoincrement())
@@ -556,30 +553,30 @@ model CompanyWorkerWalletTransaction {
 }
 
 model MercadoPagoPaymentIntent {
-  id                Int       @id @default(autoincrement())
-  publicId          String    @unique
-  flow              String
-  status            String    @default("created")
+  id       Int    @id @default(autoincrement())
+  publicId String @unique
+  flow     String
+  status   String @default("created")
 
-  amount            Int       @default(0)
+  amount Int @default(0)
 
   customerId        Int?
   companyCustomerId Int?
   orderId           Int?
 
-  preferenceId      String?
-  initPoint         String?
-  sandboxInitPoint  String?
-  paymentId         String?
+  preferenceId     String?
+  initPoint        String?
+  sandboxInitPoint String?
+  paymentId        String?
 
-  payloadJson       String
+  payloadJson String
 
-  lastError         String?
-  approvedAt        DateTime?
-  processedAt       DateTime?
+  lastError   String?
+  approvedAt  DateTime?
+  processedAt DateTime?
 
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([flow])
   @@index([status])
@@ -599,12 +596,6 @@ model MercadoPagoSettings {
   updatedAt     DateTime @updatedAt
 }
 
-
-
-
-
-
-
 model PasswordResetToken {
   id          Int       @id @default(autoincrement())
   accountType String
@@ -617,4 +608,3 @@ model PasswordResetToken {
 
   @@index([accountType, email])
 }
-
