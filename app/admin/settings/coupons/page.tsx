@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 
@@ -12,11 +12,66 @@ type Coupon = {
 
 export default function CouponsPage() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [couponsVisible, setCouponsVisible] = useState(true);
+  const [savingCouponVisibility, setSavingCouponVisibility] = useState(false);
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [percent, setPercent] = useState(10);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+
+  async function loadCouponSettings() {
+    try {
+      const response = await fetch("/api/settings/coupons", {
+        cache: "no-store",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) return;
+
+      setCouponsVisible(data.couponsVisible ?? true);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function saveCouponVisibility(nextValue: boolean) {
+    try {
+      setSavingCouponVisibility(true);
+      setMessage("");
+
+      const response = await fetch("/api/settings/coupons", {
+        method: "PUT",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          couponsVisible: nextValue,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(data.error || "No se pudo guardar la visibilidad de cupones.");
+        return;
+      }
+
+      setCouponsVisible(data.couponsVisible ?? true);
+      setMessage(
+        nextValue
+          ? "Los cupones ahora se muestran en pedido online."
+          : "Los cupones ahora estan ocultos en pedido online."
+      );
+    } catch (error) {
+      console.error(error);
+      setMessage("Error al guardar visibilidad de cupones.");
+    } finally {
+      setSavingCouponVisibility(false);
+    }
+  }
 
   async function loadCoupons() {
     try {
@@ -132,6 +187,7 @@ export default function CouponsPage() {
 
   useEffect(() => {
     loadCoupons();
+    loadCouponSettings();
   }, []);
 
   return (
@@ -157,6 +213,39 @@ export default function CouponsPage() {
         </a>
       </header>
 
+      <section className="mb-6 rounded-3xl border border-emerald-100 bg-emerald-50 p-5 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-emerald-700">
+              Visibilidad en pedido online
+            </p>
+
+            <h2 className="mt-1 text-2xl font-black">
+              Mostrar cupones en /pedido
+            </h2>
+
+            <p className="mt-1 text-sm font-bold text-zinc-600">
+              Si lo ocultas, los clientes no veran el campo para ingresar cupon en la venta online.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => saveCouponVisibility(!couponsVisible)}
+            disabled={savingCouponVisibility}
+            className="rounded-2xl px-6 py-4 text-sm font-black text-white disabled:bg-zinc-300"
+            style={{
+              background: couponsVisible ? "#10B557" : "#18181b",
+            }}
+          >
+            {savingCouponVisibility
+              ? "Guardando..."
+              : couponsVisible
+              ? "Visible"
+              : "Oculto"}
+          </button>
+        </div>
+      </section>
       <section className="mb-6 rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
         <h2 className="text-2xl font-black">Crear cupón</h2>
 

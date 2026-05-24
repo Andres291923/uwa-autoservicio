@@ -176,6 +176,7 @@ model BusinessSettings {
   primaryColor      String  @default("#10B557")
   kioskSubtitle     String  @default("Autoservicio")
   kioskTitle        String  @default("Elige tus productos")
+  couponsVisible    Boolean @default(true)
 
   tipsEnabled Boolean  @default(false)
   tipPercent  Int      @default(10)

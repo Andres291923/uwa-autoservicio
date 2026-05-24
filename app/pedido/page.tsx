@@ -371,6 +371,7 @@ export default function PedidoPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [couponMessage, setCouponMessage] = useState("");
   const [validatingCoupon, setValidatingCoupon] = useState(false);
+  const [couponsVisible, setCouponsVisible] = useState(true);
 
   async function loadInitialData() {
     try {
@@ -394,6 +395,15 @@ export default function PedidoPage() {
       if (hoursResponse.ok) {
         const hoursData = await hoursResponse.json();
         setOpeningHours(Array.isArray(hoursData.hours) ? hoursData.hours : []);
+      }
+
+      const couponSettingsResponse = await fetch("/api/settings/coupons", {
+        cache: "no-store",
+      });
+
+      if (couponSettingsResponse.ok) {
+        const couponSettingsData = await couponSettingsResponse.json();
+        setCouponsVisible(couponSettingsData.couponsVisible ?? true);
       }
     } catch (error) {
       console.error(error);
@@ -1758,6 +1768,7 @@ export default function PedidoPage() {
             </label>
           </div>
 
+          {couponsVisible && (
           <section className="mt-5 rounded-3xl border border-emerald-100 bg-emerald-50 p-4">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
@@ -1813,6 +1824,7 @@ export default function PedidoPage() {
               </p>
             )}
           </section>
+          )}
 
           {message && (
             <p className="mt-4 rounded-2xl bg-zinc-100 p-4 text-sm font-black">
