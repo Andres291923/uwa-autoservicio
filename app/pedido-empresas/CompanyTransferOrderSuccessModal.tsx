@@ -2,6 +2,16 @@
 
 import { useEffect, useState } from "react";
 
+function formatPrice(value: number | null | undefined) {
+  const amount = Number(value || 0);
+
+  return new Intl.NumberFormat("es-CL", {
+    style: "currency",
+    currency: "CLP",
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
 type BankSettings = {
   businessName?: string;
   rut?: string;
@@ -14,12 +24,14 @@ type BankSettings = {
 type Props = {
   open: boolean;
   orderNumber: number | null;
+  orderTotal?: number | null;
   onClose: () => void;
 };
 
 export default function CompanyTransferOrderSuccessModal({
   open,
   orderNumber,
+  orderTotal,
   onClose,
 }: Props) {
   const [bankSettings, setBankSettings] = useState<BankSettings | null>(null);
@@ -68,6 +80,15 @@ export default function CompanyTransferOrderSuccessModal({
         <h2 className="mt-3 text-4xl font-black text-zinc-950">
           Pedido #{orderNumber || ""}
         </h2>
+
+        <div className="mx-auto mt-4 w-full max-w-md rounded-3xl bg-emerald-50 p-5">
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-700">
+            Total a transferir
+          </p>
+          <p className="mt-2 text-4xl font-black text-emerald-700">
+            {formatPrice(orderTotal)}
+          </p>
+        </div>
 
         <p className="mt-4 text-lg font-bold leading-relaxed text-zinc-700">
           Como seleccionaste <strong>Transferencia</strong>, debes realizar el pago
@@ -129,3 +150,4 @@ export default function CompanyTransferOrderSuccessModal({
     </div>
   );
 }
+
