@@ -3,11 +3,6 @@
 import TotemCompanyWorkerSessionBadge from "./TotemCompanyWorkerSessionBadge";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  findCatalogProductForChannel,
-  sanitizeSelectedOptionsByGroup,
-  sanitizeTotemCartWithCatalog,
-} from "@/lib/catalog-sync";
 import TotemCompanyWorkerLoginButton from "./TotemCompanyWorkerLoginButton";
 
 type Category = {
@@ -423,28 +418,19 @@ export default function TotemPage() {
     }
   }
 
-  async function loadProducts(showLoading = true) {
+  async function loadProducts() {
     try {
-      if (showLoading) {
-        setLoading(true);
-      }
+      setLoading(true);
 
-      const response = await fetch("/api/products", {
-        cache: "no-store",
-      });
+      const response = await fetch("/api/products");
       const data = await response.json();
 
       setProducts(Array.isArray(data) ? data.filter((p) => p.active) : []);
     } catch (error) {
       console.error(error);
-
-      if (showLoading) {
-        setProducts([]);
-      }
+      setProducts([]);
     } finally {
-      if (showLoading) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   }
 
@@ -635,7 +621,7 @@ export default function TotemPage() {
       ...currentCart,
       {
         id: Date.now() + Math.floor(Math.random() * 1000),
-        productId: (selectedProduct as Product).id,
+        productId: selectedProduct.id,
         name: selectedProduct.name,
         basePrice: selectedProduct.price,
         quantity: 1,
@@ -883,64 +869,7 @@ export default function TotemPage() {
     window.addEventListener("totem-company-worker-update", handleCompanyWorkerLogin);
     window.addEventListener("totem-company-worker-logout", handleCompanyWorkerLogout);
 
-    // CATALOG_LIVE_SYNC_TOTEM
-  useEffect(() => {
-    const catalogInterval = window.setInterval(() => {
-      loadProducts(false);
-    }, 3000);
-
-    return () => window.clearInterval(catalogInterval);
-  }, []);
-
-  useEffect(() => {
-    if (cart.length === 0) return;
-
-    const synced = sanitizeTotemCartWithCatalog(cart, products);
-
-    if (!synced.changed) return;
-
-    setCart(synced.cart as CartItem[]);
-    setOrderMessage(synced.message);
-
-    if (synced.cart.length === 0) {
-      setSelectedProduct(null);
-      setSelectedOptionsByGroup({});
-      setStep("catalog");
-    }
-  }, [products, cart]);
-
-  useEffect(() => {
-    if (!selectedProduct) return;
-
-    const latestProduct = findCatalogProductForChannel(
-      products,
-      (selectedProduct as Product).id,
-      "totem"
-    ) as Product | null;
-
-    if (!latestProduct) {
-      setSelectedProduct(null);
-      setSelectedOptionsByGroup({});
-      setOrderMessage("Este producto ya no esta disponible.");
-      return;
-    }
-
-    if (latestProduct !== selectedProduct) {
-      setSelectedProduct(latestProduct);
-    }
-
-    const syncedOptions = sanitizeSelectedOptionsByGroup(
-      latestProduct,
-      selectedOptionsByGroup,
-      "totem"
-    );
-
-    if (syncedOptions.changed) {
-      setSelectedOptionsByGroup(syncedOptions.optionsByGroup);
-      setOrderMessage(syncedOptions.message);
-    }
-  }, [products, selectedProduct, selectedOptionsByGroup]);
-  return () => {
+    return () => {
       window.removeEventListener("totem-company-worker-login", handleCompanyWorkerLogin);
       window.removeEventListener("totem-company-worker-update", handleCompanyWorkerLogin);
       window.removeEventListener("totem-company-worker-logout", handleCompanyWorkerLogout);
@@ -962,123 +891,9 @@ export default function TotemPage() {
       loadStoreStatus();
     }, 60000);
 
-    // CATALOG_LIVE_SYNC_TOTEM
-  useEffect(() => {
-    const catalogInterval = window.setInterval(() => {
-      loadProducts(false);
-    }, 3000);
-
-    return () => window.clearInterval(catalogInterval);
+    return () => window.clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    if (cart.length === 0) return;
-
-    const synced = sanitizeTotemCartWithCatalog(cart, products);
-
-    if (!synced.changed) return;
-
-    setCart(synced.cart as CartItem[]);
-    setOrderMessage(synced.message);
-
-    if (synced.cart.length === 0) {
-      setSelectedProduct(null);
-      setSelectedOptionsByGroup({});
-      setStep("catalog");
-    }
-  }, [products, cart]);
-
-  useEffect(() => {
-    if (!selectedProduct) return;
-
-    const latestProduct = findCatalogProductForChannel(
-      products,
-      (selectedProduct as Product).id,
-      "totem"
-    ) as Product | null;
-
-    if (!latestProduct) {
-      setSelectedProduct(null);
-      setSelectedOptionsByGroup({});
-      setOrderMessage("Este producto ya no esta disponible.");
-      return;
-    }
-
-    if (latestProduct !== selectedProduct) {
-      setSelectedProduct(latestProduct);
-    }
-
-    const syncedOptions = sanitizeSelectedOptionsByGroup(
-      latestProduct,
-      selectedOptionsByGroup,
-      "totem"
-    );
-
-    if (syncedOptions.changed) {
-      setSelectedOptionsByGroup(syncedOptions.optionsByGroup);
-      setOrderMessage(syncedOptions.message);
-    }
-  }, [products, selectedProduct, selectedOptionsByGroup]);
-  return () => window.clearInterval(interval);
-  }, []);
-
-  // CATALOG_LIVE_SYNC_TOTEM
-  useEffect(() => {
-    const catalogInterval = window.setInterval(() => {
-      loadProducts(false);
-    }, 3000);
-
-    return () => window.clearInterval(catalogInterval);
-  }, []);
-
-  useEffect(() => {
-    if (cart.length === 0) return;
-
-    const synced = sanitizeTotemCartWithCatalog(cart, products);
-
-    if (!synced.changed) return;
-
-    setCart(synced.cart as CartItem[]);
-    setOrderMessage(synced.message);
-
-    if (synced.cart.length === 0) {
-      setSelectedProduct(null);
-      setSelectedOptionsByGroup({});
-      setStep("catalog");
-    }
-  }, [products, cart]);
-
-  useEffect(() => {
-    if (!selectedProduct) return;
-
-    const latestProduct = findCatalogProductForChannel(
-      products,
-      (selectedProduct as Product).id,
-      "totem"
-    ) as Product | null;
-
-    if (!latestProduct) {
-      setSelectedProduct(null);
-      setSelectedOptionsByGroup({});
-      setOrderMessage("Este producto ya no esta disponible.");
-      return;
-    }
-
-    if (latestProduct !== selectedProduct) {
-      setSelectedProduct(latestProduct);
-    }
-
-    const syncedOptions = sanitizeSelectedOptionsByGroup(
-      latestProduct,
-      selectedOptionsByGroup,
-      "totem"
-    );
-
-    if (syncedOptions.changed) {
-      setSelectedOptionsByGroup(syncedOptions.optionsByGroup);
-      setOrderMessage(syncedOptions.message);
-    }
-  }, [products, selectedProduct, selectedOptionsByGroup]);
   return (
     <main className="min-h-screen overflow-x-hidden bg-white pb-[112px] text-zinc-950">
 
@@ -1419,64 +1234,7 @@ export default function TotemPage() {
                   selectedIds.length >= min &&
                   (max <= 0 || selectedIds.length <= max);
 
-                // CATALOG_LIVE_SYNC_TOTEM
-  useEffect(() => {
-    const catalogInterval = window.setInterval(() => {
-      loadProducts(false);
-    }, 3000);
-
-    return () => window.clearInterval(catalogInterval);
-  }, []);
-
-  useEffect(() => {
-    if (cart.length === 0) return;
-
-    const synced = sanitizeTotemCartWithCatalog(cart, products);
-
-    if (!synced.changed) return;
-
-    setCart(synced.cart as CartItem[]);
-    setOrderMessage(synced.message);
-
-    if (synced.cart.length === 0) {
-      setSelectedProduct(null);
-      setSelectedOptionsByGroup({});
-      setStep("catalog");
-    }
-  }, [products, cart]);
-
-  useEffect(() => {
-    if (!selectedProduct) return;
-
-    const latestProduct = findCatalogProductForChannel(
-      products,
-      (selectedProduct as Product).id,
-      "totem"
-    ) as Product | null;
-
-    if (!latestProduct) {
-      setSelectedProduct(null);
-      setSelectedOptionsByGroup({});
-      setOrderMessage("Este producto ya no esta disponible.");
-      return;
-    }
-
-    if (latestProduct !== selectedProduct) {
-      setSelectedProduct(latestProduct);
-    }
-
-    const syncedOptions = sanitizeSelectedOptionsByGroup(
-      latestProduct,
-      selectedOptionsByGroup,
-      "totem"
-    );
-
-    if (syncedOptions.changed) {
-      setSelectedOptionsByGroup(syncedOptions.optionsByGroup);
-      setOrderMessage(syncedOptions.message);
-    }
-  }, [products, selectedProduct, selectedOptionsByGroup]);
-  return (
+                return (
                   <section
                     key={group.id}
                     className={`rounded-3xl border p-4 ${
@@ -1509,64 +1267,7 @@ export default function TotemPage() {
                       {group.template.options.map((option) => {
                         const selected = selectedIds.includes(option.id);
 
-                        // CATALOG_LIVE_SYNC_TOTEM
-  useEffect(() => {
-    const catalogInterval = window.setInterval(() => {
-      loadProducts(false);
-    }, 3000);
-
-    return () => window.clearInterval(catalogInterval);
-  }, []);
-
-  useEffect(() => {
-    if (cart.length === 0) return;
-
-    const synced = sanitizeTotemCartWithCatalog(cart, products);
-
-    if (!synced.changed) return;
-
-    setCart(synced.cart as CartItem[]);
-    setOrderMessage(synced.message);
-
-    if (synced.cart.length === 0) {
-      setSelectedProduct(null);
-      setSelectedOptionsByGroup({});
-      setStep("catalog");
-    }
-  }, [products, cart]);
-
-  useEffect(() => {
-    if (!selectedProduct) return;
-
-    const latestProduct = findCatalogProductForChannel(
-      products,
-      (selectedProduct as Product).id,
-      "totem"
-    ) as Product | null;
-
-    if (!latestProduct) {
-      setSelectedProduct(null);
-      setSelectedOptionsByGroup({});
-      setOrderMessage("Este producto ya no esta disponible.");
-      return;
-    }
-
-    if (latestProduct !== selectedProduct) {
-      setSelectedProduct(latestProduct);
-    }
-
-    const syncedOptions = sanitizeSelectedOptionsByGroup(
-      latestProduct,
-      selectedOptionsByGroup,
-      "totem"
-    );
-
-    if (syncedOptions.changed) {
-      setSelectedOptionsByGroup(syncedOptions.optionsByGroup);
-      setOrderMessage(syncedOptions.message);
-    }
-  }, [products, selectedProduct, selectedOptionsByGroup]);
-  return (
+                        return (
                           <button
                             key={option.id}
                             type="button"
@@ -2302,64 +2003,7 @@ export default function TotemPage() {
                   const hasModifiers =
                     getActiveModifierGroups(product).length > 0;
 
-                  // CATALOG_LIVE_SYNC_TOTEM
-  useEffect(() => {
-    const catalogInterval = window.setInterval(() => {
-      loadProducts(false);
-    }, 3000);
-
-    return () => window.clearInterval(catalogInterval);
-  }, []);
-
-  useEffect(() => {
-    if (cart.length === 0) return;
-
-    const synced = sanitizeTotemCartWithCatalog(cart, products);
-
-    if (!synced.changed) return;
-
-    setCart(synced.cart as CartItem[]);
-    setOrderMessage(synced.message);
-
-    if (synced.cart.length === 0) {
-      setSelectedProduct(null);
-      setSelectedOptionsByGroup({});
-      setStep("catalog");
-    }
-  }, [products, cart]);
-
-  useEffect(() => {
-    if (!selectedProduct) return;
-
-    const latestProduct = findCatalogProductForChannel(
-      products,
-      (selectedProduct as Product).id,
-      "totem"
-    ) as Product | null;
-
-    if (!latestProduct) {
-      setSelectedProduct(null);
-      setSelectedOptionsByGroup({});
-      setOrderMessage("Este producto ya no esta disponible.");
-      return;
-    }
-
-    if (latestProduct !== selectedProduct) {
-      setSelectedProduct(latestProduct);
-    }
-
-    const syncedOptions = sanitizeSelectedOptionsByGroup(
-      latestProduct,
-      selectedOptionsByGroup,
-      "totem"
-    );
-
-    if (syncedOptions.changed) {
-      setSelectedOptionsByGroup(syncedOptions.optionsByGroup);
-      setOrderMessage(syncedOptions.message);
-    }
-  }, [products, selectedProduct, selectedOptionsByGroup]);
-  return (
+                  return (
                     <article
                       key={product.id}
                       className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm transition active:scale-[0.99]"
@@ -2473,10 +2117,6 @@ export default function TotemPage() {
     </main>
   );
 }
-
-
-
-
 
 
 
