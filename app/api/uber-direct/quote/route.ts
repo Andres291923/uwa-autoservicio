@@ -7,18 +7,25 @@ let cachedToken: {
   expiresAt: number;
 } | null = null;
 
-function requiredEnv(name: string) {
-  const value = process.env[name];
+function cleanEnv(name: string) {
+  return String(process.env[name] || "")
+    .trim()
+    .replace(/^['"]|['"]$/g, "")
+    .trim();
+}
 
-  if (!value || !String(value).trim()) {
+function requiredEnv(name: string) {
+  const value = cleanEnv(name);
+
+  if (!value) {
     throw new Error(`Falta variable de entorno ${name}`);
   }
 
-  return String(value).trim().replace(/^[\'"]|[\'"]$/g, "").trim();
+  return value;
 }
 
 function optionalEnv(name: string) {
-  return String(process.env[name] || "").trim().replace(/^[\'"]|[\'"]$/g, "").trim();
+  return cleanEnv(name);
 }
 
 function cleanText(value: unknown) {
@@ -29,13 +36,15 @@ function cleanPhone(value: unknown) {
   return String(value || "").replace(/\s+/g, "").trim();
 }
 
+function removeAccents(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
 function normalizeUberFee(rawFee: unknown, currency: string) {
   const number = Math.round(Number(rawFee || 0));
 
   if (!Number.isFinite(number) || number <= 0) return 0;
 
-  // Uber Direct suele devolver el fee en subunidad.
-  // Para CLP lo normalizamos a pesos chilenos.
   if (currency.toUpperCase() === "CLP") {
     return Math.round(number / 100);
   }
@@ -87,13 +96,17 @@ async function getUberDirectToken() {
 }
 
 function buildPickupAddressText() {
+  const saved = optionalEnv("UBER_DIRECT_STORE_PICKUP_ADDRESS");
+
+  if (saved) return removeAccents(saved);
+
   const street = requiredEnv("UBER_DIRECT_PICKUP_STREET");
   const city = requiredEnv("UBER_DIRECT_PICKUP_CITY");
   const state = requiredEnv("UBER_DIRECT_PICKUP_STATE");
   const zipCode = requiredEnv("UBER_DIRECT_PICKUP_POSTAL_CODE");
   const country = optionalEnv("UBER_DIRECT_PICKUP_COUNTRY") || "CL";
 
-  return `${street}, ${city}, ${state}, ${zipCode}, ${country}`;
+  return removeAccents(`${street}, ${city}, ${state}, ${zipCode}, ${country}`);
 }
 
 function buildDropoffAddressText(params: {
@@ -103,7 +116,36 @@ function buildDropoffAddressText(params: {
   zipCode: string;
   country: string;
 }) {
-  return `${params.street}, ${params.city}, ${params.state}, ${params.zipCode}, ${params.country}`;
+  return removeAccents(
+    `${params.street}, ${params.city}, ${params.state}, ${params.zipCode}, ${params.country}`
+  );
+}
+
+async function requestQuote(params: {
+  token: string;
+  customerId: string;
+  payload: Record<string, unknown>;
+}) {
+  const response = await fetch(
+    `https://api.uber.com/v1/customers/${params.customerId}/delivery_quotes`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${params.token}`,
+        "Content-Type": "application/json",
+        "User-Agent": "UWA-Direct-Next",
+      },
+      body: JSON.stringify(params.payload),
+    }
+  );
+
+  const data = await response.json();
+
+  return {
+    ok: response.ok,
+    status: response.status,
+    data,
+  };
 }
 
 export async function POST(request: Request) {
@@ -141,10 +183,21 @@ export async function POST(request: Request) {
     }
 
     const token = await getUberDirectToken();
-    const customerId =
-      optionalEnv("UBER_DIRECT_ORG_ID") ||
-      requiredEnv("UBER_DIRECT_CUSTOMER_ID");
-    const externalStoreId = requiredEnv("UBER_DIRECT_EXTERNAL_STORE_ID");
+
+    const rootCustomerId = optionalEnv("UBER_DIRECT_CUSTOMER_ID");
+    const childOrgId = optionalEnv("UBER_DIRECT_ORG_ID");
+    const externalStoreId = optionalEnv("UBER_DIRECT_EXTERNAL_STORE_ID");
+
+    const customerCandidates = [
+      { label: "org_id", value: childOrgId },
+      { label: "customer_id", value: rootCustomerId },
+    ].filter((item, index, arr) => {
+      return item.value && arr.findIndex((x) => x.value === item.value) === index;
+    });
+
+    if (customerCandidates.length === 0) {
+      throw new Error("Falta UBER_DIRECT_CUSTOMER_ID o UBER_DIRECT_ORG_ID.");
+    }
 
     const pickupAddress = buildPickupAddressText();
     const dropoffAddress = buildDropoffAddressText({
@@ -155,78 +208,106 @@ export async function POST(request: Request) {
       country,
     });
 
-    const payload = {
-      pickup_address: pickupAddress,
-      dropoff_address: dropoffAddress,
-      external_store_id: externalStoreId,
-    };
+    const payloadCandidates: { label: string; payload: Record<string, unknown> }[] = [];
 
-    console.log("UBER_DIRECT_QUOTE_PAYLOAD", payload);
-
-    const response = await fetch(
-      `https://api.uber.com/v1/customers/${customerId}/delivery_quotes`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-          "User-Agent": "UWA-Direct-Next",
+    if (externalStoreId) {
+      payloadCandidates.push({
+        label: "with_external_store_id",
+        payload: {
+          pickup_address: pickupAddress,
+          dropoff_address: dropoffAddress,
+          external_store_id: externalStoreId,
         },
-        body: JSON.stringify(payload),
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error("UBER_DIRECT_QUOTE_ERROR", {
-        payload,
-        data,
       });
-
-      return NextResponse.json(
-        {
-          error:
-            data?.message ||
-            data?.title ||
-            data?.code ||
-            "Uber Direct no pudo cotizar esta dirección.",
-          payload,
-          detail: data,
-        },
-        { status: response.status }
-      );
     }
 
-    const quoteId = String(data.id || data.quote_id || "");
-    const currency = String(data.currency_type || data.currency || "CLP").toUpperCase();
-    const rawFee = Number(data.fee || 0);
-    const fee = normalizeUberFee(rawFee, currency);
-
-    return NextResponse.json({
-      ok: true,
-      publicId: quoteId,
-      quoteId,
-      fee,
-      currency,
-      expiresAt: data.expires || data.expires_at || null,
-      duration: data.duration || null,
-      pickupDuration: data.pickup_duration || null,
-      dropoffEta: data.dropoff_eta || null,
-      externalStoreId,
-      pickupAddress,
-      dropoffAddress,
-      customer: {
-        name,
-        phone,
-        address: street,
-        city,
-        state,
-        zipCode,
-        country,
-        instructions,
+    payloadCandidates.push({
+      label: "without_external_store_id",
+      payload: {
+        pickup_address: pickupAddress,
+        dropoff_address: dropoffAddress,
       },
     });
+
+    const attempts: any[] = [];
+
+    for (const customer of customerCandidates) {
+      for (const candidate of payloadCandidates) {
+        const result = await requestQuote({
+          token,
+          customerId: customer.value,
+          payload: candidate.payload,
+        });
+
+        attempts.push({
+          customerIdKind: customer.label,
+          payloadKind: candidate.label,
+          status: result.status,
+          error:
+            result.data?.message ||
+            result.data?.title ||
+            result.data?.code ||
+            result.data?.metadata ||
+            null,
+          detail: result.data,
+        });
+
+        if (result.ok) {
+          const data = result.data;
+          const quoteId = String(data.id || data.quote_id || "");
+          const currency = String(data.currency_type || data.currency || "CLP").toUpperCase();
+          const rawFee = Number(data.fee || 0);
+          const fee = normalizeUberFee(rawFee, currency);
+
+          return NextResponse.json({
+            ok: true,
+            publicId: quoteId,
+            quoteId,
+            fee,
+            rawFee,
+            currency,
+            expiresAt: data.expires || data.expires_at || null,
+            duration: data.duration || null,
+            pickupDuration: data.pickup_duration || null,
+            dropoffEta: data.dropoff_eta || null,
+            usedCustomerIdKind: customer.label,
+            usedPayloadKind: candidate.label,
+            externalStoreId,
+            pickupAddress,
+            dropoffAddress,
+            customer: {
+              name,
+              phone,
+              address: street,
+              city,
+              state,
+              zipCode,
+              country,
+              instructions,
+            },
+          });
+        }
+      }
+    }
+
+    console.error("UBER_DIRECT_QUOTE_ALL_ATTEMPTS_FAILED", {
+      pickupAddress,
+      dropoffAddress,
+      attempts,
+    });
+
+    return NextResponse.json(
+      {
+        error:
+          attempts[0]?.detail?.message ||
+          attempts[0]?.detail?.title ||
+          "Uber Direct no pudo cotizar esta dirección.",
+        pickupAddress,
+        dropoffAddress,
+        attempts,
+      },
+      { status: 400 }
+    );
   } catch (error) {
     console.error("UBER_DIRECT_QUOTE_ROUTE_ERROR", error);
 
@@ -241,11 +322,3 @@ export async function POST(request: Request) {
     );
   }
 }
-
-
-
-
-
-
-
-
