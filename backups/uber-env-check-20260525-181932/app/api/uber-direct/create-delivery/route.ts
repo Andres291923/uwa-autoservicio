@@ -26,11 +26,11 @@ function requiredEnv(name: string) {
     throw new Error(`Falta variable de entorno ${name}`);
   }
 
-  return String(value).trim().replace(/^[\'"]|[\'"]$/g, "").trim();
+  return String(value).trim();
 }
 
 function optionalEnv(name: string) {
-  return String(process.env[name] || "").trim().replace(/^[\'"]|[\'"]$/g, "").trim();
+  return String(process.env[name] || "").trim();
 }
 
 function cleanText(value: unknown) {
