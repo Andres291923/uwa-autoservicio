@@ -53,7 +53,7 @@ async function getUberDirectToken() {
   body.set("client_id", requiredEnv("UBER_DIRECT_CLIENT_ID"));
   body.set("client_secret", requiredEnv("UBER_DIRECT_CLIENT_SECRET"));
   body.set("grant_type", "client_credentials");
-  body.set("scope", "eats.deliveries direct.organizations");
+  body.set("scope", "eats.deliveries");
 
   const response = await fetch("https://auth.uber.com/oauth/v2/token", {
     method: "POST",
