@@ -141,7 +141,9 @@ export async function POST(request: Request) {
     }
 
     const token = await getUberDirectToken();
-    const customerId = requiredEnv("UBER_DIRECT_CUSTOMER_ID");
+    const customerId =
+      optionalEnv("UBER_DIRECT_ORG_ID") ||
+      requiredEnv("UBER_DIRECT_CUSTOMER_ID");
     const externalStoreId = requiredEnv("UBER_DIRECT_EXTERNAL_STORE_ID");
 
     const pickupAddress = buildPickupAddressText();
@@ -239,6 +241,7 @@ export async function POST(request: Request) {
     );
   }
 }
+
 
 
 
