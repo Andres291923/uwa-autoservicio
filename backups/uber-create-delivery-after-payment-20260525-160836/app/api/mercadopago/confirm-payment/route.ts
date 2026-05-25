@@ -107,47 +107,11 @@ async function createOrderFromIntent(request: Request, intent: any, paymentId: s
     throw new Error(orderData.error || "No se pudo crear el pedido en cocina.");
   }
 
-  let uberDelivery: any = null;
-
-  // CREATE_UBER_DELIVERY_AFTER_PAYMENT
-  if (payload.deliveryMethod === "uber_direct") {
-    try {
-      const deliveryResponse = await fetch(
-        new URL("/api/uber-direct/create-delivery", request.url),
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            orderId: orderData.id,
-            orderNumber: orderData.orderNumber,
-            quoteId: payload.uberQuotePublicId,
-            customerName: orderBody.customerName,
-            deliveryAddress: payload.deliveryAddress || "",
-            deliveryCity: payload.deliveryCity || "",
-            deliveryPhone: payload.deliveryPhone || "",
-            deliveryInstructions: payload.deliveryInstructions || "",
-          }),
-        }
-      );
-
-      uberDelivery = await deliveryResponse.json();
-
-      if (!deliveryResponse.ok) {
-        console.error("UBER_DELIVERY_CREATE_AFTER_PAYMENT_FAILED", uberDelivery);
-      }
-    } catch (error) {
-      console.error("UBER_DELIVERY_CREATE_AFTER_PAYMENT_ERROR", error);
-    }
-  }
-
   return {
     type: "order",
     orderId: orderData.id,
     orderNumber: orderData.orderNumber,
     total: orderData.total,
-    uberDelivery,
   };
 }
 

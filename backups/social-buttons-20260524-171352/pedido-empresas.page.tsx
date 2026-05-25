@@ -1,6 +1,13 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
+import CompanyTransferOrderSuccessModal from "./CompanyTransferOrderSuccessModal";
+import CompanyBankInfoButton from "./CompanyBankInfoButton";
+import WorkerCreatePasswordModalButton from "./WorkerCreatePasswordModalButton";
+import CompanyWorkersButton from "./CompanyWorkersButton";
+import CompanyBalanceAmount from "./CompanyBalanceAmount";
+import CompanyInvoicesPublicButton from "./CompanyInvoicesPublicButton";
+import CompanyOrdersPublicModalButton from "./CompanyOrdersPublicModalButton";
 
 type Category = {
   id: number;
@@ -77,6 +84,12 @@ type LoggedCustomer = {
   cashbackCredits?: number;
   nextCashbackExpiration?: string | null;
   nextCashbackAmount?: number;
+  accountType?: "company" | "worker";
+  companyCustomerId?: number;
+  companyName?: string;
+  companyEmail?: string;
+  workerId?: number;
+  rut?: string | null;
 };
 
 type WalletSummary = {
@@ -156,26 +169,13 @@ type OpeningHour = {
   closeTime: string;
 };
 
-type DeliveryQuote = {
-  publicId: string;
-  fee: number;
-  currency: string;
-  expiresAt: string | null;
-  duration?: number | null;
-  dropoffEta?: string | null;
-};
-
 const defaultSettings: Settings = {
   businessName: "Mi negocio",
-  kioskTitle: "Pedido online",
+  kioskTitle: "Pedido online empresas",
   kioskSubtitle: "Compra online y retira en local",
   logoUrl: null,
   primaryColor: "#10B557",
 };
-
-const instagramUrl = "https://www.instagram.com/uwa_chile/";
-const whatsappUrl = "https://api.whatsapp.com/send?phone=56997971213&text=Hola%2C%20vengo%20de%20pedidos%20online%2C%20necesito%20ayuda.";
-// SOCIAL_LINKS_UWA
 
 function formatPrice(value: number) {
   return new Intl.NumberFormat("es-CL", {
@@ -215,12 +215,13 @@ function formatOrderSource(value: string) {
 
 function formatFulfillment(value: string) {
   if (value === "scheduled") return "Programado";
-  return "Retiro ahora";
+  return "Retirar ahora";
 }
 
 function formatPaymentMethod(value: string) {
   if (value === "food_benefit") return "Beneficio alimentación";
-  if (value === "debit_credit") return "Débito / Crédito";
+  if (value === "debit_credit") return "Tarjeta";
+  if (value === "bank_transfer") return "Transferencia";
   return value || "No informado";
 }
 
@@ -326,6 +327,17 @@ function buildScheduleBanner(openingHours: OpeningHour[]) {
   return parts.join(" · ");
 }
 
+
+function tomorrowInputDate() {
+  const now = new Date();
+  now.setDate(now.getDate() + 1);
+
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
 export default function PedidoPage() {
   const todayInputDate = useMemo(() => getTodayInputDate(), []);
 
@@ -337,7 +349,7 @@ export default function PedidoPage() {
     "all"
   );
 
-  const [scheduledDate, setScheduledDate] = useState(todayInputDate);
+  const [scheduledDate, setScheduledDate] = useState(tomorrowInputDate);
   const [scheduledTime, setScheduledTime] = useState("");
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
 
@@ -354,30 +366,42 @@ export default function PedidoPage() {
   );
   const [walletSummary, setWalletSummary] = useState<WalletSummary | null>(null);
   const [cashbackDetailVisible, setCashbackDetailVisible] = useState(false);
-  const [authMode, setAuthMode] = useState<"login" | "register" | "guest">(
+  const [authMode, setAuthMode] = useState<"login" | "worker" | "register">(
     "login"
   );
   const [authName, setAuthName] = useState("");
+  const [companyRut, setCompanyRut] = useState("");
+  const [companyGiro, setCompanyGiro] = useState("");
+  const [companyAddress, setCompanyAddress] = useState("");
+  const [companyContactName, setCompanyContactName] = useState("");
+  const [companyPhone, setCompanyPhone] = useState("");
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
+  const [workerNewPassword, setWorkerNewPassword] = useState("");
   const [guestName, setGuestName] = useState("");
   const [useWallet, setUseWallet] = useState(false);
 
   const [fulfillmentType, setFulfillmentType] = useState<
-    "immediate" | "scheduled" | "delivery"
+    "immediate" | "scheduled"
   >("immediate");
 
-  const [deliveryAddress, setDeliveryAddress] = useState("");
-  const [deliveryCity, setDeliveryCity] = useState("Concepción");
-  const [deliveryPhone, setDeliveryPhone] = useState("");
-  const [deliveryInstructions, setDeliveryInstructions] = useState("");
-  const [deliveryQuote, setDeliveryQuote] = useState<DeliveryQuote | null>(null);
-  const [quotingDelivery, setQuotingDelivery] = useState(false);
-
-  const [paymentMethod, setPaymentMethod] = useState<"debit_credit">("debit_credit");
+  const [paymentMethod, setPaymentMethod] = useState<"debit_credit" | "bank_transfer">("debit_credit");
 
   const [message, setMessage] = useState("");
   const [catalogChangeMessage, setCatalogChangeMessage] = useState("");
+  const [transferSuccessOrderNumber, setTransferSuccessOrderNumber] =
+    useState<number | null>(null);
+  const [transferSuccessOrderTotal, setTransferSuccessOrderTotal] =
+    useState<number | null>(null);
+  const [transferSuccessOrderItems, setTransferSuccessOrderItems] = useState<
+    {
+      id: string | number;
+      productName: string;
+      total: number;
+      modifiersText: string[];
+      customerComment: string;
+    }[]
+  >([]);
   const [closedStoreModalVisible, setClosedStoreModalVisible] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const [loadingOrder, setLoadingOrder] = useState(false);
@@ -393,30 +417,29 @@ export default function PedidoPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [couponMessage, setCouponMessage] = useState("");
   const [validatingCoupon, setValidatingCoupon] = useState(false);
-  const [couponsVisible, setCouponsVisible] = useState(true);
 
-  function showCatalogChangeMessage(message: string) {
+  function showCompanyCatalogChangeMessage(message: string) {
     setMessage(message);
     setCatalogChangeMessage(message);
   }
 
-  function buildCatalogChangeMessage(details: string[]) {
+  function buildCompanyCatalogChangeMessage(details: string[]) {
     const cleanDetails = Array.from(
       new Set(details.map((item) => item.trim()).filter(Boolean))
     );
 
     if (cleanDetails.length === 0) {
-      return "Lo sentimos, una opcion ya no esta disponible. Elige otra opcion para continuar.";
+      return "Lo sentimos, una opción ya no esta disponible. Elige otra opción para continuar.";
     }
 
     if (cleanDetails.length === 1) {
-      return `Lo sentimos, ${cleanDetails[0]} ya no esta disponible. Elige otra opcion para continuar.`;
+      return `Lo sentimos, ${cleanDetails[0]} ya no esta disponible. Elige otra opción para continuar.`;
     }
 
-    return `Lo sentimos, estas opciones ya no estan disponibles: ${cleanDetails.join(", ")}. Elige otras opciones para continuar.`;
+    return `Lo sentimos, estas opciónes ya no estan disponibles: ${cleanDetails.join(", ")}. Elige otras opciónes para continuar.`;
   }
 
-  function getOnlineProductFromCatalog(productId: number): Product | null {
+  function getCompanyProductFromCatalog(productId: number): Product | null {
     const product = products.find(
       (candidate) =>
         candidate.id === productId &&
@@ -476,18 +499,9 @@ export default function PedidoPage() {
         const hoursData = await hoursResponse.json();
         setOpeningHours(Array.isArray(hoursData.hours) ? hoursData.hours : []);
       }
-
-      const couponSettingsResponse = await fetch("/api/settings/coupons", {
-        cache: "no-store",
-      });
-
-      if (couponSettingsResponse.ok) {
-        const couponSettingsData = await couponSettingsResponse.json();
-        setCouponsVisible(couponSettingsData.couponsVisible ?? true);
-      }
     } catch (error) {
       console.error(error);
-      setMessage("No se pudo cargar el catalogo.");
+      setMessage("No se pudo cargar el catálogo.");
     }
   }
 
@@ -512,7 +526,7 @@ export default function PedidoPage() {
     return () => window.clearInterval(productsInterval);
   }, []);
 
-  // PEDIDO_CART_SYNC_CATALOG
+  // EMPRESAS_CART_SYNC_CATALOG
   useEffect(() => {
     if (cart.length === 0 || products.length === 0) return;
 
@@ -522,7 +536,7 @@ export default function PedidoPage() {
     const nextCart: CartItem[] = [];
 
     for (const item of cart) {
-      const product = getOnlineProductFromCatalog(item.productId);
+      const product = getCompanyProductFromCatalog(item.productId);
 
       if (!product) {
         changed = true;
@@ -556,7 +570,7 @@ export default function PedidoPage() {
 
         selectedOptionIds.forEach((optionId, index) => {
           if (!validOptionIds.includes(optionId)) {
-            removedDetails.push(item.modifiersText[index] || "Opcion");
+            removedDetails.push(item.modifiersText[index] || "Opción");
           }
         });
       }
@@ -590,12 +604,14 @@ export default function PedidoPage() {
         continue;
       }
 
-      const modifiersText = validOptionIds.map((optionId) => {
-        const context = optionContext.get(optionId);
-        return context
-          ? `${context.groupName}: ${context.option.name}`
-          : "";
-      }).filter(Boolean);
+      const modifiersText = validOptionIds
+        .map((optionId) => {
+          const context = optionContext.get(optionId);
+          return context
+            ? `${context.groupName}: ${context.option.name}`
+            : "";
+        })
+        .filter(Boolean);
 
       const modifiersTotal = validOptionIds.reduce((sum, optionId) => {
         const context = optionContext.get(optionId);
@@ -613,8 +629,7 @@ export default function PedidoPage() {
       if (
         item.productName !== nextItem.productName ||
         item.total !== nextItem.total ||
-        JSON.stringify(item.modifierOptionIds) !==
-          JSON.stringify(nextItem.modifierOptionIds) ||
+        JSON.stringify(item.modifierOptionIds) !== JSON.stringify(nextItem.modifierOptionIds) ||
         JSON.stringify(item.modifiersText) !== JSON.stringify(nextItem.modifiersText)
       ) {
         changed = true;
@@ -629,18 +644,18 @@ export default function PedidoPage() {
     setAppliedCoupon(null);
     setCouponCode("");
     setCouponMessage("");
-    showCatalogChangeMessage(buildCatalogChangeMessage(removedDetails));
+    showCompanyCatalogChangeMessage(buildCompanyCatalogChangeMessage(removedDetails));
   }, [products]);
 
   useEffect(() => {
     if (!selectedProduct || products.length === 0) return;
 
-    const latestProduct = getOnlineProductFromCatalog(selectedProduct.id);
+    const latestProduct = getCompanyProductFromCatalog(selectedProduct.id);
 
     if (!latestProduct) {
       setSelectedProduct(null);
       setSelectedOptionsByGroup({});
-      showCatalogChangeMessage(
+      showCompanyCatalogChangeMessage(
         "Lo sentimos, este producto ya no esta disponible. Elige otro producto para continuar."
       );
       return;
@@ -689,7 +704,7 @@ export default function PedidoPage() {
 
             if (option) {
               removedSelectedDetails.push(
-                `${originalGroup?.template.name || "Opcion"}: ${option.name}`
+                `${originalGroup?.template.name || "Opción"}: ${option.name}`
               );
             }
           }
@@ -705,7 +720,9 @@ export default function PedidoPage() {
 
     if (changed) {
       setSelectedOptionsByGroup(nextOptionsByGroup);
-      showCatalogChangeMessage(buildCatalogChangeMessage(removedSelectedDetails));
+      showCompanyCatalogChangeMessage(
+        buildCompanyCatalogChangeMessage(removedSelectedDetails)
+      );
     }
   }, [products]);
   const scheduleBanner = useMemo(() => {
@@ -778,7 +795,7 @@ export default function PedidoPage() {
         template: {
           ...group.template,
           options: (group.template.options || [])
-            .filter((option) => option.active !== false && option.available !== false)
+            .filter((option) => option.active !== false)
             .sort((a, b) => a.order - b.order || a.id - b.id),
         },
       }))
@@ -790,30 +807,33 @@ export default function PedidoPage() {
     return cart.reduce((sum, item) => sum + item.total, 0);
   }, [cart]);
 
-  const couponDiscountAmount = appliedCoupon
-    ? Math.min(cartTotal, Math.round(cartTotal * (appliedCoupon.percent / 100)))
-    : 0;
+  const couponDiscountAmount = 0;
 
-  const subtotalAfterDiscount = Math.max(0, cartTotal - couponDiscountAmount);
-
-  const deliveryFee =
-    fulfillmentType === "delivery" && deliveryQuote ? deliveryQuote.fee : 0;
-
-  const totalBeforeWallet = subtotalAfterDiscount + deliveryFee;
+  const subtotalAfterDiscount = cartTotal;
 
   const walletAmountToUse = useMemo(() => {
     if (!loggedCustomer || !useWallet) return 0;
-    return Math.min(loggedCustomer.walletBalance, totalBeforeWallet);
-  }, [loggedCustomer, useWallet, totalBeforeWallet]);
+    return Math.min(loggedCustomer.walletBalance, subtotalAfterDiscount);
+  }, [loggedCustomer, useWallet, subtotalAfterDiscount]);
 
-  const totalToPay = Math.max(0, totalBeforeWallet - walletAmountToUse);
+  const totalToPay = Math.max(0, subtotalAfterDiscount - walletAmountToUse);
+
+  const companyBowlCount = cart.length;
+  const minimumCompanyBowls = 5;
+    const requiresCompanyMinimum = fulfillmentType === "scheduled";
+  const hasMinimumCompanyBowls =
+    !requiresCompanyMinimum || companyBowlCount >= minimumCompanyBowls;
+
+  function switchToImmediatePickup() {
+    setFulfillmentType("immediate");
+    setScheduledTime("");
+    setMessage("");
+  }
 
   function switchToScheduled() {
     setFulfillmentType("scheduled");
-
-    if (!scheduledDate) {
-      setScheduledDate(todayInputDate);
-    }
+    setScheduledDate(tomorrowInputDate());
+    setMessage("");
   }
 
   function openProduct(product: Product) {
@@ -888,7 +908,7 @@ export default function PedidoPage() {
     if (!selectedProduct) return;
 
     if (!canAddSelectedProduct()) {
-      setMessage("Completa las opciones obligatorias.");
+      setMessage("Completa las opciónes obligatorias.");
       return;
     }
 
@@ -937,7 +957,27 @@ export default function PedidoPage() {
     setCart((current) => current.filter((item) => item.id !== id));
   }
 
+  function updateCartItemWorkerName(id: string, workerName: string) {
+    setCart((current) =>
+      current.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              customerComment: workerName.slice(0, 80),
+            }
+          : item
+      )
+    );
+  }
+
   async function loadWalletSummary(customerId: number) {
+    if (
+      loggedCustomer?.accountType === "company" ||
+      loggedCustomer?.accountType === "worker"
+    ) {
+      return;
+    }
+
     try {
       const response = await fetch(
         `/api/customer-wallet/summary?customerId=${customerId}`,
@@ -970,6 +1010,13 @@ export default function PedidoPage() {
   }
 
   async function refreshCustomerWallet(customerId: number) {
+    if (
+      loggedCustomer?.accountType === "company" ||
+      loggedCustomer?.accountType === "worker"
+    ) {
+      return;
+    }
+
     try {
       const response = await fetch("/api/customer-auth/wallet", {
         method: "POST",
@@ -1002,14 +1049,14 @@ export default function PedidoPage() {
       setLoadingAuth(true);
       setAuthMessage("");
 
-      const response = await fetch("/api/customer-auth/login", {
+      const response = await fetch("/api/company-auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: authEmail,
-          password: authPassword,
+          email: authEmail.trim().toLowerCase(),
+          password: authPassword.trim(),
         }),
       });
 
@@ -1020,58 +1067,30 @@ export default function PedidoPage() {
         return;
       }
 
-      setLoggedCustomer(data);
-      setGuestName(data.name);
-      await loadWalletSummary(data.id);
-      setAuthPassword("");
-      setUseWallet(false);
-      setAuthMessage("Cuenta ingresada correctamente.");
-    } catch (error) {
-      console.error(error);
-      setAuthMessage("Error al ingresar.");
-    } finally {
-      setLoadingAuth(false);
-    }
-  }
-
-  async function registerCustomer() {
-    try {
-      setLoadingAuth(true);
-      setAuthMessage("");
-
-      const response = await fetch("/api/customer-auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: authName,
-          email: authEmail,
-          password: authPassword,
-        }),
+      setLoggedCustomer({
+        ...data,
+        id: data.id,
+        name: data.companyName || data.name || "Empresa",
+        email: data.email,
+        active: data.active,
+        walletBalance: data.walletBalance || 0,
+        accountType: "company",
+        companyCustomerId: data.id,
+        companyName: data.companyName || data.name,
+        companyEmail: data.email,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        setAuthMessage(data.error || "No se pudo crear la cuenta.");
-        return;
-      }
-
-      setLoggedCustomer(data);
-      setGuestName(data.name);
-      await loadWalletSummary(data.id);
+      setGuestName(data.companyName || data.name || "Empresa");
       setAuthPassword("");
       setUseWallet(false);
-      setAuthMessage("Cuenta creada correctamente.");
+      setAuthMessage("Empresa ingresada correctamente.");
     } catch (error) {
       console.error(error);
-      setAuthMessage("Error al crear cuenta.");
+      setAuthMessage("Error al ingresar empresa.");
     } finally {
       setLoadingAuth(false);
     }
   }
-
   async function openWalletHistory() {
     if (!loggedCustomer) return;
 
@@ -1114,7 +1133,7 @@ export default function PedidoPage() {
       setOrderHistoryLoading(true);
       setOrderHistoryVisible(true);
 
-      const response = await fetch("/api/customer-auth/order-history", {
+      const response = await fetch("/api/company-auth/order-history", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1210,82 +1229,112 @@ export default function PedidoPage() {
 
   function buildOnlineOrderCustomerComment() {
     return cart
-      .filter((item) => item.customerComment.trim())
-      .map((item) => `${item.productName}: ${item.customerComment.trim()}`)
+      .map((item) => {
+        const workerName = item.customerComment.trim() || "Sin nombre";
+        return `${item.productName}: ${workerName}`;
+      })
       .join(" | ");
   }
 
-  async function quoteDelivery() {
+
+
+  async function registerCustomer() {
     try {
-      setMessage("");
+      setLoadingAuth(true);
+      setAuthMessage("");
 
-      const finalCustomerName = loggedCustomer?.name || guestName.trim();
-
-      if (cart.length === 0) {
-        setMessage("Agrega productos antes de cotizar delivery.");
-        return;
-      }
-
-      if (!finalCustomerName) {
-        setMessage("Ingresa tu nombre antes de cotizar delivery.");
-        return;
-      }
-
-      if (!deliveryAddress.trim()) {
-        setMessage("Ingresa la dirección de entrega.");
-        return;
-      }
-
-      if (!deliveryPhone.trim()) {
-        setMessage("Ingresa un teléfono de contacto.");
-        return;
-      }
-
-      setQuotingDelivery(true);
-      setDeliveryQuote(null);
-
-      const response = await fetch("/api/uber-direct/quote", {
+      const response = await fetch("/api/company-auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name: finalCustomerName,
-          phone: deliveryPhone,
-          street: deliveryAddress,
-          instructions: deliveryInstructions,
-          city: deliveryCity,
-          state: "Biobío",
-          zipCode: "4030000",
-          country: "CL",
+          companyName: authName.trim(),
+          rut: companyRut.trim(),
+          giro: companyGiro.trim(),
+          address: companyAddress.trim(),
+          contactName: companyContactName.trim(),
+          phone: companyPhone.trim(),
+          email: authEmail.trim().toLowerCase(),
+          password: authPassword.trim(),
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        setMessage(data.error || "No se pudo cotizar el delivery.");
+        setAuthMessage(data.error || "No se pudo registrar la empresa.");
         return;
       }
 
-      setDeliveryQuote({
-        publicId: data.publicId,
-        fee: Number(data.fee || 0),
-        currency: data.currency || "CLP",
-        expiresAt: data.expiresAt || null,
-        duration: data.duration || null,
-        dropoffEta: data.dropoffEta || null,
-      });
+      setLoggedCustomer(null);
+      setGuestName("");
+      setUseWallet(false);
 
-      setMessage("Delivery cotizado correctamente.");
+      setCompanyRut("");
+      setCompanyGiro("");
+      setCompanyAddress("");
+      setCompanyContactName("");
+      setCompanyPhone("");
+      setAuthName("");
+      setAuthPassword("");
+
+      setAuthMode("login");
+      setAuthMessage("Empresa registrada correctamente. Ahora ingresa con correo y clave.");
     } catch (error) {
       console.error(error);
-      setMessage("Error al cotizar delivery.");
+      setAuthMessage("Error al registrar la empresa.");
     } finally {
-      setQuotingDelivery(false);
+      setLoadingAuth(false);
     }
   }
+  async function loginWorker() {
+    try {
+      setLoadingAuth(true);
+      setAuthMessage("");
 
+      const response = await fetch("/api/company-worker-auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: authEmail.trim().toLowerCase(),
+          password: authPassword.trim(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setAuthMessage(data.error || "No se pudo ingresar como trabajador.");
+        return;
+      }
+
+      setLoggedCustomer({
+        ...data,
+        id: data.companyCustomerId || data.id,
+        name: data.name || data.companyName || "Empresa",
+        email: data.email || data.companyEmail || authEmail.trim().toLowerCase(),
+        walletBalance: data.walletBalance || 0,
+        accountType: "worker",
+        companyCustomerId: data.companyCustomerId || data.id,
+        companyName: data.companyName || data.name,
+        companyEmail: data.companyEmail || data.email,
+        workerId: data.workerId || null,
+      });
+
+      setGuestName(data.companyName || data.name || "");
+      setAuthPassword("");
+      setUseWallet(false);
+      setAuthMessage("Trabajador ingresado correctamente.");
+    } catch (error) {
+      console.error(error);
+      setAuthMessage("Error al ingresar como trabajador.");
+    } finally {
+      setLoadingAuth(false);
+    }
+  }
   async function createOnlineOrder() {
     try {
       setLoadingOrder(true);
@@ -1296,35 +1345,51 @@ export default function PedidoPage() {
         return;
       }
 
-      const finalCustomerName = loggedCustomer?.name || guestName.trim();
+      const missingWorkerName = cart.some(
+        (item) => !item.customerComment.trim()
+      );
+
+      if (missingWorkerName) {
+        setMessage("Debes ingresar el nombre del trabajador en cada bowl.");
+        return;
+      }      if (requiresCompanyMinimum && !hasMinimumCompanyBowls) {
+        setMessage(
+          `Pedido mínimo para envío empresas: ${minimumCompanyBowls} bowls. Actualmente tienes ${companyBowlCount}.`
+        );
+        return;
+      }
+
+      const finalCustomerName =
+        loggedCustomer?.companyName || loggedCustomer?.name || guestName.trim();
 
       if (!finalCustomerName) {
         setMessage("Ingresa tu nombre o entra con tu cuenta.");
         return;
       }
 
-      if (fulfillmentType === "delivery") {
-        if (!deliveryAddress.trim()) {
-          setMessage("Ingresa la dirección de entrega.");
-          return;
-        }
+      const companyTransferSummaryItems = cart.map((item) => ({
+        id: item.id,
+        productName: item.productName,
+        total: Number(item.total || 0),
+        modifiersText: item.modifiersText || [],
+        customerComment: item.customerComment || "",
+      }));
 
-        if (!deliveryPhone.trim()) {
-          setMessage("Ingresa un teléfono de contacto.");
-          return;
-        }
-
-        if (!deliveryQuote) {
-          setMessage("Debes cotizar el delivery antes de pagar.");
-          return;
-        }
-      }
+      const companyTransferSummaryTotal = companyTransferSummaryItems.reduce(
+        (sum, item) => sum + item.total,
+        0
+      );
 
       let scheduledForValue: string | null = null;
 
       if (fulfillmentType === "scheduled") {
         if (!scheduledDate || !scheduledTime) {
-          setMessage("Selecciona fecha y hora para programar el pedido.");
+          setMessage("Selecciona fecha y hora para programar el envío.");
+          return;
+        }
+
+        if (scheduledDate < tomorrowInputDate()) {
+          setMessage("Los envíos empresa deben programarse desde el día siguiente.");
           return;
         }
 
@@ -1341,30 +1406,112 @@ export default function PedidoPage() {
         scheduledForValue = `${scheduledDate}T${scheduledTime}:00`;
       }
 
+      // COMPANY_TRANSFER_SNAPSHOT_TOTAL
+      const companyTransferSnapshotItems = cart.map((item) => ({
+        id: item.id,
+        productName: item.productName,
+        total: Number(item.total || 0),
+        modifiersText: item.modifiersText || [],
+        customerComment: item.customerComment || "",
+      }));
+
+      const companyTransferSnapshotTotal = Math.max(
+        0,
+        Number(totalToPay || cartTotal || 0)
+      );
+
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem(
+          "companyTransferSnapshotTotal",
+          String(companyTransferSnapshotTotal)
+        );
+        window.sessionStorage.setItem(
+          "companyTransferSnapshotItems",
+          JSON.stringify(companyTransferSnapshotItems)
+        );
+      }
+
       const customerComment = buildOnlineOrderCustomerComment();
 
-      const response = await fetch("/api/mercadopago/create-preference", {
+      // EMPRESA_MERCADOPAGO_CHECKOUT
+      if (paymentMethod === "debit_credit") {
+        const companyCustomerId =
+          loggedCustomer?.companyCustomerId || loggedCustomer?.id || null;
+
+        if (!companyCustomerId) {
+          setMessage("Debes ingresar como empresa para pagar con tarjeta.");
+          return;
+        }
+
+        const response = await fetch("/api/mercadopago/create-preference", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            flow: "company_order",
+            companyCustomerId,
+            customerName: finalCustomerName,
+            customerEmail:
+              loggedCustomer?.companyEmail ||
+              loggedCustomer?.email ||
+              authEmail.trim() ||
+              null,
+            customerComment,
+            walletAmountUsed: walletAmountToUse,
+            orderSource:
+              loggedCustomer?.accountType === "worker" ? "company_worker" : "company",
+            fulfillmentType,
+            scheduledFor: scheduledForValue
+              ? new Date(scheduledForValue).toISOString()
+              : null,
+            items: cart.map((item) => ({
+              productId: item.productId,
+              quantity: 1,
+              modifierOptionIds: item.modifierOptionIds,
+            })),
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          setMessage(data.error || "No se pudo iniciar el pago con Mercado Pago.");
+          return;
+        }
+
+        const paymentUrl =
+          data.checkoutUrl ||
+          (data.environment === "production"
+            ? data.initPoint
+            : data.sandboxInitPoint || data.initPoint);
+
+        if (!paymentUrl) {
+          setMessage("Mercado Pago no devolvió URL de pago.");
+          return;
+        }
+
+        setMessage("Redirigiendo a Mercado Pago...");
+        window.location.href = paymentUrl;
+        return;
+      }
+      const response = await fetch("/api/orders", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          flow: "personal_order",
-          customerId: loggedCustomer?.id || null,
+          customerId: null,
+          companyCustomerId: loggedCustomer?.companyCustomerId || loggedCustomer?.id || null,
           customerName: finalCustomerName,
-          customerEmail: loggedCustomer?.email || authEmail.trim() || null,
-          discountCouponCode: appliedCoupon?.code || null,
           customerComment,
+          discountCouponCode: null,
           walletAmountUsed: walletAmountToUse,
-          orderSource: "online",
-          fulfillmentType: fulfillmentType === "delivery" ? "immediate" : fulfillmentType,
-          deliveryMethod: fulfillmentType === "delivery" ? "uber_direct" : "pickup",
-          deliveryAddress: fulfillmentType === "delivery" ? deliveryAddress : "",
-          deliveryCity: fulfillmentType === "delivery" ? deliveryCity : "",
-          deliveryPhone: fulfillmentType === "delivery" ? deliveryPhone : "",
-          deliveryInstructions: fulfillmentType === "delivery" ? deliveryInstructions : "",
-          uberQuotePublicId: fulfillmentType === "delivery" ? deliveryQuote?.publicId || null : null,
-          uberDeliveryFee: fulfillmentType === "delivery" ? deliveryFee : 0,
+          totemCode: "empresa",
+          paymentMethod,
+          orderSource:
+            loggedCustomer?.accountType === "worker" ? "company_worker" : "company",
+          fulfillmentType,
           scheduledFor: scheduledForValue
             ? new Date(scheduledForValue).toISOString()
             : null,
@@ -1379,62 +1526,71 @@ export default function PedidoPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setMessage(data.error || "No se pudo iniciar el pago con Mercado Pago.");
+        const errorText = String(data.error || "");
+
+        if (
+          errorText.includes("STORE_CLOSED_FOR_IMMEDIATE_ORDER") ||
+          errorText.includes("STORE_CLOSED_FOR_SCHEDULED_ORDER")
+        ) {
+          setMessage("");
+          switchToScheduled();
+          setClosedStoreModalVisible(true);
+          return;
+        }
+
+        setMessage(data.error || "No se pudo crear el pedido.");
         return;
       }
 
-      const paymentUrl =
-        data.checkoutUrl ||
-        (data.environment === "production"
-          ? data.initPoint
-          : data.sandboxInitPoint || data.initPoint);
+      const createdCompanyTransferOrderNumber = Number(
+        data.orderNumber || data.order?.orderNumber || 0
+      );
 
-      if (!paymentUrl) {
-        setMessage("Mercado Pago no devolvió URL de pago.");
+      setCart([]);
+      setGuestName(loggedCustomer?.name || "");
+      setFulfillmentType("scheduled");
+      setScheduledDate(tomorrowInputDate());
+      setScheduledTime("");
+      setPaymentMethod("debit_credit");
+      setUseWallet(false);
+      clearCoupon();
+      // PEDIDO_EMPRESA_NO_USAR_WALLET_CLIENTE_PERSONA
+      // Esta pantalla usa cuentas empresa/trabajador.
+      // No refrescar con /api/customer-auth ni /api/customer-wallet,
+      // porque puede encontrar un cliente persona con el mismo ID
+      // y sobrescribir el nombre de la empresa logueada.
+
+      if (paymentMethod === "bank_transfer" && createdCompanyTransferOrderNumber) {
+        setTransferSuccessOrderNumber(createdCompanyTransferOrderNumber);
+        setTransferSuccessOrderTotal(companyTransferSnapshotTotal);
+        setTransferSuccessOrderItems(companyTransferSnapshotItems);
+        setMessage("");
         return;
       }
 
-      setMessage("Redirigiendo a Mercado Pago...");
-      window.location.href = paymentUrl;
+      const cashbackText =
+        loggedCustomer && data.cashbackEarned > 0
+          ? ` Cashback ganado: ${formatPrice(data.cashbackEarned)}.`
+          : "";
+
+      const walletText =
+        walletAmountToUse > 0
+          ? ` Saldo usado: ${formatPrice(walletAmountToUse)}.`
+          : "";
+
+      setMessage(
+        `Pedido online empresas #${data.orderNumber} enviado a cocina.${walletText}${cashbackText}`
+      );
     } catch (error) {
       console.error(error);
-      setMessage("Error al iniciar pago con Mercado Pago.");
+      setMessage("Error al crear Pedido online empresas.");
     } finally {
       setLoadingOrder(false);
     }
   }
 
-
   return (
     <main className="min-h-screen bg-[#f5f6f8] text-zinc-950">
-      {/* SOCIAL_FLOATING_BUTTONS_UWA */}
-      <div className="fixed bottom-5 right-5 z-[9000] flex flex-col gap-3">
-        <a
-          href={instagramUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Instagram ÜWA"
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-zinc-950 shadow-2xl ring-1 ring-zinc-200 transition hover:scale-105 active:scale-95"
-        >
-          <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="3" width="18" height="18" rx="5" />
-            <circle cx="12" cy="12" r="4" />
-            <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
-          </svg>
-        </a>
-
-        <a
-          href={whatsappUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="WhatsApp ÜWA"
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-2xl transition hover:scale-105 active:scale-95"
-        >
-          <svg viewBox="0 0 32 32" className="h-8 w-8" fill="currentColor">
-            <path d="M16.04 4C9.43 4 4.05 9.28 4.05 15.78c0 2.08.56 4.11 1.63 5.9L4 28l6.48-1.64a12.2 12.2 0 0 0 5.56 1.36c6.61 0 11.99-5.28 11.99-11.78S22.65 4 16.04 4Zm0 21.67c-1.78 0-3.52-.47-5.04-1.36l-.36-.21-3.84.97.99-3.65-.24-.38a9.67 9.67 0 0 1-1.48-5.26c0-5.36 4.47-9.73 9.97-9.73 5.49 0 9.96 4.37 9.96 9.73s-4.47 9.89-9.96 9.89Zm5.46-7.31c-.3-.15-1.77-.86-2.05-.96-.27-.1-.47-.15-.67.15-.2.29-.77.96-.95 1.16-.17.19-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.46-.89-.78-1.49-1.75-1.66-2.04-.17-.29-.02-.45.13-.6.13-.13.3-.34.45-.51.15-.17.2-.29.3-.49.1-.19.05-.36-.02-.51-.08-.15-.67-1.59-.92-2.18-.24-.57-.49-.49-.67-.5h-.57c-.2 0-.52.07-.8.36-.27.29-1.05 1.01-1.05 2.47s1.08 2.87 1.23 3.07c.15.19 2.13 3.2 5.16 4.49.72.31 1.28.49 1.72.63.72.23 1.38.2 1.9.12.58-.09 1.77-.71 2.02-1.4.25-.69.25-1.28.17-1.4-.07-.12-.27-.19-.57-.34Z" />
-          </svg>
-        </a>
-      </div>
       {walletHistoryVisible && loggedCustomer && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 px-4">
           <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-[2rem] bg-white p-6 shadow-2xl">
@@ -1451,6 +1607,12 @@ export default function PedidoPage() {
                 <p className="mt-1 text-sm font-bold text-zinc-500">
                   {loggedCustomer.email}
                 </p>
+
+                  {loggedCustomer.accountType === "worker" && (
+                    <p className="mt-1 text-sm font-black text-zinc-700">
+                      Trabajador: {loggedCustomer.name}
+                    </p>
+                  )}
               </div>
 
               <button suppressHydrationWarning
@@ -1464,10 +1626,14 @@ export default function PedidoPage() {
 
             <div className="mb-5 rounded-3xl bg-zinc-50 p-4">
               <p className="text-xs font-black uppercase text-zinc-500">
-                Saldo disponible
+                Saldo disponible empresa
               </p>
               <p className="mt-1 text-4xl font-black text-[#10B557]">
-                {formatPrice(loggedCustomer.walletBalance)}
+                <CompanyBalanceAmount
+                          companyId={loggedCustomer.companyCustomerId || loggedCustomer.id}
+                          initialBalance={Number(loggedCustomer.walletBalance || 0)}
+                          className="text-4xl font-black text-[#10B557]"
+                        />
               </p>
             </div>
 
@@ -1559,7 +1725,7 @@ export default function PedidoPage() {
               }}
               className="mt-6 w-full rounded-2xl bg-[#10B557] py-4 text-lg font-black text-white"
             >
-              Programar pedido
+              Programar envío
             </button>
 
             <button suppressHydrationWarning
@@ -1596,7 +1762,7 @@ export default function PedidoPage() {
                 {settings.businessName}
               </p>
               <h1 className="text-xl font-black leading-tight">
-                Pedido online
+                Pedido online empresas
               </h1>
             </div>
           </div>
@@ -1624,16 +1790,16 @@ export default function PedidoPage() {
         )}
       </header>
 
-      {/* PEDIDO_CATALOG_CHANGE_MODAL */}
+      {/* EMPRESAS_CATALOG_CHANGE_MODAL */}
       {catalogChangeMessage && (
         <div className="fixed inset-0 z-[20000] flex items-center justify-center bg-black/60 px-5">
           <div className="w-full max-w-xl rounded-[2rem] bg-white p-7 text-center shadow-2xl">
             <p className="text-xs font-black uppercase tracking-[0.25em] text-red-500">
-              Catalogo actualizado
+              Catálogo actualizado
             </p>
 
             <h2 className="mt-3 text-3xl font-black text-zinc-950">
-              Opcion no disponible
+              Opción no disponible
             </h2>
 
             <p className="mt-4 text-lg font-bold leading-relaxed text-zinc-600">
@@ -1648,7 +1814,7 @@ export default function PedidoPage() {
               }}
               className="mt-7 w-full rounded-2xl bg-[#10B557] py-5 text-xl font-black text-white shadow-lg active:scale-[0.98]"
             >
-              Elegir otra opcion
+              Elegir otra opción
             </button>
           </div>
         </div>
@@ -1763,11 +1929,13 @@ export default function PedidoPage() {
             {loggedCustomer ? (
               <div>
                 <p className="text-xs font-black uppercase text-[#10B557]">
-                  Cliente registrado
+                  Empresa registrada
                 </p>
 
                 <h3 className="mt-1 text-xl font-black">
-                  Hola, {loggedCustomer.name}
+                  {loggedCustomer.accountType === "worker"
+                      ? "Empresa: " + (loggedCustomer.companyName || "")
+                      : "Empresa: " + loggedCustomer.name}
                 </h3>
 
                 <p className="mt-1 text-sm font-bold text-zinc-500">
@@ -1780,10 +1948,14 @@ export default function PedidoPage() {
                   </p>
 
                   <p className="mt-1 text-3xl font-black text-[#10B557]">
-                    {formatPrice(loggedCustomer.walletBalance)}
+                    <CompanyBalanceAmount
+                          companyId={loggedCustomer.companyCustomerId || loggedCustomer.id}
+                          initialBalance={Number(loggedCustomer.walletBalance || 0)}
+                          className="text-4xl font-black text-[#10B557]"
+                        />
                   </p>
                   <div className="mt-4 grid gap-2">
-                    <div className="rounded-2xl bg-zinc-50 p-3">
+                    <div className="hidden">
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-xs font-black uppercase text-zinc-500">
                           Saldo recarga
@@ -1794,7 +1966,7 @@ export default function PedidoPage() {
                       </div>
                     </div>
 
-                    <div className="rounded-2xl bg-emerald-50 p-3">
+                    <div className="hidden">
                       <div className="flex items-center justify-between gap-3">
                         <span className="text-xs font-black uppercase text-emerald-700">
                           Cashback disponible
@@ -1850,7 +2022,7 @@ export default function PedidoPage() {
                     </div>
 
                     {(walletSummary?.expiredCashback || loggedCustomer.expiredCashback || 0) > 0 && (
-                      <div className="rounded-2xl bg-red-50 p-3">
+                      <div className="hidden">
                         <div className="flex items-center justify-between gap-3">
                           <span className="text-xs font-black uppercase text-red-600">
                             Cashback vencido
@@ -1886,30 +2058,31 @@ export default function PedidoPage() {
                     Salir de la cuenta
                   </button>
 
-                  <button suppressHydrationWarning
-                    type="button"
-                    onClick={openWalletHistory}
-                    className="rounded-xl bg-zinc-950 px-4 py-2 text-xs font-black text-white"
-                  >
-                    Ver historial
-                  </button>
+                  <CompanyOrdersPublicModalButton
+                    companyId={loggedCustomer.companyCustomerId || loggedCustomer.id}
+                    companyName={loggedCustomer.name}
+                    companyEmail={loggedCustomer.email}
+                    walletBalance={loggedCustomer.walletBalance}
+                  />
 
-                  <button suppressHydrationWarning
-                    type="button"
-                    onClick={openOrderHistory}
-                    className="rounded-xl bg-[#10B557] px-4 py-2 text-xs font-black text-white"
-                  >
-                    Mis pedidos
-                  </button>
+                  <CompanyInvoicesPublicButton
+                    companyId={loggedCustomer.companyCustomerId || loggedCustomer.id}
+                  />
+
+                  <CompanyBankInfoButton />
+
+                  <CompanyWorkersButton
+                    companyId={loggedCustomer.companyCustomerId || loggedCustomer.id}
+                  />
                 </div>
               </div>
             ) : (
               <div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2">
                   <button suppressHydrationWarning
                     type="button"
                     onClick={() => setAuthMode("login")}
-                    className={`rounded-xl px-3 py-2 text-xs font-black ${
+                    className={`rounded-xl px-2 py-3 text-[11px] font-black whitespace-nowrap text-center ${
                       authMode === "login"
                         ? "text-white"
                         : "bg-white text-zinc-600"
@@ -1919,64 +2092,118 @@ export default function PedidoPage() {
                         authMode === "login" ? settings.primaryColor : undefined,
                     }}
                   >
-                    Ingresar
+                    Ingresar Empresa
                   </button>
+
+                  <a
+                    href="/pedido-trabajador"
+                    className="rounded-xl bg-white px-2 py-3 text-center text-[11px] font-black whitespace-nowrap text-zinc-600"
+                  >
+                    Ingresar Trabajador
+                  </a>
 
                   <button suppressHydrationWarning
                     type="button"
                     onClick={() => setAuthMode("register")}
-                    className={`rounded-xl px-3 py-2 text-xs font-black ${
+                    className={`rounded-xl px-2 py-3 text-[11px] font-black whitespace-nowrap text-center ${
                       authMode === "register"
                         ? "text-white"
                         : "bg-white text-zinc-600"
                     }`}
                     style={{
                       background:
-                        authMode === "register"
-                          ? settings.primaryColor
-                          : undefined,
+                        authMode === "register" ? settings.primaryColor : undefined,
                     }}
                   >
-                    Crear cuenta
-                  </button>
-
-                  <button suppressHydrationWarning
-                    type="button"
-                    onClick={() => setAuthMode("guest")}
-                    className={`rounded-xl px-3 py-2 text-xs font-black ${
-                      authMode === "guest"
-                        ? "text-white"
-                        : "bg-white text-zinc-600"
-                    }`}
-                    style={{
-                      background:
-                        authMode === "guest" ? settings.primaryColor : undefined,
-                    }}
-                  >
-                    Invitado
+                    Registrar Empresa
                   </button>
                 </div>
 
                 {authMode === "register" && (
                   <label className="mt-4 block">
-                    <span className="text-xs font-black uppercase text-zinc-500">
-                      Nombre
-                    </span>
+                    <span className="text-xs font-black uppercase text-zinc-500">Nombre empresa</span>
                     <input suppressHydrationWarning
                       value={authName}
                       onChange={(event) => setAuthName(event.target.value)}
                       className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
-                      placeholder="Ej: Andres"
+                      placeholder="Ej: Empresa SpA"
                     />
                   </label>
                 )}
 
-                {authMode !== "guest" ? (
+                {authMode === "register" && (
                   <>
                     <label className="mt-4 block">
                       <span className="text-xs font-black uppercase text-zinc-500">
-                        Correo
+                        RUT empresa
                       </span>
+                      <input
+                        suppressHydrationWarning
+                        value={companyRut}
+                        onChange={(event) => setCompanyRut(event.target.value)}
+                        placeholder="Ej: 76123456-7"
+                        className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-black outline-none focus:border-[#10B557]"
+                      />
+                    </label>
+
+                    <label className="mt-4 block">
+                      <span className="text-xs font-black uppercase text-zinc-500">
+                        Giro
+                      </span>
+                      <input
+                        suppressHydrationWarning
+                        value={companyGiro}
+                        onChange={(event) => setCompanyGiro(event.target.value)}
+                        placeholder="Ej: Servicios de alimentación"
+                        className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-black outline-none focus:border-[#10B557]"
+                      />
+                    </label>
+
+                    <label className="mt-4 block">
+                      <span className="text-xs font-black uppercase text-zinc-500">
+                        Dirección
+                      </span>
+                      <input
+                        suppressHydrationWarning
+                        value={companyAddress}
+                        onChange={(event) => setCompanyAddress(event.target.value)}
+                        placeholder="Ej: Av. Principal 123"
+                        className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-black outline-none focus:border-[#10B557]"
+                      />
+                    </label>
+
+                    <label className="mt-4 block">
+                      <span className="text-xs font-black uppercase text-zinc-500">
+                        Nombre encargado
+                      </span>
+                      <input
+                        suppressHydrationWarning
+                        value={companyContactName}
+                        onChange={(event) => setCompanyContactName(event.target.value)}
+                        placeholder="Ej: Andrés Matamala"
+                        className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-black outline-none focus:border-[#10B557]"
+                      />
+                    </label>
+
+                    <label className="mt-4 block">
+                      <span className="text-xs font-black uppercase text-zinc-500">
+                        Teléfono encargado
+                      </span>
+                      <input
+                        suppressHydrationWarning
+                        value={companyPhone}
+                        onChange={(event) => setCompanyPhone(event.target.value)}
+                        placeholder="Ej: +569 1234 5678"
+                        className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-black outline-none focus:border-[#10B557]"
+                      />
+                    </label>
+                  </>
+                )}
+
+                {true ? (
+                  <>
+                    <label className="mt-4 block">
+                      <span className="text-xs font-black uppercase text-zinc-500">Correo electrónico</span>
                       <input suppressHydrationWarning
                         value={authEmail}
                         onChange={(event) => setAuthEmail(event.target.value)}
@@ -1987,30 +2214,39 @@ export default function PedidoPage() {
 
                     <label className="mt-4 block">
                       <span className="text-xs font-black uppercase text-zinc-500">
-                        Clave
+                        {authMode === "worker" ? "Clave trabajador" : "Clave"}
                       </span>
                       <input suppressHydrationWarning
                         type="password"
                         value={authPassword}
                         onChange={(event) => setAuthPassword(event.target.value)}
                         className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
-                        placeholder="Clave"
+                        placeholder={authMode === "worker" ? "Clave trabajador" : "Clave"}
                       />
                     </label>
 
-                    {authMode === "login" && (
+                  {authMode === "worker" && (
+                    <div className="rounded-2xl bg-zinc-50 p-4 text-sm font-bold text-zinc-600">
+                      <WorkerCreatePasswordModalButton />
+                    </div>
+                  )}
+                    {(authMode === "login" || authMode === "worker") && (
                       <a
-                        href="/recuperar-clave?type=customer"
+                        href={
+                          authMode === "worker"
+                            ? "/recuperar-clave?type=worker"
+                            : "/recuperar-clave?type=company"
+                        }
                         className="mt-3 block text-center text-sm font-black text-[#10B557]"
                       >
                         Olvidaste tu clave?
                       </a>
                     )}
+
+
                     <button suppressHydrationWarning
                       type="button"
-                      onClick={
-                        authMode === "login" ? loginCustomer : registerCustomer
-                      }
+                      onClick={authMode === "login" ? loginCustomer : authMode === "worker" ? loginWorker : registerCustomer}
                       disabled={loadingAuth}
                       className="mt-4 w-full rounded-2xl py-3 text-sm font-black text-white disabled:bg-zinc-300"
                       style={{
@@ -2021,9 +2257,7 @@ export default function PedidoPage() {
                     >
                       {loadingAuth
                         ? "Procesando..."
-                        : authMode === "login"
-                        ? "Ingresar"
-                        : "Crear cuenta"}
+                        : authMode === "login" ? "Ingresar Empresa" : authMode === "worker" ? "Ingresar Trabajador" : "Registrar Empresa"}
                     </button>
                   </>
                 ) : (
@@ -2035,7 +2269,7 @@ export default function PedidoPage() {
                       value={guestName}
                       onChange={(event) => setGuestName(event.target.value)}
                       className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
-                      placeholder="Ej: Andres"
+                      placeholder="Ej: Empresa SpA"
                     />
                     <p className="mt-2 text-xs font-bold text-zinc-500">
                       Como invitado no acumulas cashback ni puedes usar saldo.
@@ -2098,7 +2332,23 @@ export default function PedidoPage() {
                     >
                       Quitar
                     </button>
-                  </div>
+                  </div>                      <label className="mt-3 block">
+                        <span className="text-xs font-black uppercase text-zinc-500">
+                          Nombre trabajador
+                        </span>
+
+                        <input
+                          suppressHydrationWarning
+                          value={item.customerComment || ""}
+                          onChange={(event) =>
+                            updateCartItemWorkerName(item.id, event.target.value)
+                          }
+                          placeholder="Ej: Juan Perez"
+                          className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-black outline-none focus:border-[#10B557]"
+                        />
+                      </label>
+
+
 
                   <p
                     className="mt-3 text-xl font-black"
@@ -2111,14 +2361,24 @@ export default function PedidoPage() {
             </div>
           )}
 
+          {requiresCompanyMinimum && cart.length > 0 && (<div
+              className={`mt-4 rounded-2xl p-4 text-sm font-black ${
+                hasMinimumCompanyBowls
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "bg-yellow-50 text-yellow-700"
+              }`}
+            >
+              Pedido mínimo para envío empresas: {companyBowlCount}/{minimumCompanyBowls} bowls.
+              {!hasMinimumCompanyBowls &&
+                " Agrega más bowls para programar el envío."}
+            </div>
+          )}
+
           <div className="mt-5 border-t border-zinc-200 pt-5">
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <button suppressHydrationWarning
                 type="button"
-                onClick={() => {
-                  setFulfillmentType("immediate");
-                  setDeliveryQuote(null);
-                }}
+                onClick={switchToImmediatePickup}
                 className={`rounded-2xl border px-3 py-3 text-sm font-black ${
                   fulfillmentType === "immediate"
                     ? "text-white"
@@ -2131,7 +2391,7 @@ export default function PedidoPage() {
                       : undefined,
                 }}
               >
-                Retiro ahora
+                Retirar ahora
               </button>
 
               <button suppressHydrationWarning
@@ -2149,28 +2409,7 @@ export default function PedidoPage() {
                       : undefined,
                 }}
               >
-                Programar
-              </button>
-
-              <button suppressHydrationWarning
-                type="button"
-                onClick={() => {
-                  setFulfillmentType("delivery");
-                  setDeliveryQuote(null);
-                }}
-                className={`rounded-2xl border px-3 py-3 text-sm font-black ${
-                  fulfillmentType === "delivery"
-                    ? "text-white"
-                    : "border-zinc-200 bg-white text-zinc-600"
-                }`}
-                style={{
-                  background:
-                    fulfillmentType === "delivery"
-                      ? settings.primaryColor
-                      : undefined,
-                }}
-              >
-                Delivery
+                Programar envío
               </button>
             </div>
 
@@ -2183,7 +2422,7 @@ export default function PedidoPage() {
 
                   <input suppressHydrationWarning
                     type="date"
-                    min={todayInputDate}
+                    min={tomorrowInputDate()}
                     value={scheduledDate}
                     onChange={(event) => setScheduledDate(event.target.value)}
                     className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
@@ -2228,187 +2467,26 @@ export default function PedidoPage() {
               </div>
             )}
 
-            {fulfillmentType === "delivery" && (
-              <div className="mt-4 space-y-4 rounded-3xl border border-blue-100 bg-blue-50 p-4">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">
-                    Datos para delivery
-                  </p>
-                  <p className="mt-1 text-xs font-bold text-zinc-600">
-                    Ingresa calle, número y comuna para cotizar el despacho con Uber Direct.
-                  </p>
-                </div>
-
-                <label className="block">
-                  <span className="text-xs font-black uppercase text-zinc-500">
-                    Dirección de entrega
-                  </span>
-                  <input
-                    value={deliveryAddress}
-                    onChange={(event) => {
-                      setDeliveryAddress(event.target.value);
-                      setDeliveryQuote(null);
-                    }}
-                    placeholder="Ej: Alemania 3019"
-                    className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-blue-500"
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="text-xs font-black uppercase text-zinc-500">
-                    Comuna de entrega
-                  </span>
-                  <select
-                    value={deliveryCity}
-                    onChange={(event) => {
-                      setDeliveryCity(event.target.value);
-                      setDeliveryQuote(null);
-                    }}
-                    className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-blue-500"
-                  >
-                    <option value="Concepción">Concepción</option>
-                    <option value="Hualpén">Hualpén</option>
-                    <option value="Talcahuano">Talcahuano</option>
-                    <option value="Chiguayante">Chiguayante</option>
-                    <option value="San Pedro de la Paz">San Pedro de la Paz</option>
-                    <option value="Coronel">Coronel</option>
-                    <option value="Penco">Penco</option>
-                    <option value="Tomé">Tomé</option>
-                  </select>
-                  <p className="mt-2 text-xs font-bold text-zinc-500">
-                    Selecciona la comuna correcta para que Uber pueda validar cobertura.
-                  </p>
-                </label>
-
-                <label className="block">
-                  <span className="text-xs font-black uppercase text-zinc-500">
-                    Teléfono de contacto
-                  </span>
-                  <input
-                    value={deliveryPhone}
-                    onChange={(event) => {
-                      setDeliveryPhone(event.target.value);
-                      setDeliveryQuote(null);
-                    }}
-                    placeholder="Ej: +56912345678"
-                    className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-blue-500"
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="text-xs font-black uppercase text-zinc-500">
-                    Referencia / instrucciones
-                  </span>
-                  <textarea
-                    value={deliveryInstructions}
-                    onChange={(event) => {
-                      setDeliveryInstructions(event.target.value.slice(0, 250));
-                      setDeliveryQuote(null);
-                    }}
-                    placeholder="Ej: Portón negro, llamar al llegar"
-                    rows={3}
-                    className="mt-2 w-full resize-none rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-blue-500"
-                  />
-                </label>
-
-                <button
-                  type="button"
-                  onClick={quoteDelivery}
-                  disabled={quotingDelivery || cart.length === 0}
-                  className="w-full rounded-2xl bg-blue-600 px-4 py-4 text-sm font-black text-white disabled:bg-zinc-300"
-                >
-                  {quotingDelivery ? "Cotizando delivery..." : "Cotizar delivery"}
-                </button>
-
-                {deliveryQuote && (
-                  <div className="rounded-2xl bg-white p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-black text-zinc-600">
-                        Delivery Uber
-                      </p>
-                      <p className="text-xl font-black text-blue-700">
-                        {formatPrice(deliveryQuote.fee)}
-                      </p>
-                    </div>
-                    <p className="mt-1 text-xs font-bold text-zinc-500">
-                      Esta cotización se sumará al total del pedido.
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
             <label className="mt-4 block">
               <span className="text-xs font-black uppercase text-zinc-500">
                 Medio de pago
               </span>
               <select suppressHydrationWarning
                 value={paymentMethod}
-                onChange={() => setPaymentMethod("debit_credit")}
+                onChange={(event) =>
+                  setPaymentMethod(
+                    event.target.value as "debit_credit" | "bank_transfer"
+                  )
+                }
                 className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
               >
-                <option value="debit_credit">Débito / Crédito</option>
+                <option value="debit_credit">Tarjeta / Mercado Pago</option>
+                        <option value="bank_transfer">Transferencia</option>
               </select>
             </label>
           </div>
 
-          {couponsVisible && (
-          <section className="mt-5 rounded-3xl border border-emerald-100 bg-emerald-50 p-4">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
-                Cupón de descuento
-              </p>
-              <p className="mt-1 text-xs font-bold text-zinc-600">
-                Solo disponible para pagos online con débito o crédito.
-              </p>
-            </div>
-
-            <div className="mt-3 flex gap-2">
-              <input suppressHydrationWarning
-                value={couponCode}
-                onChange={(event) => {
-                  setCouponCode(event.target.value.toUpperCase());
-                  if (appliedCoupon) {
-                    setAppliedCoupon(null);
-                  }
-                }}
-                placeholder="Ej: UWA10"
-                className="min-w-0 flex-1 rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm font-black uppercase outline-none focus:border-[#10B557]"
-              />
-
-              {appliedCoupon ? (
-                <button suppressHydrationWarning
-                  type="button"
-                  onClick={clearCoupon}
-                  className="rounded-2xl bg-zinc-950 px-4 py-3 text-sm font-black text-white"
-                >
-                  Quitar
-                </button>
-              ) : (
-                <button suppressHydrationWarning
-                  type="button"
-                  onClick={applyCoupon}
-                  disabled={validatingCoupon || cart.length === 0}
-                  className="rounded-2xl bg-[#10B557] px-4 py-3 text-sm font-black text-white disabled:bg-zinc-300"
-                >
-                  {validatingCoupon ? "Validando..." : "Aplicar"}
-                </button>
-              )}
-            </div>
-
-            {couponMessage && (
-              <p
-                className={`mt-3 rounded-2xl p-3 text-xs font-black ${
-                  appliedCoupon
-                    ? "bg-white text-emerald-700"
-                    : "bg-red-50 text-red-600"
-                }`}
-              >
-                {couponMessage}
-              </p>
-            )}
-          </section>
-          )}
+          
 
           {message && (
             <p className="mt-4 rounded-2xl bg-zinc-100 p-4 text-sm font-black">
@@ -2429,15 +2507,6 @@ export default function PedidoPage() {
                 </p>
                 <p className="text-lg font-black text-red-600">
                   - {formatPrice(couponDiscountAmount)}
-                </p>
-              </div>
-            )}
-
-            {deliveryFee > 0 && (
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-black text-zinc-500">Despacho Uber</p>
-                <p className="text-lg font-black text-blue-700">
-                  + {formatPrice(deliveryFee)}
                 </p>
               </div>
             )}
@@ -2466,16 +2535,24 @@ export default function PedidoPage() {
 
           <button suppressHydrationWarning
             onClick={createOnlineOrder}
-            disabled={loadingOrder || cart.length === 0}
+            disabled={loadingOrder || cart.length === 0 || (requiresCompanyMinimum && !hasMinimumCompanyBowls)}
             className="mt-4 w-full rounded-2xl py-4 text-lg font-black text-white disabled:bg-zinc-300"
             style={{
               background:
-                !loadingOrder && cart.length > 0
+                !loadingOrder &&
+                cart.length > 0 &&
+                (!requiresCompanyMinimum || hasMinimumCompanyBowls)
                   ? settings.primaryColor
                   : undefined,
             }}
           >
-            {loadingOrder ? "Enviando..." : "Confirmar pedido online"}
+            {loadingOrder
+              ? "Enviando..."
+              : cart.length > 0 && !hasMinimumCompanyBowls
+              ? `Minimo ${minimumCompanyBowls} bowls`
+              : paymentMethod === "debit_credit"
+              ? "Pagar con tarjeta"
+              : "Confirmar pedido por transferencia"}
           </button>
         </aside>
       </div>
@@ -2513,9 +2590,9 @@ export default function PedidoPage() {
               </div>
             ) : orderHistoryOrders.length === 0 ? (
               <div className="rounded-3xl bg-zinc-50 p-8 text-center">
-                <p className="text-xl font-black">Aún no tienes pedidos.</p>
+                <p className="text-xl font-black">Aun no tienes pedidos empresa.</p>
                 <p className="mt-1 text-sm font-bold text-zinc-500">
-                  Cuando compres con tu cuenta, aparecerán aquí.
+                  Cuando esta empresa realice pedidos, apareceran aqui.
                 </p>
               </div>
             ) : (
@@ -2580,7 +2657,7 @@ export default function PedidoPage() {
                         </p>
                       </div>
 
-                      <div className="rounded-2xl bg-zinc-50 p-4">
+                      <div className="hidden">
                         <p className="text-xs font-black uppercase text-zinc-500">
                           Cashback
                         </p>
@@ -2828,9 +2905,40 @@ export default function PedidoPage() {
           </div>
         </div>
       )}
-    </main>
+    
+      <CompanyTransferOrderSuccessModal
+        open={transferSuccessOrderNumber !== null}
+        orderNumber={transferSuccessOrderNumber}
+        onClose={() => setTransferSuccessOrderNumber(null)}
+      />
+</main>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

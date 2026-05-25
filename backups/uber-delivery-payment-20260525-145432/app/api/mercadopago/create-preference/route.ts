@@ -17,12 +17,6 @@ type PreferenceBody = {
   orderSource?: string;
   fulfillmentType?: string;
   scheduledFor?: string | null;
-  deliveryMethod?: "pickup" | "uber_direct";
-  deliveryAddress?: string | null;
-  deliveryPhone?: string | null;
-  deliveryInstructions?: string | null;
-  uberQuotePublicId?: string | null;
-  uberDeliveryFee?: number;
   items?: {
     productId: number;
     quantity?: number;
@@ -102,26 +96,6 @@ async function calculateOrderAmount(body: PreferenceBody) {
 
   const totalAfterDiscount = Math.max(0, subtotalAmount - discountAmount);
 
-  const deliveryMethod = body.deliveryMethod === "uber_direct" ? "uber_direct" : "pickup";
-  const uberDeliveryFee =
-    deliveryMethod === "uber_direct" ? cleanNumber(body.uberDeliveryFee) : 0;
-
-  if (deliveryMethod === "uber_direct") {
-    if (!body.uberQuotePublicId) {
-      throw new Error("Falta cotización de Uber Direct.");
-    }
-
-    if (uberDeliveryFee <= 0) {
-      throw new Error("Uber Direct no devolvió un valor de despacho válido.");
-    }
-
-    if (!body.deliveryAddress || !body.deliveryPhone) {
-      throw new Error("Faltan datos de entrega para Uber Direct.");
-    }
-  }
-
-  const totalWithDelivery = totalAfterDiscount + uberDeliveryFee;
-
   let walletAmountUsed = 0;
   const requestedWalletAmount = cleanNumber(body.walletAmountUsed);
 
@@ -136,7 +110,7 @@ async function calculateOrderAmount(body: PreferenceBody) {
     }
 
     const walletBalance = calculateWalletBreakdown(customer.walletTransactions).totalBalance;
-    walletAmountUsed = Math.min(requestedWalletAmount, walletBalance, totalWithDelivery);
+    walletAmountUsed = Math.min(requestedWalletAmount, walletBalance, totalAfterDiscount);
   }
 
   if (body.flow === "company_order" && body.companyCustomerId && requestedWalletAmount > 0) {
@@ -151,7 +125,7 @@ async function calculateOrderAmount(body: PreferenceBody) {
     walletAmountUsed = Math.min(
       requestedWalletAmount,
       Number(company.walletBalance || 0),
-      totalWithDelivery
+      totalAfterDiscount
     );
   }
 
@@ -159,9 +133,7 @@ async function calculateOrderAmount(body: PreferenceBody) {
     subtotalAmount,
     discountAmount,
     walletAmountUsed,
-    deliveryMethod,
-    uberDeliveryFee,
-    amountToPay: Math.max(0, totalWithDelivery - walletAmountUsed),
+    amountToPay: Math.max(0, totalAfterDiscount - walletAmountUsed),
   };
 }
 

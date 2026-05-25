@@ -368,7 +368,6 @@ export default function PedidoPage() {
   >("immediate");
 
   const [deliveryAddress, setDeliveryAddress] = useState("");
-  const [deliveryCity, setDeliveryCity] = useState("Concepción");
   const [deliveryPhone, setDeliveryPhone] = useState("");
   const [deliveryInstructions, setDeliveryInstructions] = useState("");
   const [deliveryQuote, setDeliveryQuote] = useState<DeliveryQuote | null>(null);
@@ -1254,7 +1253,7 @@ export default function PedidoPage() {
           phone: deliveryPhone,
           street: deliveryAddress,
           instructions: deliveryInstructions,
-          city: deliveryCity,
+          city: "Concepción",
           state: "Biobío",
           zipCode: "4030000",
           country: "CL",
@@ -1360,7 +1359,6 @@ export default function PedidoPage() {
           fulfillmentType: fulfillmentType === "delivery" ? "immediate" : fulfillmentType,
           deliveryMethod: fulfillmentType === "delivery" ? "uber_direct" : "pickup",
           deliveryAddress: fulfillmentType === "delivery" ? deliveryAddress : "",
-          deliveryCity: fulfillmentType === "delivery" ? deliveryCity : "",
           deliveryPhone: fulfillmentType === "delivery" ? deliveryPhone : "",
           deliveryInstructions: fulfillmentType === "delivery" ? deliveryInstructions : "",
           uberQuotePublicId: fulfillmentType === "delivery" ? deliveryQuote?.publicId || null : null,
@@ -2235,7 +2233,7 @@ export default function PedidoPage() {
                     Datos para delivery
                   </p>
                   <p className="mt-1 text-xs font-bold text-zinc-600">
-                    Ingresa calle, número y comuna para cotizar el despacho con Uber Direct.
+                    Ingresa tu dirección para cotizar el despacho con Uber Direct.
                   </p>
                 </div>
 
@@ -2249,35 +2247,9 @@ export default function PedidoPage() {
                       setDeliveryAddress(event.target.value);
                       setDeliveryQuote(null);
                     }}
-                    placeholder="Ej: Alemania 3019"
+                    placeholder="Ej: Chacabuco 123, departamento 404"
                     className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-blue-500"
                   />
-                </label>
-
-                <label className="block">
-                  <span className="text-xs font-black uppercase text-zinc-500">
-                    Comuna de entrega
-                  </span>
-                  <select
-                    value={deliveryCity}
-                    onChange={(event) => {
-                      setDeliveryCity(event.target.value);
-                      setDeliveryQuote(null);
-                    }}
-                    className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-blue-500"
-                  >
-                    <option value="Concepción">Concepción</option>
-                    <option value="Hualpén">Hualpén</option>
-                    <option value="Talcahuano">Talcahuano</option>
-                    <option value="Chiguayante">Chiguayante</option>
-                    <option value="San Pedro de la Paz">San Pedro de la Paz</option>
-                    <option value="Coronel">Coronel</option>
-                    <option value="Penco">Penco</option>
-                    <option value="Tomé">Tomé</option>
-                  </select>
-                  <p className="mt-2 text-xs font-bold text-zinc-500">
-                    Selecciona la comuna correcta para que Uber pueda validar cobertura.
-                  </p>
                 </label>
 
                 <label className="block">
@@ -2831,7 +2803,6 @@ export default function PedidoPage() {
     </main>
   );
 }
-
 
 
 

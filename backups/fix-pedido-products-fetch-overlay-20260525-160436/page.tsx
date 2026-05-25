@@ -1360,7 +1360,6 @@ export default function PedidoPage() {
           fulfillmentType: fulfillmentType === "delivery" ? "immediate" : fulfillmentType,
           deliveryMethod: fulfillmentType === "delivery" ? "uber_direct" : "pickup",
           deliveryAddress: fulfillmentType === "delivery" ? deliveryAddress : "",
-          deliveryCity: fulfillmentType === "delivery" ? deliveryCity : "",
           deliveryPhone: fulfillmentType === "delivery" ? deliveryPhone : "",
           deliveryInstructions: fulfillmentType === "delivery" ? deliveryInstructions : "",
           uberQuotePublicId: fulfillmentType === "delivery" ? deliveryQuote?.publicId || null : null,
@@ -2831,7 +2830,6 @@ export default function PedidoPage() {
     </main>
   );
 }
-
 
 
 

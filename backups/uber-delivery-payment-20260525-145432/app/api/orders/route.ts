@@ -359,7 +359,7 @@ export async function POST(request: Request) {
       ? String(body.customerName).trim()
       : null;
 
-    let customerComment = body.customerComment
+    const customerComment = body.customerComment
       ? String(body.customerComment).trim().slice(0, 500)
       : null;
 
@@ -368,24 +368,6 @@ export async function POST(request: Request) {
     const orderSource = normalizeOrderSource(body.orderSource);
     const fulfillmentType = normalizeFulfillmentType(body.fulfillmentType);
     const scheduledFor = body.scheduledFor ? new Date(body.scheduledFor) : null;
-
-    const deliveryMethod = body.deliveryMethod === "uber_direct" ? "uber_direct" : "pickup";
-    const deliveryAddress = body.deliveryAddress
-      ? String(body.deliveryAddress).trim().slice(0, 500)
-      : "";
-    const deliveryPhone = body.deliveryPhone
-      ? String(body.deliveryPhone).trim().slice(0, 80)
-      : "";
-    const deliveryInstructions = body.deliveryInstructions
-      ? String(body.deliveryInstructions).trim().slice(0, 500)
-      : "";
-    const uberQuotePublicId = body.uberQuotePublicId
-      ? String(body.uberQuotePublicId).trim()
-      : "";
-    const uberDeliveryFee = deliveryMethod === "uber_direct"
-      ? Math.max(0, Math.round(Number(body.uberDeliveryFee || 0)))
-      : 0;
-
     const requestedDiscountCouponCode = normalizeCouponCode(
       body.discountCouponCode || body.couponCode
     );
@@ -414,48 +396,6 @@ export async function POST(request: Request) {
         { error: "El nombre del cliente es obligatorio." },
         { status: 400 }
       );
-    }
-
-    if (deliveryMethod === "uber_direct") {
-      if (!deliveryAddress) {
-        return NextResponse.json(
-          { error: "Falta dirección de entrega para Uber Direct." },
-          { status: 400 }
-        );
-      }
-
-      if (!deliveryPhone) {
-        return NextResponse.json(
-          { error: "Falta teléfono de entrega para Uber Direct." },
-          { status: 400 }
-        );
-      }
-
-      if (!uberQuotePublicId) {
-        return NextResponse.json(
-          { error: "Falta cotización Uber Direct." },
-          { status: 400 }
-        );
-      }
-
-      if (uberDeliveryFee <= 0) {
-        return NextResponse.json(
-          { error: "Falta valor de despacho Uber Direct." },
-          { status: 400 }
-        );
-      }
-
-      const deliveryComment = [
-        "DELIVERY UBER",
-        "Dirección: " + deliveryAddress,
-        "Teléfono: " + deliveryPhone,
-        deliveryInstructions ? "Referencia: " + deliveryInstructions : "",
-        "Despacho: $" + uberDeliveryFee.toLocaleString("es-CL")
-      ].filter(Boolean).join(" | ");
-
-      customerComment = [customerComment, deliveryComment]
-        .filter(Boolean)
-        .join(" | ");
     }
 
     if (fulfillmentType === "scheduled" && !scheduledFor) {
@@ -654,7 +594,6 @@ export async function POST(request: Request) {
     }
 
     const totalAfterDiscount = Math.max(0, subtotalAmount - discountAmount);
-    const finalOrderTotal = totalAfterDiscount + uberDeliveryFee;
 
     const companyWorker = companyWorkerId
       ? await prisma.companyWorker.findUnique({
@@ -695,7 +634,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (companyWorker && Number(companyWorker.walletBalance || 0) < finalOrderTotal) {
+    if (companyWorker && Number(companyWorker.walletBalance || 0) < totalAfterDiscount) {
       return NextResponse.json(
         { error: "Saldo trabajador insuficiente." },
         { status: 400 }
@@ -707,9 +646,9 @@ export async function POST(request: Request) {
       : 0;
 
     const walletAmountUsed = companyWorker
-      ? finalOrderTotal
+      ? totalAfterDiscount
       : customer
-      ? Math.min(requestedWalletAmount, walletBalance, finalOrderTotal)
+      ? Math.min(requestedWalletAmount, walletBalance, totalAfterDiscount)
       : 0;
 
     const { cashbackEarned, expiresAt } = await calculateCashback({
@@ -724,7 +663,7 @@ export async function POST(request: Request) {
       const orderData: any = {
         orderNumber,
         status: "pending",
-        total: finalOrderTotal,
+        total: totalAfterDiscount,
         subtotalAmount,
         discountAmount,
         discountPercent,

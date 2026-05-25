@@ -156,15 +156,6 @@ type OpeningHour = {
   closeTime: string;
 };
 
-type DeliveryQuote = {
-  publicId: string;
-  fee: number;
-  currency: string;
-  expiresAt: string | null;
-  duration?: number | null;
-  dropoffEta?: string | null;
-};
-
 const defaultSettings: Settings = {
   businessName: "Mi negocio",
   kioskTitle: "Pedido online",
@@ -364,15 +355,8 @@ export default function PedidoPage() {
   const [useWallet, setUseWallet] = useState(false);
 
   const [fulfillmentType, setFulfillmentType] = useState<
-    "immediate" | "scheduled" | "delivery"
+    "immediate" | "scheduled"
   >("immediate");
-
-  const [deliveryAddress, setDeliveryAddress] = useState("");
-  const [deliveryCity, setDeliveryCity] = useState("Concepción");
-  const [deliveryPhone, setDeliveryPhone] = useState("");
-  const [deliveryInstructions, setDeliveryInstructions] = useState("");
-  const [deliveryQuote, setDeliveryQuote] = useState<DeliveryQuote | null>(null);
-  const [quotingDelivery, setQuotingDelivery] = useState(false);
 
   const [paymentMethod, setPaymentMethod] = useState<"debit_credit">("debit_credit");
 
@@ -796,17 +780,12 @@ export default function PedidoPage() {
 
   const subtotalAfterDiscount = Math.max(0, cartTotal - couponDiscountAmount);
 
-  const deliveryFee =
-    fulfillmentType === "delivery" && deliveryQuote ? deliveryQuote.fee : 0;
-
-  const totalBeforeWallet = subtotalAfterDiscount + deliveryFee;
-
   const walletAmountToUse = useMemo(() => {
     if (!loggedCustomer || !useWallet) return 0;
-    return Math.min(loggedCustomer.walletBalance, totalBeforeWallet);
-  }, [loggedCustomer, useWallet, totalBeforeWallet]);
+    return Math.min(loggedCustomer.walletBalance, subtotalAfterDiscount);
+  }, [loggedCustomer, useWallet, subtotalAfterDiscount]);
 
-  const totalToPay = Math.max(0, totalBeforeWallet - walletAmountToUse);
+  const totalToPay = Math.max(0, subtotalAfterDiscount - walletAmountToUse);
 
   function switchToScheduled() {
     setFulfillmentType("scheduled");
@@ -1215,77 +1194,6 @@ export default function PedidoPage() {
       .join(" | ");
   }
 
-  async function quoteDelivery() {
-    try {
-      setMessage("");
-
-      const finalCustomerName = loggedCustomer?.name || guestName.trim();
-
-      if (cart.length === 0) {
-        setMessage("Agrega productos antes de cotizar delivery.");
-        return;
-      }
-
-      if (!finalCustomerName) {
-        setMessage("Ingresa tu nombre antes de cotizar delivery.");
-        return;
-      }
-
-      if (!deliveryAddress.trim()) {
-        setMessage("Ingresa la dirección de entrega.");
-        return;
-      }
-
-      if (!deliveryPhone.trim()) {
-        setMessage("Ingresa un teléfono de contacto.");
-        return;
-      }
-
-      setQuotingDelivery(true);
-      setDeliveryQuote(null);
-
-      const response = await fetch("/api/uber-direct/quote", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: finalCustomerName,
-          phone: deliveryPhone,
-          street: deliveryAddress,
-          instructions: deliveryInstructions,
-          city: deliveryCity,
-          state: "Biobío",
-          zipCode: "4030000",
-          country: "CL",
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setMessage(data.error || "No se pudo cotizar el delivery.");
-        return;
-      }
-
-      setDeliveryQuote({
-        publicId: data.publicId,
-        fee: Number(data.fee || 0),
-        currency: data.currency || "CLP",
-        expiresAt: data.expiresAt || null,
-        duration: data.duration || null,
-        dropoffEta: data.dropoffEta || null,
-      });
-
-      setMessage("Delivery cotizado correctamente.");
-    } catch (error) {
-      console.error(error);
-      setMessage("Error al cotizar delivery.");
-    } finally {
-      setQuotingDelivery(false);
-    }
-  }
-
   async function createOnlineOrder() {
     try {
       setLoadingOrder(true);
@@ -1301,23 +1209,6 @@ export default function PedidoPage() {
       if (!finalCustomerName) {
         setMessage("Ingresa tu nombre o entra con tu cuenta.");
         return;
-      }
-
-      if (fulfillmentType === "delivery") {
-        if (!deliveryAddress.trim()) {
-          setMessage("Ingresa la dirección de entrega.");
-          return;
-        }
-
-        if (!deliveryPhone.trim()) {
-          setMessage("Ingresa un teléfono de contacto.");
-          return;
-        }
-
-        if (!deliveryQuote) {
-          setMessage("Debes cotizar el delivery antes de pagar.");
-          return;
-        }
       }
 
       let scheduledForValue: string | null = null;
@@ -1357,14 +1248,7 @@ export default function PedidoPage() {
           customerComment,
           walletAmountUsed: walletAmountToUse,
           orderSource: "online",
-          fulfillmentType: fulfillmentType === "delivery" ? "immediate" : fulfillmentType,
-          deliveryMethod: fulfillmentType === "delivery" ? "uber_direct" : "pickup",
-          deliveryAddress: fulfillmentType === "delivery" ? deliveryAddress : "",
-          deliveryCity: fulfillmentType === "delivery" ? deliveryCity : "",
-          deliveryPhone: fulfillmentType === "delivery" ? deliveryPhone : "",
-          deliveryInstructions: fulfillmentType === "delivery" ? deliveryInstructions : "",
-          uberQuotePublicId: fulfillmentType === "delivery" ? deliveryQuote?.publicId || null : null,
-          uberDeliveryFee: fulfillmentType === "delivery" ? deliveryFee : 0,
+          fulfillmentType,
           scheduledFor: scheduledForValue
             ? new Date(scheduledForValue).toISOString()
             : null,
@@ -2112,13 +1996,10 @@ export default function PedidoPage() {
           )}
 
           <div className="mt-5 border-t border-zinc-200 pt-5">
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <button suppressHydrationWarning
                 type="button"
-                onClick={() => {
-                  setFulfillmentType("immediate");
-                  setDeliveryQuote(null);
-                }}
+                onClick={() => setFulfillmentType("immediate")}
                 className={`rounded-2xl border px-3 py-3 text-sm font-black ${
                   fulfillmentType === "immediate"
                     ? "text-white"
@@ -2150,27 +2031,6 @@ export default function PedidoPage() {
                 }}
               >
                 Programar
-              </button>
-
-              <button suppressHydrationWarning
-                type="button"
-                onClick={() => {
-                  setFulfillmentType("delivery");
-                  setDeliveryQuote(null);
-                }}
-                className={`rounded-2xl border px-3 py-3 text-sm font-black ${
-                  fulfillmentType === "delivery"
-                    ? "text-white"
-                    : "border-zinc-200 bg-white text-zinc-600"
-                }`}
-                style={{
-                  background:
-                    fulfillmentType === "delivery"
-                      ? settings.primaryColor
-                      : undefined,
-                }}
-              >
-                Delivery
               </button>
             </div>
 
@@ -2223,116 +2083,6 @@ export default function PedidoPage() {
                   <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
                     Horario disponible: {selectedDaySchedule.openTime} a{" "}
                     {selectedDaySchedule.closeTime}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {fulfillmentType === "delivery" && (
-              <div className="mt-4 space-y-4 rounded-3xl border border-blue-100 bg-blue-50 p-4">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">
-                    Datos para delivery
-                  </p>
-                  <p className="mt-1 text-xs font-bold text-zinc-600">
-                    Ingresa calle, número y comuna para cotizar el despacho con Uber Direct.
-                  </p>
-                </div>
-
-                <label className="block">
-                  <span className="text-xs font-black uppercase text-zinc-500">
-                    Dirección de entrega
-                  </span>
-                  <input
-                    value={deliveryAddress}
-                    onChange={(event) => {
-                      setDeliveryAddress(event.target.value);
-                      setDeliveryQuote(null);
-                    }}
-                    placeholder="Ej: Alemania 3019"
-                    className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-blue-500"
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="text-xs font-black uppercase text-zinc-500">
-                    Comuna de entrega
-                  </span>
-                  <select
-                    value={deliveryCity}
-                    onChange={(event) => {
-                      setDeliveryCity(event.target.value);
-                      setDeliveryQuote(null);
-                    }}
-                    className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-blue-500"
-                  >
-                    <option value="Concepción">Concepción</option>
-                    <option value="Hualpén">Hualpén</option>
-                    <option value="Talcahuano">Talcahuano</option>
-                    <option value="Chiguayante">Chiguayante</option>
-                    <option value="San Pedro de la Paz">San Pedro de la Paz</option>
-                    <option value="Coronel">Coronel</option>
-                    <option value="Penco">Penco</option>
-                    <option value="Tomé">Tomé</option>
-                  </select>
-                  <p className="mt-2 text-xs font-bold text-zinc-500">
-                    Selecciona la comuna correcta para que Uber pueda validar cobertura.
-                  </p>
-                </label>
-
-                <label className="block">
-                  <span className="text-xs font-black uppercase text-zinc-500">
-                    Teléfono de contacto
-                  </span>
-                  <input
-                    value={deliveryPhone}
-                    onChange={(event) => {
-                      setDeliveryPhone(event.target.value);
-                      setDeliveryQuote(null);
-                    }}
-                    placeholder="Ej: +56912345678"
-                    className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-blue-500"
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="text-xs font-black uppercase text-zinc-500">
-                    Referencia / instrucciones
-                  </span>
-                  <textarea
-                    value={deliveryInstructions}
-                    onChange={(event) => {
-                      setDeliveryInstructions(event.target.value.slice(0, 250));
-                      setDeliveryQuote(null);
-                    }}
-                    placeholder="Ej: Portón negro, llamar al llegar"
-                    rows={3}
-                    className="mt-2 w-full resize-none rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-blue-500"
-                  />
-                </label>
-
-                <button
-                  type="button"
-                  onClick={quoteDelivery}
-                  disabled={quotingDelivery || cart.length === 0}
-                  className="w-full rounded-2xl bg-blue-600 px-4 py-4 text-sm font-black text-white disabled:bg-zinc-300"
-                >
-                  {quotingDelivery ? "Cotizando delivery..." : "Cotizar delivery"}
-                </button>
-
-                {deliveryQuote && (
-                  <div className="rounded-2xl bg-white p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-black text-zinc-600">
-                        Delivery Uber
-                      </p>
-                      <p className="text-xl font-black text-blue-700">
-                        {formatPrice(deliveryQuote.fee)}
-                      </p>
-                    </div>
-                    <p className="mt-1 text-xs font-bold text-zinc-500">
-                      Esta cotización se sumará al total del pedido.
-                    </p>
                   </div>
                 )}
               </div>
@@ -2429,15 +2179,6 @@ export default function PedidoPage() {
                 </p>
                 <p className="text-lg font-black text-red-600">
                   - {formatPrice(couponDiscountAmount)}
-                </p>
-              </div>
-            )}
-
-            {deliveryFee > 0 && (
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-black text-zinc-500">Despacho Uber</p>
-                <p className="text-lg font-black text-blue-700">
-                  + {formatPrice(deliveryFee)}
                 </p>
               </div>
             )}
@@ -2831,7 +2572,6 @@ export default function PedidoPage() {
     </main>
   );
 }
-
 
 
 
