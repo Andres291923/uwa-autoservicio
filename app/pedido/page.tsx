@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -185,6 +185,33 @@ function formatPrice(value: number) {
   }).format(value || 0);
 }
 
+
+function normalizeText(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function isBeverageProduct(product: Product) {
+  const text = normalizeText(`${product.name} ${product.category?.name || ""}`);
+
+  return (
+    text.includes("bebida") ||
+    text.includes("jugo") ||
+    text.includes("agua") ||
+    text.includes("coca") ||
+    text.includes("vital")
+  );
+}
+
+function isBestSellerProduct(product: Product, bestSellerProductId: number | null) {
+  return Boolean(
+    bestSellerProductId &&
+      product.id === bestSellerProductId &&
+      !isBeverageProduct(product)
+  );
+}
 function formatShortDate(value: string | null | undefined) {
   if (!value) return "";
   const date = new Date(value);
@@ -371,6 +398,7 @@ export default function PedidoPage() {
 
   const [settings, setSettings] = useState<Settings>(defaultSettings);
   const [products, setProducts] = useState<Product[]>([]);
+  const [bestSellerProductId, setBestSellerProductId] = useState<number | null>(null);
   const [openingHours, setOpeningHours] = useState<OpeningHour[]>([]);
 
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | "all">(
@@ -533,8 +561,33 @@ export default function PedidoPage() {
     }
   }
 
+
+  async function loadBestSeller() {
+    try {
+      const response = await fetch("/api/totem/best-sellers?days=30", {
+        cache: "no-store",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setBestSellerProductId(null);
+        return;
+      }
+
+      setBestSellerProductId(
+        typeof data.bestSellerProductId === "number"
+          ? data.bestSellerProductId
+          : null
+      );
+    } catch (error) {
+      console.error(error);
+      setBestSellerProductId(null);
+    }
+  }
   useEffect(() => {
     loadInitialData();
+    loadBestSeller();
 
     const productsInterval = window.setInterval(async () => {
       try {
@@ -551,10 +604,41 @@ export default function PedidoPage() {
       }
     }, 3000);
 
-    return () => window.clearInterval(productsInterval);
+    const bestSellerInterval = window.setInterval(() => {
+      loadBestSeller();
+    }, 300000);
+
+    return () => {
+      window.clearInterval(productsInterval);
+      window.clearInterval(bestSellerInterval);
+    };
   }, []);
 
   // PEDIDO_CART_SYNC_CATALOG
+
+  async function loadBestSeller() {
+    try {
+      const response = await fetch("/api/totem/best-sellers?days=30", {
+        cache: "no-store",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setBestSellerProductId(null);
+        return;
+      }
+
+      setBestSellerProductId(
+        typeof data.bestSellerProductId === "number"
+          ? data.bestSellerProductId
+          : null
+      );
+    } catch (error) {
+      console.error(error);
+      setBestSellerProductId(null);
+    }
+  }
   useEffect(() => {
     if (cart.length === 0 || products.length === 0) return;
 
@@ -674,6 +758,30 @@ export default function PedidoPage() {
     showCatalogChangeMessage(buildCatalogChangeMessage(removedDetails));
   }, [products]);
 
+
+  async function loadBestSeller() {
+    try {
+      const response = await fetch("/api/totem/best-sellers?days=30", {
+        cache: "no-store",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setBestSellerProductId(null);
+        return;
+      }
+
+      setBestSellerProductId(
+        typeof data.bestSellerProductId === "number"
+          ? data.bestSellerProductId
+          : null
+      );
+    } catch (error) {
+      console.error(error);
+      setBestSellerProductId(null);
+    }
+  }
   useEffect(() => {
     if (!selectedProduct || products.length === 0) return;
 
@@ -758,6 +866,30 @@ export default function PedidoPage() {
     return getScheduleForDate(scheduledDate, openingHours);
   }, [scheduledDate, openingHours]);
 
+
+  async function loadBestSeller() {
+    try {
+      const response = await fetch("/api/totem/best-sellers?days=30", {
+        cache: "no-store",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setBestSellerProductId(null);
+        return;
+      }
+
+      setBestSellerProductId(
+        typeof data.bestSellerProductId === "number"
+          ? data.bestSellerProductId
+          : null
+      );
+    } catch (error) {
+      console.error(error);
+      setBestSellerProductId(null);
+    }
+  }
   useEffect(() => {
     if (fulfillmentType !== "scheduled") return;
 
@@ -896,6 +1028,30 @@ export default function PedidoPage() {
   }
 
   // CANDADO_TOTAL_FRONTEND_TIENDA_CERRADA
+
+  async function loadBestSeller() {
+    try {
+      const response = await fetch("/api/totem/best-sellers?days=30", {
+        cache: "no-store",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setBestSellerProductId(null);
+        return;
+      }
+
+      setBestSellerProductId(
+        typeof data.bestSellerProductId === "number"
+          ? data.bestSellerProductId
+          : null
+      );
+    } catch (error) {
+      console.error(error);
+      setBestSellerProductId(null);
+    }
+  }
   useEffect(() => {
     refreshStoreStatusForOrdering().then((isOpen) => {
       if (!isOpen) {
@@ -1782,10 +1938,20 @@ export default function PedidoPage() {
       )}
       <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[1fr_410px]">
         <section>
-          <div className="mb-5">
-            <h2 className="text-3xl font-black">Elige tus productos</h2>
-            <p className="mt-1 text-sm font-bold text-zinc-500">
-              Compra online usando el mismo catálogo del local.
+                    <div className="mb-5 overflow-hidden rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-black/5">
+            <p
+              className="text-[11px] font-black uppercase tracking-[0.25em]"
+              style={{ color: settings.primaryColor }}
+            >
+              Bowls frescos · rápidos · al momento
+            </p>
+
+            <h2 className="mt-2 text-4xl font-black leading-none tracking-[-0.05em] text-zinc-950">
+              Arma tu bowl perfecto 😍
+            </h2>
+
+            <p className="mt-3 text-base font-bold text-zinc-500">
+              Elige tus ingredientes favoritos y nosotros lo preparamos al momento.
             </p>
           </div>
 
@@ -1836,7 +2002,21 @@ export default function PedidoPage() {
                 className="overflow-hidden rounded-2xl bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className="grid min-h-[170px] grid-cols-[150px_1fr]">
-                  <div className="flex items-center justify-center bg-white">
+                  <div className="relative flex items-center justify-center bg-white">
+                    <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1.5">
+                      {isBestSellerProduct(product, bestSellerProductId) && (
+                        <span className="rounded-full bg-orange-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.06em] text-orange-700">
+                          🔥 Más vendido
+                        </span>
+                      )}
+
+                      {!isBeverageProduct(product) && (
+                        <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.06em] text-emerald-700">
+                          Sin gluten
+                        </span>
+                      )}
+                    </div>
+
                     {product.imageUrl ? (
                       <img
                         src={product.imageUrl}
@@ -2947,6 +3127,8 @@ export default function PedidoPage() {
     </main>
   );
 }
+
+
 
 
 
