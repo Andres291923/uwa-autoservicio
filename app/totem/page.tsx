@@ -1235,7 +1235,7 @@ export default function TotemPage() {
                 <button
                   type="button"
                   onClick={resetIdentifiedCustomer}
-                  className="rounded-lg bg-white px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.04em] text-zinc-600 shadow-sm active:scale-[0.98]"
+                  className="rounded-lg bg-white px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.04em] text-zinc-600 shadow-sm active:"
                 >
                   Cerrar sesión
                 </button>
@@ -1245,7 +1245,7 @@ export default function TotemPage() {
             <button
               type="button"
               onClick={() => openTotemAuth("login")}
-              className="shrink-0 active:scale-[0.98]"
+              className="shrink-0 active:"
             >
               <div className="flex h-[44px] min-w-[245px] items-center justify-center gap-2 rounded-xl bg-[#10B557] px-4 text-white shadow-sm">
                 <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-white/20 text-xs font-semibold">
@@ -1283,7 +1283,7 @@ export default function TotemPage() {
                 setCatalogChangeMessage("");
                 setOrderMessage("");
               }}
-              className="mt-7 w-full rounded-2xl bg-[#10B557] py-5 text-xl font-black text-white shadow-lg active:scale-[0.98]"
+              className="mt-7 w-full rounded-2xl bg-[#10B557] py-5 text-xl font-black text-white shadow-lg active:"
             >
               Elegir otra opción
             </button>
@@ -1595,12 +1595,12 @@ export default function TotemPage() {
                             }}
                           >
                             <div className="flex h-full flex-col items-center justify-start gap-2">
-                              <div className="flex h-[116px] w-[138px] items-center justify-center overflow-hidden bg-transparent">
+                              <div className="flex h-[104px] w-[128px] items-center justify-center overflow-hidden bg-transparent">
                                 {option.imageUrl ? (
                                   <img
                                     src={option.imageUrl}
                                     alt={option.name}
-                                    className="block h-auto max-h-[112px] w-auto max-w-[132px] scale-[1.12] object-contain drop-shadow-xl"
+                                    className="block h-auto max-h-[96px] w-auto max-w-[118px] object-contain"
                                   />
                                 ) : (
                                   <span className="text-2xl font-black text-zinc-400">
@@ -2317,18 +2317,18 @@ export default function TotemPage() {
                   return (
                     <article
                       key={product.id}
-                      className="overflow-hidden rounded-[2rem] border border-white bg-white shadow-[0_18px_45px_rgba(15,23,42,0.08)] ring-1 ring-black/5 transition active:scale-[0.985]"
+                      className="overflow-hidden rounded-[2rem] border border-white bg-white shadow-[0_18px_45px_rgba(15,23,42,0.08)] ring-1 ring-black/5 transition active:"
                     >
 <button
                         onClick={() => openProduct(product)}
                         className="flex h-[390px] w-full flex-col text-center"
                       >
-                        <div className="mx-3 mb-1 flex h-[210px] min-h-[210px] items-center justify-center overflow-hidden rounded-[1.7rem] bg-gradient-to-br from-zinc-50 via-white to-emerald-50/50">
+                        <div className="mx-3 mb-2 flex h-[205px] min-h-[205px] items-center justify-center overflow-hidden rounded-[1.7rem] bg-white">
                           {product.imageUrl ? (
                             <img
                               src={product.imageUrl}
                               alt={product.name}
-                              className="block h-full w-full scale-[1.16] object-contain p-1 drop-shadow-xl transition duration-200"
+                              className="block h-auto max-h-[178px] w-auto max-w-[84%] object-contain"
                             />
                           ) : (
                             <div className="flex h-full w-full flex-col items-center justify-center text-zinc-400">
@@ -2428,6 +2428,7 @@ export default function TotemPage() {
     </main>
   );
 }
+
 
 
 
