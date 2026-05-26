@@ -523,6 +523,30 @@ export default function PedidoPage() {
     };
   }
 
+
+  async function loadBestSeller() {
+    try {
+      const response = await fetch("/api/totem/best-sellers?days=30", {
+        cache: "no-store",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setBestSellerProductId(null);
+        return;
+      }
+
+      setBestSellerProductId(
+        typeof data.bestSellerProductId === "number"
+          ? data.bestSellerProductId
+          : null
+      );
+    } catch (error) {
+      console.error(error);
+      setBestSellerProductId(null);
+    }
+  }
   async function loadInitialData() {
     try {
       const [settingsResponse, productsResponse, hoursResponse] =
@@ -561,34 +585,9 @@ export default function PedidoPage() {
     }
   }
 
-
-  async function loadBestSeller() {
-    try {
-      const response = await fetch("/api/totem/best-sellers?days=30", {
-        cache: "no-store",
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setBestSellerProductId(null);
-        return;
-      }
-
-      setBestSellerProductId(
-        typeof data.bestSellerProductId === "number"
-          ? data.bestSellerProductId
-          : null
-      );
-    } catch (error) {
-      console.error(error);
-      setBestSellerProductId(null);
-    }
-  }
   useEffect(() => {
     loadInitialData();
     loadBestSeller();
-
     const productsInterval = window.setInterval(async () => {
       try {
         const response = await fetch("/api/products", {
@@ -605,8 +604,7 @@ export default function PedidoPage() {
     }, 3000);
 
     const bestSellerInterval = window.setInterval(() => {
-      loadBestSeller();
-    }, 300000);
+      }, 300000);
 
     return () => {
       window.clearInterval(productsInterval);
@@ -616,29 +614,6 @@ export default function PedidoPage() {
 
   // PEDIDO_CART_SYNC_CATALOG
 
-  async function loadBestSeller() {
-    try {
-      const response = await fetch("/api/totem/best-sellers?days=30", {
-        cache: "no-store",
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setBestSellerProductId(null);
-        return;
-      }
-
-      setBestSellerProductId(
-        typeof data.bestSellerProductId === "number"
-          ? data.bestSellerProductId
-          : null
-      );
-    } catch (error) {
-      console.error(error);
-      setBestSellerProductId(null);
-    }
-  }
   useEffect(() => {
     if (cart.length === 0 || products.length === 0) return;
 
@@ -758,30 +733,6 @@ export default function PedidoPage() {
     showCatalogChangeMessage(buildCatalogChangeMessage(removedDetails));
   }, [products]);
 
-
-  async function loadBestSeller() {
-    try {
-      const response = await fetch("/api/totem/best-sellers?days=30", {
-        cache: "no-store",
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setBestSellerProductId(null);
-        return;
-      }
-
-      setBestSellerProductId(
-        typeof data.bestSellerProductId === "number"
-          ? data.bestSellerProductId
-          : null
-      );
-    } catch (error) {
-      console.error(error);
-      setBestSellerProductId(null);
-    }
-  }
   useEffect(() => {
     if (!selectedProduct || products.length === 0) return;
 
@@ -866,30 +817,6 @@ export default function PedidoPage() {
     return getScheduleForDate(scheduledDate, openingHours);
   }, [scheduledDate, openingHours]);
 
-
-  async function loadBestSeller() {
-    try {
-      const response = await fetch("/api/totem/best-sellers?days=30", {
-        cache: "no-store",
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setBestSellerProductId(null);
-        return;
-      }
-
-      setBestSellerProductId(
-        typeof data.bestSellerProductId === "number"
-          ? data.bestSellerProductId
-          : null
-      );
-    } catch (error) {
-      console.error(error);
-      setBestSellerProductId(null);
-    }
-  }
   useEffect(() => {
     if (fulfillmentType !== "scheduled") return;
 
@@ -1029,29 +956,6 @@ export default function PedidoPage() {
 
   // CANDADO_TOTAL_FRONTEND_TIENDA_CERRADA
 
-  async function loadBestSeller() {
-    try {
-      const response = await fetch("/api/totem/best-sellers?days=30", {
-        cache: "no-store",
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setBestSellerProductId(null);
-        return;
-      }
-
-      setBestSellerProductId(
-        typeof data.bestSellerProductId === "number"
-          ? data.bestSellerProductId
-          : null
-      );
-    } catch (error) {
-      console.error(error);
-      setBestSellerProductId(null);
-    }
-  }
   useEffect(() => {
     refreshStoreStatusForOrdering().then((isOpen) => {
       if (!isOpen) {
@@ -3127,6 +3031,7 @@ export default function PedidoPage() {
     </main>
   );
 }
+
 
 
 
