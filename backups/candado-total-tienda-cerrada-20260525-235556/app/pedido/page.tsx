@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -243,19 +243,6 @@ function formatUberEta(value: string | null) {
 function formatFulfillment(value: string) {
   if (value === "scheduled") return "Programado";
   return "Retiro ahora";
-}
-
-function cleanCheckoutMessage(value: string) {
-  const text = String(value || "");
-
-  if (
-    text.includes("STORE_CLOSED") ||
-    text.includes("HARD_LOCK_STORE_CLOSED")
-  ) {
-    return "Tienda cerrada. Por ahora solo puedes programar tu pedido para retiro.";
-  }
-
-  return text;
 }
 
 function formatPaymentMethod(value: string) {
@@ -859,66 +846,6 @@ export default function PedidoPage() {
     setMessage("Tienda cerrada. Solo puedes programar tu pedido para retiro.");
   }
 
-
-  async function refreshStoreStatusForOrdering() {
-    try {
-      const response = await fetch("/api/store-status", { cache: "no-store" });
-      const data = await response.json();
-
-      const isOpen = Boolean(data.isOpen);
-
-      setStoreOpenForImmediate(isOpen);
-      setStoreStatusLoaded(true);
-
-      if (!isOpen) {
-        setFulfillmentType("scheduled");
-        setDeliveryQuote(null);
-      }
-
-      return isOpen;
-    } catch (error) {
-      console.error("STORE_STATUS_FRONTEND_ERROR", error);
-
-      setStoreOpenForImmediate(false);
-      setStoreStatusLoaded(true);
-      setFulfillmentType("scheduled");
-      setDeliveryQuote(null);
-
-      return false;
-    }
-  }
-
-  function showClosedStoreAndForceSchedule() {
-    setFulfillmentType("scheduled");
-    setDeliveryQuote(null);
-    setClosedStoreModalVisible(true);
-    setMessage("Tienda cerrada. Por ahora solo puedes programar retiro.");
-  }
-
-  // CANDADO_TOTAL_FRONTEND_TIENDA_CERRADA
-  useEffect(() => {
-    refreshStoreStatusForOrdering().then((isOpen) => {
-      if (!isOpen) {
-        setClosedStoreModalVisible(true);
-      }
-    });
-
-    const interval = window.setInterval(() => {
-      refreshStoreStatusForOrdering();
-    }, 60000);
-
-    const onFocus = () => {
-      refreshStoreStatusForOrdering();
-    };
-
-    window.addEventListener("focus", onFocus);
-
-    return () => {
-      window.clearInterval(interval);
-      window.removeEventListener("focus", onFocus);
-    };
-  }, []);
-
   function switchToScheduled() {
     setFulfillmentType("scheduled");
 
@@ -1375,7 +1302,7 @@ export default function PedidoPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setMessage(cleanCheckoutMessage(data.error || "No se pudo cotizar el delivery."));
+        setMessage(data.error || "No se pudo cotizar el delivery.");
         return;
       }
 
@@ -1400,15 +1327,6 @@ export default function PedidoPage() {
   async function createOnlineOrder() {
     try {
       setLoadingOrder(true);
-
-      const storeIsOpenNow = await refreshStoreStatusForOrdering();
-
-      if (!storeIsOpenNow && fulfillmentType !== "scheduled") {
-        showClosedStoreAndForceSchedule();
-        setMessage("No se puede pagar con Retiro ahora o Delivery mientras la tienda está cerrada. Programa tu pedido para retiro.");
-        setLoadingOrder(false);
-        return;
-      }
 
       if (immediateOrderingBlocked && fulfillmentType !== "scheduled") {
         showClosedStoreAndSchedule();
@@ -2278,17 +2196,6 @@ export default function PedidoPage() {
                 Delivery
               </button>
             </div>
-
-            {immediateOrderingBlocked && (
-              <div className="mt-4 rounded-3xl border border-yellow-200 bg-yellow-50 p-4">
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-yellow-700">
-                  Tienda cerrada
-                </p>
-                <p className="mt-2 text-sm font-bold text-yellow-950">
-                  Solo pedidos programados para retiro. Retiro ahora y Delivery se activan cuando estemos dentro del horario de atención.
-                </p>
-              </div>
-            )}
 
             {fulfillmentType === "scheduled" && (
               <div className="mt-4 space-y-4">
