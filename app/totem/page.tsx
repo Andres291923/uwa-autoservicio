@@ -2527,15 +2527,15 @@ export default function TotemPage() {
                     className="text-[11px] font-black uppercase tracking-[0.25em]"
                     style={{ color: settings.primaryColor }}
                   >
-                    Fresco · rápido · sin gluten
+                    Bowls frescos · rápidos · al momento
                   </p>
 
                   <h2 className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-zinc-950">
-                    Arma tu bowl a tu pinta 😍
+                    Arma tu bowl perfecto 😍
                   </h2>
 
                   <p className="mt-2 text-sm font-bold text-zinc-500">
-                    Elige tus favoritos y nosotros lo preparamos al momento.
+                    Elige tus ingredientes favoritos y nosotros lo preparamos al momento.
                   </p>
                 </div>
 
@@ -2692,6 +2692,7 @@ export default function TotemPage() {
     </main>
   );
 }
+
 
 
 
