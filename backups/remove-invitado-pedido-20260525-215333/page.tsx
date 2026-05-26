@@ -1905,7 +1905,56 @@ export default function PedidoPage() {
               </div>
             ) : (
               <div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
+                  <button suppressHydrationWarning
+                    type="button"
+                    onClick={() => setAuthMode("login")}
+                    className={`rounded-xl px-3 py-2 text-xs font-black ${
+                      authMode === "login"
+                        ? "text-white"
+                        : "bg-white text-zinc-600"
+                    }`}
+                    style={{
+                      background:
+                        authMode === "login" ? settings.primaryColor : undefined,
+                    }}
+                  >
+                    Ingresar
+                  </button>
+
+                  <button suppressHydrationWarning
+                    type="button"
+                    onClick={() => setAuthMode("register")}
+                    className={`rounded-xl px-3 py-2 text-xs font-black ${
+                      authMode === "register"
+                        ? "text-white"
+                        : "bg-white text-zinc-600"
+                    }`}
+                    style={{
+                      background:
+                        authMode === "register"
+                          ? settings.primaryColor
+                          : undefined,
+                    }}
+                  >
+                    Crear cuenta
+                  </button>
+
+                  <button suppressHydrationWarning
+                    type="button"
+                    onClick={() => setAuthMode("guest")}
+                    className={`rounded-xl px-3 py-2 text-xs font-black ${
+                      authMode === "guest"
+                        ? "text-white"
+                        : "bg-white text-zinc-600"
+                    }`}
+                    style={{
+                      background:
+                        authMode === "guest" ? settings.primaryColor : undefined,
+                    }}
+                  >
+                    Invitado
+                  </button>
                 </div>
 
                 {authMode === "register" && (
