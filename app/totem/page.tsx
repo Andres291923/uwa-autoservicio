@@ -1177,11 +1177,11 @@ export default function TotemPage() {
       : "");
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-white pb-[112px] text-zinc-950">
+    <main className="min-h-screen overflow-x-hidden bg-[#f7f8f4] pb-[112px] text-zinc-950">
 
       {/* BADGE_WORKER_ROOT */}
       <TotemCompanyWorkerSessionBadge />
-      <header className="sticky top-0 z-40 border-b border-zinc-100 bg-white px-3 py-2 shadow-sm">
+      <header className="sticky top-0 z-40 border-b border-emerald-100 bg-white/95 px-4 py-2 shadow-[0_8px_30px_rgba(16,181,87,0.08)] backdrop-blur">
         <div className="flex h-[70px] items-center justify-between gap-3">
           <div className="flex min-w-0 flex-1 items-center gap-3">
             <div className="flex h-[50px] w-[50px] min-w-[50px] items-center justify-center overflow-hidden rounded-2xl bg-zinc-100">
@@ -1506,7 +1506,7 @@ export default function TotemPage() {
       )}
       {selectedProduct ? (
         <section className="p-3 pb-32">
-          <div className="mx-auto max-w-5xl rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm">
+          <div className="mx-auto max-w-6xl rounded-[2rem] border border-white bg-white p-5 shadow-[0_18px_55px_rgba(15,23,42,0.10)] ring-1 ring-black/5">
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>
                 <button
@@ -1585,7 +1585,7 @@ export default function TotemPage() {
                             onClick={() => toggleOption(group, option.id)}
                             className="relative rounded-2xl border bg-white p-3 text-center transition"
                             style={{
-                              minHeight: "150px",
+                              minHeight: "190px",
                               borderColor: selected
                                 ? settings.primaryColor
                                 : "#e4e4e7",
@@ -1595,12 +1595,12 @@ export default function TotemPage() {
                             }}
                           >
                             <div className="flex h-full flex-col items-center justify-start gap-2">
-                              <div className="flex h-[72px] w-[86px] items-center justify-center overflow-hidden bg-transparent">
+                              <div className="flex h-[116px] w-[138px] items-center justify-center overflow-hidden bg-transparent">
                                 {option.imageUrl ? (
                                   <img
                                     src={option.imageUrl}
                                     alt={option.name}
-                                    className="block h-auto max-h-[72px] w-auto max-w-[86px] object-contain"
+                                    className="block h-auto max-h-[112px] w-auto max-w-[132px] scale-[1.12] object-contain drop-shadow-xl"
                                   />
                                 ) : (
                                   <span className="text-2xl font-black text-zinc-400">
@@ -1609,7 +1609,7 @@ export default function TotemPage() {
                                 )}
                               </div>
 
-                              <p className="w-full break-words text-sm font-black leading-[17px] text-zinc-950">
+                              <p className="w-full break-words text-[15px] font-black leading-[18px] text-zinc-950">
                                 {option.name}
                               </p>
 
@@ -1685,7 +1685,7 @@ export default function TotemPage() {
                 <button
                   onClick={addConfiguredProductToCart}
                   disabled={!canAddSelectedProduct}
-                  className="rounded-2xl px-7 py-4 text-base font-black text-white disabled:bg-zinc-200 disabled:text-zinc-500"
+                  className="rounded-2xl px-9 py-5 text-lg font-black text-white shadow-lg disabled:bg-zinc-200 disabled:text-zinc-500"
                   style={{
                     background: canAddSelectedProduct
                       ? settings.primaryColor
@@ -2251,8 +2251,8 @@ export default function TotemPage() {
           </div>
         </section>
       ) : (
-        <section className="grid min-h-[calc(100vh-71px)] grid-cols-[118px_minmax(0,1fr)] overflow-x-hidden">
-          <aside className="sticky top-[71px] h-[calc(100vh-71px)] overflow-y-auto border-r border-zinc-100 bg-zinc-50 px-2 py-3">
+        <section className="grid min-h-[calc(100vh-71px)] grid-cols-[126px_minmax(0,1fr)] overflow-x-hidden">
+          <aside className="sticky top-[71px] h-[calc(100vh-71px)] overflow-y-auto border-r border-emerald-100 bg-white/85 px-2.5 py-4 shadow-[8px_0_30px_rgba(15,23,42,0.04)]">
             <h2 className="mb-3 px-1 text-[9px] font-black uppercase tracking-[0.22em] text-zinc-400">
               Categorías
             </h2>
@@ -2291,7 +2291,7 @@ export default function TotemPage() {
             </div>
           </aside>
 
-          <section className="min-w-0 overflow-x-hidden bg-white p-3 pb-36">
+          <section className="min-w-0 overflow-x-hidden bg-[#f7f8f4] p-4 pb-36">
             {loading && (
               <div className="rounded-3xl bg-zinc-50 p-10 text-center">
                 <p className="text-xl font-black">Cargando productos...</p>
@@ -2309,7 +2309,7 @@ export default function TotemPage() {
             )}
 
             {!loading && visibleProducts.length > 0 && (
-              <div className="grid grid-cols-2 gap-3 xl:grid-cols-3 2xl:grid-cols-4">
+              <div className="grid grid-cols-2 gap-4 xl:grid-cols-3 2xl:grid-cols-4">
                 {visibleProducts.map((product) => {
                   const hasModifiers =
                     getActiveModifierGroups(product).length > 0;
@@ -2317,18 +2317,18 @@ export default function TotemPage() {
                   return (
                     <article
                       key={product.id}
-                      className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm transition active:scale-[0.99]"
+                      className="overflow-hidden rounded-[2rem] border border-white bg-white shadow-[0_18px_45px_rgba(15,23,42,0.08)] ring-1 ring-black/5 transition active:scale-[0.985]"
                     >
 <button
                         onClick={() => openProduct(product)}
-                        className="flex h-[315px] w-full flex-col text-center"
+                        className="flex h-[390px] w-full flex-col text-center"
                       >
-                        <div className="flex h-[125px] min-h-[125px] w-full items-center justify-center overflow-hidden bg-white">
+                        <div className="mx-3 mb-1 flex h-[210px] min-h-[210px] items-center justify-center overflow-hidden rounded-[1.7rem] bg-gradient-to-br from-zinc-50 via-white to-emerald-50/50">
                           {product.imageUrl ? (
                             <img
                               src={product.imageUrl}
                               alt={product.name}
-                              className="block h-full w-full object-contain p-2"
+                              className="block h-full w-full scale-[1.16] object-contain p-1 drop-shadow-xl transition duration-200"
                             />
                           ) : (
                             <div className="flex h-full w-full flex-col items-center justify-center text-zinc-400">
@@ -2343,13 +2343,13 @@ export default function TotemPage() {
                           )}
                         </div>
 
-                        <div className="flex min-h-0 flex-1 flex-col p-3">
-                          <h2 className="flex min-h-[44px] w-full items-center justify-center text-center text-[17px] font-black leading-[20px]">
+                        <div className="flex min-h-0 flex-1 flex-col p-4">
+                          <h2 className="flex min-h-[48px] w-full items-center justify-center text-center text-[19px] font-black leading-[21px] tracking-[-0.02em]">
                             {product.name}
                           </h2>
 
                           {product.description ? (
-                            <p className="mt-1 line-clamp-2 min-h-[36px] text-[12px] leading-[17px] text-zinc-500">
+                            <p className="mt-1 line-clamp-2 min-h-[38px] text-[13px] font-semibold leading-[17px] text-zinc-500">
                               {product.description}
                             </p>
                           ) : (
@@ -2359,7 +2359,7 @@ export default function TotemPage() {
                           <div className="mt-auto flex items-end justify-between gap-2 pt-3">
                             <div className="min-w-0">
                               <p
-                                className="whitespace-nowrap text-[24px] font-black leading-none"
+                                className="whitespace-nowrap text-[29px] font-black leading-none tracking-[-0.04em]"
                                 style={{ color: settings.primaryColor }}
                               >
                                 {formatPrice(product.price)}
@@ -2373,7 +2373,7 @@ export default function TotemPage() {
                             </div>
 
                             <div
-                              className="flex h-11 w-11 min-w-11 items-center justify-center rounded-2xl text-2xl font-black text-white shadow-sm"
+                              className="flex h-[52px] w-[52px] min-w-[52px] items-center justify-center rounded-2xl text-3xl font-black text-white shadow-lg"
                               style={{ background: settings.primaryColor }}
                             >
                               +
@@ -2389,7 +2389,7 @@ export default function TotemPage() {
           </section>
 
           <footer className="fixed inset-x-0 bottom-0 z-[9999] border-t border-zinc-200 bg-white/95 px-3 py-3 shadow-[0_-12px_40px_rgba(0,0,0,0.12)] backdrop-blur">
-            <div className="mx-auto flex max-w-[760px] items-stretch overflow-hidden rounded-[26px] border border-zinc-200 bg-white shadow-2xl">
+            <div className="mx-auto flex max-w-[840px] items-stretch overflow-hidden rounded-[28px] border border-zinc-200 bg-white shadow-2xl">
               <div className="flex min-w-[155px] flex-col justify-center px-5 py-3">
                 <p className="m-0 text-[12px] font-black uppercase tracking-[0.16em] text-zinc-400">
                   Total
@@ -2428,6 +2428,7 @@ export default function TotemPage() {
     </main>
   );
 }
+
 
 
 
