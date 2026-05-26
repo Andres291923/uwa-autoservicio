@@ -409,13 +409,6 @@ export async function POST(request: Request) {
       );
     }
 
-    if (orderSource === "online" && !customerId) {
-      return NextResponse.json(
-        { error: "Los pedidos online requieren cliente registrado." },
-        { status: 400 }
-      );
-    }
-
     if (!customerName) {
       return NextResponse.json(
         { error: "El nombre del cliente es obligatorio." },
@@ -1053,5 +1046,4 @@ export async function PATCH(request: Request) {
     );
   }
 }
-
 

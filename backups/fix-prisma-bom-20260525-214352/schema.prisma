@@ -1,4 +1,4 @@
-generator client {
+﻿generator client {
   provider = "prisma-client-js"
 }
 
@@ -121,8 +121,8 @@ model Order {
   claimedAt          DateTime?
   printAgentId       String?
 
-  orderSource     String    @default("totem")
-  fulfillmentType String    @default("immediate")
+  orderSource     String           @default("totem")
+  fulfillmentType String           @default("immediate")
   scheduledFor    DateTime?
 
   uberDeliveryId     String?
@@ -130,9 +130,9 @@ model Order {
   uberDeliveryStatus String?
   uberDeliveryCode   String?
   uberDropoffEta     DateTime?
-  items              OrderItem[]
-  customer           Customer?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  companyCustomer    CompanyCustomer? @relation(fields: [companyCustomerId], references: [id], onDelete: SetNull)
+  items           OrderItem[]
+  customer        Customer?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  companyCustomer CompanyCustomer? @relation(fields: [companyCustomerId], references: [id], onDelete: SetNull)
 
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @default(now()) @updatedAt
@@ -615,3 +615,4 @@ model PasswordResetToken {
 
   @@index([accountType, email])
 }
+

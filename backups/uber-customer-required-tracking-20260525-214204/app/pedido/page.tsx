@@ -1085,7 +1085,7 @@ export default function PedidoPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          customerId: loggedCustomer!.id,
+          customerId: loggedCustomer.id,
         }),
       });
 
@@ -1120,7 +1120,7 @@ export default function PedidoPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          customerId: loggedCustomer!.id,
+          customerId: loggedCustomer.id,
         }),
       });
 
@@ -1350,9 +1350,9 @@ export default function PedidoPage() {
         },
         body: JSON.stringify({
           flow: "personal_order",
-          customerId: loggedCustomer!.id,
+          customerId: loggedCustomer?.id || null,
           customerName: finalCustomerName,
-          customerEmail: loggedCustomer!.email || authEmail.trim() || null,
+          customerEmail: loggedCustomer?.email || authEmail.trim() || null,
           discountCouponCode: appliedCoupon?.code || null,
           customerComment,
           walletAmountUsed: walletAmountToUse,
@@ -2029,10 +2029,16 @@ export default function PedidoPage() {
                 ) : (
                   <label className="mt-4 block">
                     <span className="text-xs font-black uppercase text-zinc-500">
-                      Cuenta obligatoria
+                      Nombre para el pedido
                     </span>
-                    <p className="mt-2 rounded-2xl bg-yellow-50 p-4 text-sm font-black text-yellow-800">
-                      Para pedir online debes ingresar o crear una cuenta. Así podrás ver el seguimiento Uber y tu historial de pedidos.
+                    <input suppressHydrationWarning
+                      value={guestName}
+                      onChange={(event) => setGuestName(event.target.value)}
+                      className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
+                      placeholder="Ej: Andres"
+                    />
+                    <p className="mt-2 text-xs font-bold text-zinc-500">
+                      Como invitado no acumulas cashback ni puedes usar saldo.
                     </p>
                   </label>
                 )}
@@ -2825,8 +2831,6 @@ export default function PedidoPage() {
     </main>
   );
 }
-
-
 
 
 

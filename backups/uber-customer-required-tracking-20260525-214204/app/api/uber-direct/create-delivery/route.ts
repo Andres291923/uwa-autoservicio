@@ -116,49 +116,6 @@ function appendText(base: string | null | undefined, extra: string) {
   return [base || "", extra].filter(Boolean).join(" | ").slice(0, 500);
 }
 
-function findUberVerificationCode(value: any): string {
-  const seen = new Set<any>();
-
-  function walk(input: any): string {
-    if (!input || typeof input !== "object") return "";
-    if (seen.has(input)) return "";
-    seen.add(input);
-
-    for (const [key, raw] of Object.entries(input)) {
-      const lowerKey = key.toLowerCase();
-
-      if (
-        typeof raw === "string" &&
-        raw.trim() &&
-        (lowerKey.includes("pin") ||
-          lowerKey.includes("code") ||
-          lowerKey.includes("verification"))
-      ) {
-        return raw.trim();
-      }
-
-      if (typeof raw === "number" && lowerKey.includes("pin")) {
-        return String(raw);
-      }
-
-      if (raw && typeof raw === "object") {
-        const found = walk(raw);
-        if (found) return found;
-      }
-    }
-
-    return "";
-  }
-
-  return walk(value);
-}
-
-function parseUberDate(value: any) {
-  if (!value) return null;
-  const date = new Date(String(value));
-  return Number.isNaN(date.getTime()) ? null : date;
-}
-
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -268,11 +225,6 @@ export async function POST(request: Request) {
       pickup_ready_dt: pickupReadyDate.toISOString(),
       deliverable_action: "deliverable_action_leave_at_door",
       undeliverable_action: "leave_at_door",
-      dropoff_verification: {
-        pincode: {
-          enabled: true,
-        },
-      },
     };
 
     if (optionalEnv("UBER_DIRECT_MODE") === "test") {
@@ -331,16 +283,12 @@ export async function POST(request: Request) {
     }
 
     const trackingUrl = data.tracking_url || "";
-    const deliveryId = data.uuid || data.id || "";
-    const deliveryStatus = String(data.status || "created");
-    const deliveryCode = findUberVerificationCode(data);
-    const dropoffEta = parseUberDate(data.dropoff_eta);
+    const deliveryId = data.id || data.uuid || "";
 
     const extraComment = [
       "UBER DIRECT CREADO",
       deliveryId ? `ID: ${deliveryId}` : "",
       trackingUrl ? `Tracking: ${trackingUrl}` : "",
-      deliveryCode ? `Código entrega: ${deliveryCode}` : "",
     ]
       .filter(Boolean)
       .join(" | ");
@@ -349,11 +297,6 @@ export async function POST(request: Request) {
       where: { id: order.id },
       data: {
         customerComment: appendText(order.customerComment, extraComment),
-        uberDeliveryId: deliveryId || null,
-        uberTrackingUrl: trackingUrl || null,
-        uberDeliveryStatus: deliveryStatus || null,
-        uberDeliveryCode: deliveryCode || null,
-        uberDropoffEta: dropoffEta,
       },
     });
 
@@ -378,7 +321,6 @@ export async function POST(request: Request) {
     );
   }
 }
-
 
 
 
