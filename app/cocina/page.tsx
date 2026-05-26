@@ -484,6 +484,7 @@ export default function CocinaPage() {
   const [channelFilter, setChannelFilter] = useState<ChannelFilter>("all");
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [audioNeedsTouch, setAudioNeedsTouch] = useState(false);
+  const [companyApprovalKeys, setCompanyApprovalKeys] = useState<Record<number, string>>({});
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const firstOrdersLoadRef = useRef(true);
@@ -538,14 +539,54 @@ export default function CocinaPage() {
   }
 
   async function validatePrintAndReady(order: Order) {
+    const approvalKey = String(companyApprovalKeys[order.id] || "").trim();
+
+    if (!approvalKey) {
+      alert("Ingresa la clave para autorizar este pedido empresa.");
+      return;
+    }
+
     const ok = window.confirm(
-      "¿Confirmas que este pedido fue validado, autorizado y se puede imprimir?"
+      "¿Confirmas pago, fecha de entrega y autorización para imprimir este pedido empresa?"
     );
 
     if (!ok) return;
 
-    printOrderTicket(order);
-    await updateOrderStatus(order, "ready");
+    try {
+      setUpdatingOrderId(order.id);
+
+      const response = await fetch("/api/kitchen/company-order/approve", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          orderId: order.id,
+          approvalKey,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        alert(data.error || "No se pudo autorizar el pedido empresa.");
+        return;
+      }
+
+      printOrderTicket(order);
+
+      setCompanyApprovalKeys((current) => ({
+        ...current,
+        [order.id]: "",
+      }));
+
+      await loadOrders();
+    } catch (error) {
+      console.error(error);
+      alert("Error al autorizar pedido empresa.");
+    } finally {
+      setUpdatingOrderId(null);
+    }
   }
 
   function getAudioContext() {
@@ -1089,13 +1130,31 @@ export default function CocinaPage() {
 
                       <div className="flex flex-wrap gap-3">
                         {isCompanyOrder(order) && order.status === "pending" ? (
-                          <button
-                            onClick={() => validatePrintAndReady(order)}
-                            disabled={updatingOrderId === order.id}
-                            className="rounded-2xl bg-orange-500 px-6 py-4 text-base font-black text-white disabled:bg-zinc-300"
-                          >
-                            Validar pago, imprimir y dejar listo
-                          </button>
+                          <>
+                            <input
+                              type="password"
+                              inputMode="numeric"
+                              value={companyApprovalKeys[order.id] || ""}
+                              onChange={(event) =>
+                                setCompanyApprovalKeys((current) => ({
+                                  ...current,
+                                  [order.id]: event.target.value,
+                                }))
+                              }
+                              placeholder="Clave autorización"
+                              className="min-w-[220px] rounded-2xl border-2 border-orange-300 bg-white px-5 py-4 text-base font-black outline-none focus:border-orange-500"
+                            />
+
+                            <button
+                              onClick={() => validatePrintAndReady(order)}
+                              disabled={updatingOrderId === order.id}
+                              className="rounded-2xl bg-orange-500 px-6 py-4 text-base font-black text-white disabled:bg-zinc-300"
+                            >
+                              {updatingOrderId === order.id
+                                ? "Validando..."
+                                : "Validar con clave, imprimir y dejar listo"}
+                            </button>
+                          </>
                         ) : (
                           <>
                             <button
@@ -1181,3 +1240,4 @@ export default function CocinaPage() {
     </main>
   );
 }
+
