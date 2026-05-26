@@ -1906,6 +1906,39 @@ export default function PedidoPage() {
             ) : (
               <div>
                 <div className="grid grid-cols-2 gap-2">
+                  <button suppressHydrationWarning
+                    type="button"
+                    onClick={() => setAuthMode("login")}
+                    className={`rounded-xl px-3 py-2 text-xs font-black ${
+                      authMode === "login"
+                        ? "text-white"
+                        : "bg-white text-zinc-600"
+                    }`}
+                    style={{
+                      background:
+                        authMode === "login" ? settings.primaryColor : undefined,
+                    }}
+                  >
+                    Ingresar
+                  </button>
+
+                  <button suppressHydrationWarning
+                    type="button"
+                    onClick={() => setAuthMode("register")}
+                    className={`rounded-xl px-3 py-2 text-xs font-black ${
+                      authMode === "register"
+                        ? "text-white"
+                        : "bg-white text-zinc-600"
+                    }`}
+                    style={{
+                      background:
+                        authMode === "register"
+                          ? settings.primaryColor
+                          : undefined,
+                    }}
+                  >
+                    Crear cuenta
+                  </button>
                 </div>
 
                 {authMode === "register" && (
@@ -2057,7 +2090,7 @@ export default function PedidoPage() {
           )}
 
           <div className="mt-5 border-t border-zinc-200 pt-5">
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <button suppressHydrationWarning
                 type="button"
                 onClick={() => {
@@ -2776,6 +2809,7 @@ export default function PedidoPage() {
     </main>
   );
 }
+
 
 
 
