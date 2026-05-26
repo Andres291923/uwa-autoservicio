@@ -12,8 +12,11 @@ import {
   Users,
   ChefHat,
   ChevronRight,
+  Menu,
+  X,
 } from "lucide-react";
 import type { ComponentType } from "react";
+import { useEffect, useState } from "react";
 
 type SidebarItem = {
   key: string;
@@ -110,24 +113,42 @@ export default function AdminSidebar({
   visibleKeys: string[];
 }) {
   const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const visibleMenu = menuItems.filter((item) => visibleKeys.includes(item.key));
 
-  return (
-    <aside className="hidden w-[330px] shrink-0 border-r border-zinc-200 bg-white lg:flex lg:flex-col">
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  function SidebarContent() {
+    return (
       <div className="flex h-full flex-col p-6">
         <div className="mb-8 rounded-[2rem] border border-zinc-200 bg-white p-6 shadow-sm">
-          <p className="text-xs font-black uppercase tracking-[0.35em] text-[#10B557]">
-            Panel privado
-          </p>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.35em] text-[#10B557]">
+                Panel privado
+              </p>
 
-          <h1 className="mt-2 text-3xl font-black leading-none text-zinc-950">
-            Autoservicio
-          </h1>
+              <h1 className="mt-2 text-3xl font-black leading-none text-zinc-950">
+                Autoservicio
+              </h1>
 
-          <p className="mt-3 text-sm font-semibold text-zinc-500">
-            Operacion y control del negocio.
-          </p>
+              <p className="mt-3 text-sm font-semibold text-zinc-500">
+                Operacion y control del negocio.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setMobileOpen(false)}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-zinc-100 text-zinc-700 lg:hidden"
+              aria-label="Cerrar menu"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         <nav className="flex flex-1 flex-col gap-3 overflow-y-auto pr-1">
@@ -203,7 +224,41 @@ export default function AdminSidebar({
           <LogoutButton />
         </div>
       </div>
-    </aside>
+    );
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setMobileOpen(true)}
+        className="fixed left-4 top-4 z-50 flex items-center gap-2 rounded-2xl bg-[#10B557] px-4 py-3 text-sm font-black text-white shadow-xl lg:hidden"
+        aria-label="Abrir menu admin"
+      >
+        <Menu className="h-5 w-5" />
+        Menu
+      </button>
+
+      {mobileOpen && (
+        <button
+          type="button"
+          onClick={() => setMobileOpen(false)}
+          className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm lg:hidden"
+          aria-label="Cerrar menu admin"
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-[70] flex w-[330px] max-w-[88vw] shrink-0 flex-col border-r border-zinc-200 bg-white shadow-2xl transition-transform duration-300 lg:hidden ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <SidebarContent />
+      </aside>
+
+      <aside className="hidden w-[330px] shrink-0 border-r border-zinc-200 bg-white lg:flex lg:flex-col">
+        <SidebarContent />
+      </aside>
+    </>
   );
 }
-
