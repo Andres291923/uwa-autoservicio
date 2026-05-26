@@ -406,8 +406,6 @@ export default function PedidoPage() {
   const [message, setMessage] = useState("");
   const [catalogChangeMessage, setCatalogChangeMessage] = useState("");
   const [closedStoreModalVisible, setClosedStoreModalVisible] = useState(false);
-  const [storeOpenForImmediate, setStoreOpenForImmediate] = useState(true);
-  const [storeStatusLoaded, setStoreStatusLoaded] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const [loadingOrder, setLoadingOrder] = useState(false);
   const [loadingAuth, setLoadingAuth] = useState(false);
@@ -836,15 +834,6 @@ export default function PedidoPage() {
   }, [loggedCustomer, useWallet, totalBeforeWallet]);
 
   const totalToPay = Math.max(0, totalBeforeWallet - walletAmountToUse);
-
-  const immediateOrderingBlocked = storeStatusLoaded && !storeOpenForImmediate;
-
-  function showClosedStoreAndSchedule() {
-    setFulfillmentType("scheduled");
-    setDeliveryQuote(null);
-    setClosedStoreModalVisible(true);
-    setMessage("Tienda cerrada. Solo puedes programar tu pedido para retiro.");
-  }
 
   function switchToScheduled() {
     setFulfillmentType("scheduled");
@@ -1327,13 +1316,6 @@ export default function PedidoPage() {
   async function createOnlineOrder() {
     try {
       setLoadingOrder(true);
-
-      if (immediateOrderingBlocked && fulfillmentType !== "scheduled") {
-        showClosedStoreAndSchedule();
-        setMessage("No se puede pagar un pedido inmediato con la tienda cerrada. Programa tu pedido para retiro.");
-        setLoadingOrder(false);
-        return;
-      }
       setMessage("");
 
       if (cart.length === 0) {
