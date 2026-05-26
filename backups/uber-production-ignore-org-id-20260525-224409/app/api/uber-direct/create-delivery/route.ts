@@ -53,12 +53,7 @@ async function getUberDirectToken() {
   body.set("client_id", requiredEnv("UBER_DIRECT_CLIENT_ID"));
   body.set("client_secret", requiredEnv("UBER_DIRECT_CLIENT_SECRET"));
   body.set("grant_type", "client_credentials");
-  body.set(
-    "scope",
-    optionalEnv("UBER_DIRECT_MODE") === "production"
-      ? "eats.deliveries"
-      : "eats.deliveries direct.organizations"
-  );
+  body.set("scope", "eats.deliveries direct.organizations");
 
   const response = await fetch("https://auth.uber.com/oauth/v2/token", {
     method: "POST",
@@ -223,11 +218,7 @@ export async function POST(request: Request) {
 
     const token = await getUberDirectToken();
 
-    const orgId =
-      optionalEnv("UBER_DIRECT_MODE") === "production"
-        ? requiredEnv("UBER_DIRECT_CUSTOMER_ID")
-        : optionalEnv("UBER_DIRECT_ORG_ID") ||
-          requiredEnv("UBER_DIRECT_CUSTOMER_ID");
+    const orgId = requiredEnv("UBER_DIRECT_CUSTOMER_ID");
 
     const externalStoreId = requiredEnv("UBER_DIRECT_EXTERNAL_STORE_ID");
 

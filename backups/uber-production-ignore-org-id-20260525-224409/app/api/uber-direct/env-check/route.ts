@@ -38,10 +38,6 @@ export async function GET() {
       UBER_DIRECT_CLIENT_SECRET: clientSecret ? `OK len=${clientSecret.length}` : "FALTA",
       UBER_DIRECT_CUSTOMER_ID: mask(customerId),
       UBER_DIRECT_ORG_ID: mask(orgId),
-      UBER_DIRECT_ORG_ID_EFFECTIVE:
-        cleanEnv("UBER_DIRECT_MODE") === "production"
-          ? "IGNORADO_EN_PRODUCCION"
-          : mask(orgId),
       UBER_DIRECT_EXTERNAL_STORE_ID: externalStoreId || "FALTA",
       UBER_DIRECT_PICKUP_STREET: cleanEnv("UBER_DIRECT_PICKUP_STREET") || "FALTA",
       UBER_DIRECT_PICKUP_CITY: cleanEnv("UBER_DIRECT_PICKUP_CITY") || "FALTA",

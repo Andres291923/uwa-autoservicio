@@ -64,12 +64,7 @@ async function getUberDirectToken() {
   body.set("client_id", requiredEnv("UBER_DIRECT_CLIENT_ID"));
   body.set("client_secret", requiredEnv("UBER_DIRECT_CLIENT_SECRET"));
   body.set("grant_type", "client_credentials");
-  body.set(
-    "scope",
-    optionalEnv("UBER_DIRECT_MODE") === "production"
-      ? "eats.deliveries"
-      : "eats.deliveries direct.organizations"
-  );
+  body.set("scope", "eats.deliveries direct.organizations");
 
   const response = await fetch("https://auth.uber.com/oauth/v2/token", {
     method: "POST",
@@ -193,15 +188,12 @@ export async function POST(request: Request) {
     const childOrgId = optionalEnv("UBER_DIRECT_ORG_ID");
     const externalStoreId = optionalEnv("UBER_DIRECT_EXTERNAL_STORE_ID");
 
-    const customerCandidates =
-      optionalEnv("UBER_DIRECT_MODE") === "production"
-        ? [{ label: "customer_id", value: rootCustomerId }].filter((item) => item.value)
-        : [
-            { label: "org_id", value: childOrgId },
-            { label: "customer_id", value: rootCustomerId },
-          ].filter((item, index, arr) => {
-            return item.value && arr.findIndex((x) => x.value === item.value) === index;
-          });
+    const customerCandidates = [
+      { label: "org_id", value: childOrgId },
+      { label: "customer_id", value: rootCustomerId },
+    ].filter((item, index, arr) => {
+      return item.value && arr.findIndex((x) => x.value === item.value) === index;
+    });
 
     if (customerCandidates.length === 0) {
       throw new Error("Falta UBER_DIRECT_CUSTOMER_ID o UBER_DIRECT_ORG_ID.");
