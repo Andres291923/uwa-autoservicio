@@ -71,11 +71,6 @@ export async function POST(request: Request) {
         fulfillmentType: order.fulfillmentType,
         scheduledFor: order.scheduledFor,
         customerComment: order.customerComment || "",
-        uberDeliveryId: order.uberDeliveryId || null,
-        uberTrackingUrl: order.uberTrackingUrl || null,
-        uberDeliveryStatus: order.uberDeliveryStatus || null,
-        uberDeliveryCode: order.uberDeliveryCode || null,
-        uberDropoffEta: order.uberDropoffEta,
         createdAt: order.createdAt,
         items: order.items.map((item) => ({
           id: item.id,

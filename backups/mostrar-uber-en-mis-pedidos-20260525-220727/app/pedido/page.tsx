@@ -213,33 +213,6 @@ function formatOrderSource(value: string) {
   return "Tótem";
 }
 
-function formatUberDeliveryStatus(value: string | null) {
-  if (!value) return "Delivery creado";
-  const normalized = value.toLowerCase();
-
-  if (normalized.includes("delivered")) return "Entregado";
-  if (normalized.includes("pickup")) return "Retirado por repartidor";
-  if (normalized.includes("courier")) return "Repartidor asignado";
-  if (normalized.includes("created")) return "Delivery creado";
-  if (normalized.includes("pending")) return "Buscando repartidor";
-  if (normalized.includes("canceled") || normalized.includes("cancelled")) return "Cancelado";
-
-  return value;
-}
-
-function formatUberEta(value: string | null) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-
-  return date.toLocaleString("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 function formatFulfillment(value: string) {
   if (value === "scheduled") return "Programado";
   return "Retiro ahora";
