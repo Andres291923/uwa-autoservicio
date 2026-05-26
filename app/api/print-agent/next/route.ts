@@ -88,8 +88,10 @@ export async function GET(request: Request) {
     // Seguridad: por defecto no autoimprime pedidos por transferencia bancaria.
     // Si despues quieres imprimir transferencia automaticamente, cambia
     // PRINT_AGENT_INCLUDE_BANK_TRANSFER=true
+    where.NOT = [{ orderSource: "company" }];
+
     if (!includeBankTransfer) {
-      where.NOT = [{ paymentMethod: "bank_transfer" }];
+      where.NOT.push({ paymentMethod: "bank_transfer" });
     }
 
     const candidates = await prisma.order.findMany({
@@ -108,8 +110,10 @@ export async function GET(request: Request) {
         OR: where.OR,
       };
 
+      lockWhere.NOT = [{ orderSource: "company" }];
+
       if (!includeBankTransfer) {
-        lockWhere.NOT = [{ paymentMethod: "bank_transfer" }];
+        lockWhere.NOT.push({ paymentMethod: "bank_transfer" });
       }
 
       const claimed = await prisma.order.updateMany({
@@ -148,3 +152,4 @@ export async function GET(request: Request) {
     );
   }
 }
+

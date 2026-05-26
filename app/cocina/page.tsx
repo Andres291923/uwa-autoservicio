@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type OrderModifier = {
   id: number;
@@ -35,15 +35,33 @@ type Order = {
   total: number;
   customerName: string | null;
   customerComment: string | null;
-    orderSource?: string;
-    paymentMethod?: string | null;
-    companyCustomerId?: number | null;
+  customerId?: number | null;
+  companyCustomerId?: number | null;
+  orderSource?: string;
   fulfillmentType?: string;
   scheduledFor?: string | null;
   totemCode: string | null;
+  paymentMethod?: string;
+  printStatus?: string | null;
+  printedAt?: string | null;
+  printCount?: number | null;
+  lastPrintError?: string | null;
   createdAt: string;
   items: OrderItem[];
 };
+
+type BoardKey =
+  | "action"
+  | "company"
+  | "printError"
+  | "scheduled"
+  | "printed"
+  | "all";
+
+type DateFilter = "today" | "yesterday" | "tomorrow" | "all";
+type ChannelFilter = "all" | "totem" | "online" | "company" | "delivery";
+
+const CHILE_TIME_ZONE = "America/Santiago";
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat("es-CL", {
@@ -51,88 +69,30 @@ function formatPrice(price: number) {
     currency: "CLP",
     maximumFractionDigits: 0,
   }).format(price);
-  function isOnlineOrder(order: Order) {
-    return order.orderSource === "online" || order.totemCode === "online";
-  }
-
-  function isCompanyOrder(order: Order) {
-    return Boolean(
-      order.companyCustomerId ||
-        order.paymentMethod === "bank_transfer" ||
-        order.orderSource === "company" ||
-        order.orderSource === "company_worker" ||
-        order.orderSource === "company_worker_totem"
-    );
-  }
-
-
-function getOrderSourceLabel(order: Order) {
-    if (isCompanyOrder(order)) return "PEDIDO EMPRESA";
-    return isOnlineOrder(order) ? "PEDIDO ONLINE" : "PEDIDO TOTEM";
-  }
-
-function getFulfillmentLabel(order: Order) {
-  if (!isOnlineOrder(order)) return "";
-
-  if (order.fulfillmentType === "scheduled") {
-    return "PROGRAMADO";
-  }
-
-  return "RETIRO AHORA";
-}
-
-function formatScheduledFor(value?: string | null) {
-  if (!value) return "";
-
-  return new Date(value).toLocaleString("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 }
 
 function formatTime(date: string) {
   return new Date(date).toLocaleTimeString("es-CL", {
+    timeZone: CHILE_TIME_ZONE,
     hour: "2-digit",
     minute: "2-digit",
   });
 }
-function isOnlineOrder(order: Order) {
-    return order.orderSource === "online" || order.totemCode === "online";
-  }
 
-  function isCompanyOrder(order: Order) {
-    return Boolean(
-      order.companyCustomerId ||
-        order.paymentMethod === "bank_transfer" ||
-        order.orderSource === "company" ||
-        order.orderSource === "company_worker" ||
-        order.orderSource === "company_worker_totem"
-    );
-  }
-
-function getOrderSourceLabel(order: Order) {
-    if (isCompanyOrder(order)) return "PEDIDO EMPRESA";
-    return isOnlineOrder(order) ? "PEDIDO ONLINE" : "PEDIDO TOTEM";
-  }
-
-function getFulfillmentLabel(order: Order) {
-  if (!isOnlineOrder(order)) return "";
-
-  if (order.fulfillmentType === "scheduled") {
-    return "PROGRAMADO";
-  }
-
-  return "RETIRO AHORA";
+function formatDate(date: string) {
+  return new Date(date).toLocaleDateString("es-CL", {
+    timeZone: CHILE_TIME_ZONE,
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 }
 
-function formatScheduledFor(value?: string | null) {
+function formatDateTime(value?: string | null) {
   if (!value) return "";
 
   return new Date(value).toLocaleString("es-CL", {
+    timeZone: CHILE_TIME_ZONE,
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -140,16 +100,30 @@ function formatScheduledFor(value?: string | null) {
     minute: "2-digit",
   });
 }
-function formatDate(date: string) {
-  return new Date(date).toLocaleDateString("es-CL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
+
+function getChileDateKey(value: string | Date) {
+  return new Date(value).toLocaleDateString("en-CA", {
+    timeZone: CHILE_TIME_ZONE,
   });
 }
 
+function getChileDateKeyOffset(days: number) {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+
+  return getChileDateKey(date);
+}
+
+function normalizeSearchText(value?: string | null) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
 function escapeHtml(text: string) {
-  return text
+  return String(text || "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
@@ -171,6 +145,94 @@ function groupModifiers(modifiers: OrderModifier[]) {
   });
 
   return grouped;
+}
+
+function isOnlineOrder(order: Order) {
+  return order.orderSource === "online" || order.totemCode === "online";
+}
+
+function isCompanyOrder(order: Order) {
+  return order.orderSource === "company" || order.paymentMethod === "bank_transfer";
+}
+
+function isDeliveryOrder(order: Order) {
+  const source = normalizeSearchText(order.orderSource);
+  const totemCode = normalizeSearchText(order.totemCode);
+
+  return (
+    source.includes("uber") ||
+    source.includes("delivery") ||
+    totemCode.includes("uber") ||
+    totemCode.includes("delivery")
+  );
+}
+
+function getOrderSourceLabel(order: Order) {
+  if (isCompanyOrder(order)) return "PEDIDO EMPRESA";
+  if (isDeliveryOrder(order)) return "DELIVERY / UBER";
+  if (isOnlineOrder(order)) return "PEDIDO ONLINE";
+  return "PEDIDO TÓTEM";
+}
+
+function getFulfillmentLabel(order: Order) {
+  if (order.fulfillmentType === "scheduled") return "PROGRAMADO";
+  return "RETIRO AHORA";
+}
+
+function isPrintedOrReady(order: Order) {
+  return order.status === "ready" || order.printStatus === "printed";
+}
+
+function isPrintError(order: Order) {
+  return order.printStatus === "error";
+}
+
+function isPendingTooLong(order: Order) {
+  if (order.status !== "pending") return false;
+  if (isCompanyOrder(order)) return false;
+  if (isPrintedOrReady(order)) return false;
+
+  const createdAt = new Date(order.createdAt).getTime();
+  const ageMs = Date.now() - createdAt;
+
+  return ageMs > 2 * 60 * 1000;
+}
+
+function isScheduledSoon(order: Order) {
+  if (order.fulfillmentType !== "scheduled" || !order.scheduledFor) return false;
+  if (isPrintedOrReady(order)) return false;
+
+  const scheduledAt = new Date(order.scheduledFor).getTime();
+  const diffMs = scheduledAt - Date.now();
+
+  return diffMs <= 60 * 60 * 1000 && diffMs >= -15 * 60 * 1000;
+}
+
+function requiresImmediateAction(order: Order) {
+  if (order.status !== "pending") return false;
+
+  return (
+    isCompanyOrder(order) ||
+    isPrintError(order) ||
+    isPendingTooLong(order) ||
+    isScheduledSoon(order)
+  );
+}
+
+function getCardStyle(order: Order) {
+  if (requiresImmediateAction(order)) {
+    return "border-orange-500 bg-orange-50 shadow-orange-100";
+  }
+
+  if (isPrintedOrReady(order)) {
+    return "border-zinc-200 bg-white opacity-80";
+  }
+
+  if (isOnlineOrder(order)) {
+    return "border-blue-300 bg-white";
+  }
+
+  return "border-[#10B557] bg-white";
 }
 
 function printOrderTicket(order: Order) {
@@ -199,6 +261,9 @@ function printOrderTicket(order: Order) {
       `;
     })
     .join("");
+
+  const sourceLabel = getOrderSourceLabel(order);
+  const fulfillmentLabel = getFulfillmentLabel(order);
 
   const html = `
     <!doctype html>
@@ -240,6 +305,15 @@ function printOrderTicket(order: Order) {
             letter-spacing: 1px;
           }
 
+          .source {
+            margin-top: 6px;
+            padding: 5px;
+            border: 2px solid black;
+            font-size: 16px;
+            font-weight: 900;
+            text-align: center;
+          }
+
           .title {
             margin-top: 6px;
             font-size: 28px;
@@ -250,6 +324,12 @@ function printOrderTicket(order: Order) {
             margin-top: 4px;
             font-size: 13px;
             font-weight: 700;
+          }
+
+          .client {
+            margin-top: 6px;
+            font-size: 18px;
+            font-weight: 900;
           }
 
           .line {
@@ -331,12 +411,19 @@ function printOrderTicket(order: Order) {
       <body>
         <div class="ticket">
           <div class="center">
-            <div class="brand">ÃœWA</div>
+            <div class="brand">ÜWA</div>
+            <div class="source">${escapeHtml(sourceLabel)}</div>
             <div class="title">PEDIDO #${String(order.orderNumber).padStart(3, "0")}</div>
             <div class="meta">${formatDate(order.createdAt)} - ${formatTime(order.createdAt)}</div>
+            <div class="meta">${escapeHtml(fulfillmentLabel)}</div>
+            ${
+              order.fulfillmentType === "scheduled" && order.scheduledFor
+                ? `<div class="meta">Programado: ${escapeHtml(formatDateTime(order.scheduledFor))}</div>`
+                : ""
+            }
             ${
               order.customerName
-                ? `<div class="meta">Cliente: ${escapeHtml(order.customerName)}</div>`
+                ? `<div class="client">Cliente: ${escapeHtml(order.customerName)}</div>`
                 : ""
             }
           </div>
@@ -361,7 +448,7 @@ function printOrderTicket(order: Order) {
           <div class="line"></div>
 
           <div class="footer">
-            Preparar segÃºn comanda
+            Preparar según comanda
           </div>
         </div>
 
@@ -378,7 +465,7 @@ function printOrderTicket(order: Order) {
   const printWindow = window.open("", "_blank", "width=420,height=700");
 
   if (!printWindow) {
-    alert("El navegador bloqueÃ³ la ventana de impresiÃ³n.");
+    alert("El navegador bloqueó la ventana de impresión.");
     return;
   }
 
@@ -391,24 +478,23 @@ export default function CocinaPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
-  const [approvalOrder, setApprovalOrder] = useState<Order | null>(null);
-  const [approvalStatus, setApprovalStatus] = useState("");
-  const [approvalPin, setApprovalPin] = useState("");
-  const [approvalMessage, setApprovalMessage] = useState("");
   const [orderSearch, setOrderSearch] = useState("");
-const [soundEnabled, setSoundEnabled] = useState(false);
-const [alarmActive, setAlarmActive] = useState(false);
+  const [selectedBoard, setSelectedBoard] = useState<BoardKey>("action");
+  const [dateFilter, setDateFilter] = useState<DateFilter>("today");
+  const [channelFilter, setChannelFilter] = useState<ChannelFilter>("all");
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [audioNeedsTouch, setAudioNeedsTouch] = useState(false);
 
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const firstOrdersLoadRef = useRef(true);
+  const knownPendingOrderIdsRef = useRef<Set<number>>(new Set());
 
-const audioContextRef = useRef<AudioContext | null>(null);
-const firstOrdersLoadRef = useRef(true);
-const knownPendingOrderIdsRef = useRef<Set<number>>(new Set());
-const alarmIntervalRef = useRef<number | null>(null);
-const titleIntervalRef = useRef<number | null>(null);
-const originalTitleRef = useRef("Cocina");
   async function loadOrders() {
     try {
-      const response = await fetch("/api/orders");
+      const response = await fetch("/api/orders", {
+        cache: "no-store",
+      });
+
       const data = await response.json();
 
       setOrders(Array.isArray(data) ? data : []);
@@ -420,11 +506,7 @@ const originalTitleRef = useRef("Cocina");
     }
   }
 
-  async function sendOrderStatusUpdate(
-    order: Order,
-    status: string,
-    approvalPinValue = ""
-  ) {
+  async function updateOrderStatus(order: Order, status: string) {
     try {
       setUpdatingOrderId(order.id);
 
@@ -436,245 +518,322 @@ const originalTitleRef = useRef("Cocina");
         body: JSON.stringify({
           id: order.id,
           status,
-          approvalPin: approvalPinValue,
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        const errorMessage = data.error || "No se pudo actualizar el pedido.";
-
-        if (approvalPinValue) {
-          setApprovalMessage(errorMessage);
-        } else {
-          alert(errorMessage);
-        }
-
-        return false;
+        alert(data.error || "No se pudo actualizar el pedido.");
+        return;
       }
 
       await loadOrders();
-      return true;
     } catch (error) {
       console.error(error);
-      const errorMessage = "Error al actualizar pedido.";
-
-      if (approvalPinValue) {
-        setApprovalMessage(errorMessage);
-      } else {
-        alert(errorMessage);
-      }
-
-      return false;
+      alert("Error al actualizar pedido.");
     } finally {
       setUpdatingOrderId(null);
     }
   }
 
-  async function updateOrderStatus(order: Order, status: string) {
-    if (status === "ready" && isCompanyOrder(order)) {
-      setApprovalOrder(order);
-      setApprovalStatus(status);
-      setApprovalPin("");
-      setApprovalMessage("");
+  async function validatePrintAndReady(order: Order) {
+    const ok = window.confirm(
+      "¿Confirmas que este pedido fue validado, autorizado y se puede imprimir?"
+    );
+
+    if (!ok) return;
+
+    printOrderTicket(order);
+    await updateOrderStatus(order, "ready");
+  }
+
+  function getAudioContext() {
+    if (typeof window === "undefined") return null;
+
+    const AudioContextConstructor =
+      window.AudioContext || (window as any).webkitAudioContext;
+
+    if (!AudioContextConstructor) return null;
+
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContextConstructor();
+    }
+
+    return audioContextRef.current;
+  }
+
+  async function enableKitchenSound() {
+    const audioContext = getAudioContext();
+
+    if (!audioContext) {
+      alert("Este navegador no permite activar sonido.");
       return;
     }
 
-    await sendOrderStatusUpdate(order, status);
+    if (audioContext.state === "suspended") {
+      await audioContext.resume();
+    }
+
+    localStorage.setItem("kitchenSoundEnabled", "true");
+    setSoundEnabled(true);
+    setAudioNeedsTouch(false);
+    playNewOrderSound(true);
   }
 
-  async function confirmCompanyOrderApproval() {
-    if (!approvalOrder || !approvalStatus) return;
+  function playNewOrderSound(force = false) {
+    if (!force && !soundEnabled) return;
 
-    const ok = await sendOrderStatusUpdate(
-      approvalOrder,
-      approvalStatus,
-      approvalPin
-    );
+    const audioContext = getAudioContext();
 
-    if (ok) {
-      setApprovalOrder(null);
-      setApprovalStatus("");
-      setApprovalPin("");
-      setApprovalMessage("");
+    if (!audioContext) return;
+
+    if (audioContext.state === "suspended") {
+      setAudioNeedsTouch(true);
+      return;
     }
+
+    const now = audioContext.currentTime;
+
+    const tones = [
+      1800, 850,
+      1800, 850,
+      2100, 950,
+      2100, 950,
+      1800, 850,
+      1800, 850,
+    ];
+
+    tones.forEach((frequency, index) => {
+      const startTime = now + index * 0.14;
+
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+
+      oscillator.type = "square";
+      oscillator.frequency.setValueAtTime(frequency, startTime);
+
+      gain.gain.setValueAtTime(0.0001, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.9, startTime + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.11);
+
+      oscillator.connect(gain);
+      gain.connect(audioContext.destination);
+
+      oscillator.start(startTime);
+      oscillator.stop(startTime + 0.12);
+    });
   }
 
   useEffect(() => {
     loadOrders();
 
-    const interval = setInterval(() => {
-      loadOrders();
-    }, 5000);
+    const rememberedSound = localStorage.getItem("kitchenSoundEnabled");
 
-    return () => clearInterval(interval);
+    if (rememberedSound === "true") {
+      setSoundEnabled(true);
+      setAudioNeedsTouch(true);
+    }
+
+    const interval = window.setInterval(() => {
+      loadOrders();
+    }, 4000);
+
+    return () => window.clearInterval(interval);
   }, []);
 
-  const pendingOrders = orders.filter((order) => order.status === "pending");
-const readyOrders = orders.filter((order) => order.status === "ready");
+  useEffect(() => {
+    const pendingOrderIds = new Set(
+      orders
+        .filter((order) => order.status === "pending")
+        .map((order) => order.id)
+    );
 
-const cleanOrderNumberSearch = orderSearch.replace(/\D/g, "");
+    if (firstOrdersLoadRef.current) {
+      knownPendingOrderIdsRef.current = pendingOrderIds;
+      firstOrdersLoadRef.current = false;
+      return;
+    }
 
-function normalizeSearchText(value?: string | null) {
-  return String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
-}
+    const hasNewPendingOrder = Array.from(pendingOrderIds).some(
+      (orderId) => !knownPendingOrderIdsRef.current.has(orderId)
+    );
 
-function orderMatchesSearch(order: Order) {
-  const cleanTextSearch = normalizeSearchText(orderSearch);
+    knownPendingOrderIdsRef.current = pendingOrderIds;
 
-  if (!cleanTextSearch && !cleanOrderNumberSearch) return true;
+    if (hasNewPendingOrder) {
+      playNewOrderSound();
+    }
+  }, [orders, soundEnabled]);
 
-  const rawOrderNumber = String(order.orderNumber);
-  const paddedOrderNumber = String(order.orderNumber).padStart(3, "0");
-  const customerName = normalizeSearchText(order.customerName);
+  const filteredOrders = useMemo(() => {
+    const cleanTextSearch = normalizeSearchText(orderSearch);
+    const cleanOrderNumberSearch = orderSearch.replace(/\D/g, "");
+    const targetDate =
+      dateFilter === "today"
+        ? getChileDateKeyOffset(0)
+        : dateFilter === "yesterday"
+        ? getChileDateKeyOffset(-1)
+        : dateFilter === "tomorrow"
+        ? getChileDateKeyOffset(1)
+        : "";
 
-  const matchesOrderNumber =
-    cleanOrderNumberSearch.length > 0 &&
-    (rawOrderNumber.includes(cleanOrderNumberSearch) ||
-      paddedOrderNumber.includes(cleanOrderNumberSearch));
+    return orders.filter((order) => {
+      const rawOrderNumber = String(order.orderNumber);
+      const paddedOrderNumber = String(order.orderNumber).padStart(3, "0");
+      const customerName = normalizeSearchText(order.customerName);
 
-  const matchesCustomerName =
-    cleanTextSearch.length > 0 && customerName.includes(cleanTextSearch);
+      const matchesSearch =
+        !cleanTextSearch && !cleanOrderNumberSearch
+          ? true
+          : (cleanOrderNumberSearch.length > 0 &&
+              (rawOrderNumber.includes(cleanOrderNumberSearch) ||
+                paddedOrderNumber.includes(cleanOrderNumberSearch))) ||
+            (cleanTextSearch.length > 0 && customerName.includes(cleanTextSearch));
 
-  return matchesOrderNumber || matchesCustomerName;
-}
+      const matchesDate =
+        dateFilter === "all" ? true : getChileDateKey(order.createdAt) === targetDate;
 
-const filteredPendingOrders = pendingOrders.filter(orderMatchesSearch);
-const filteredReadyOrders = readyOrders.filter(orderMatchesSearch);
+      const matchesChannel =
+        channelFilter === "all"
+          ? true
+          : channelFilter === "totem"
+          ? !isOnlineOrder(order) && !isCompanyOrder(order) && !isDeliveryOrder(order)
+          : channelFilter === "online"
+          ? isOnlineOrder(order)
+          : channelFilter === "company"
+          ? isCompanyOrder(order)
+          : isDeliveryOrder(order);
 
-function getAudioContext() {
-  if (typeof window === "undefined") return null;
+      return matchesSearch && matchesDate && matchesChannel;
+    });
+  }, [orders, orderSearch, dateFilter, channelFilter]);
 
-  const AudioContextConstructor =
-    window.AudioContext || (window as any).webkitAudioContext;
+  const actionOrders = filteredOrders.filter(requiresImmediateAction);
+  const companyOrders = filteredOrders.filter(isCompanyOrder);
+  const printErrorOrders = filteredOrders.filter(isPrintError);
+  const scheduledOrders = filteredOrders.filter(
+    (order) => order.fulfillmentType === "scheduled"
+  );
+  const printedOrders = filteredOrders.filter(isPrintedOrReady);
 
-  if (!AudioContextConstructor) return null;
+  const pendingOrders = filteredOrders.filter((order) => order.status === "pending");
+  const readyOrders = filteredOrders.filter(isPrintedOrReady);
 
-  if (!audioContextRef.current) {
-    audioContextRef.current = new AudioContextConstructor();
-  }
+  const activeOrders =
+    selectedBoard === "action"
+      ? actionOrders
+      : selectedBoard === "company"
+      ? companyOrders
+      : selectedBoard === "printError"
+      ? printErrorOrders
+      : selectedBoard === "scheduled"
+      ? scheduledOrders
+      : selectedBoard === "printed"
+      ? printedOrders
+      : filteredOrders;
 
-  return audioContextRef.current;
-}
-
-
-
-function playNewOrderSound(force = false) {
-  if (!force && !soundEnabled) return;
-
-  const audioContext = getAudioContext();
-
-  if (!audioContext) return;
-
-  if (audioContext.state === "suspended") {
-    audioContext.resume();
-  }
-
-  const now = audioContext.currentTime;
-
-  const tones = [
-    1800, 850,
-    1800, 850,
-    2100, 950,
-    2100, 950,
-    1800, 850,
-    1800, 850,
+  const boardItems: {
+    key: BoardKey;
+    label: string;
+    count: number;
+    urgent?: boolean;
+    helper: string;
+  }[] = [
+    {
+      key: "action",
+      label: "Acción inmediata",
+      count: actionOrders.length,
+      urgent: actionOrders.length > 0,
+      helper: "Requiere revisión ahora",
+    },
+    {
+      key: "company",
+      label: "Empresas",
+      count: companyOrders.length,
+      urgent: companyOrders.some((order) => order.status === "pending"),
+      helper: "Validar pago y fecha",
+    },
+    {
+      key: "printError",
+      label: "Error impresión",
+      count: printErrorOrders.length,
+      urgent: printErrorOrders.length > 0,
+      helper: "Revisar impresora/agente",
+    },
+    {
+      key: "scheduled",
+      label: "Programados",
+      count: scheduledOrders.length,
+      urgent: scheduledOrders.some(isScheduledSoon),
+      helper: "Pedidos con horario",
+    },
+    {
+      key: "printed",
+      label: "Impresos/Listos",
+      count: printedOrders.length,
+      helper: "Historial rápido",
+    },
+    {
+      key: "all",
+      label: "Todos",
+      count: filteredOrders.length,
+      helper: "Vista completa",
+    },
   ];
 
-  tones.forEach((frequency, index) => {
-    const startTime = now + index * 0.14;
-
-    const oscillator = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-
-    oscillator.type = "square";
-    oscillator.frequency.setValueAtTime(frequency, startTime);
-
-    gain.gain.setValueAtTime(0.0001, startTime);
-    gain.gain.exponentialRampToValueAtTime(0.9, startTime + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.11);
-
-    oscillator.connect(gain);
-    gain.connect(audioContext.destination);
-
-    oscillator.start(startTime);
-    oscillator.stop(startTime + 0.12);
-  });
-}
-async function enableKitchenSound() {
-  const audioContext = getAudioContext();
-
-  if (!audioContext) {
-    alert("Este navegador no permite activar sonido.");
-    return;
-  }
-
-  if (audioContext.state === "suspended") {
-    await audioContext.resume();
-  }
-
-  setSoundEnabled(true);
-  playNewOrderSound(true);
-}
-
-useEffect(() => {
-  const pendingOrderIds = new Set(
-    orders
-      .filter((order) => order.status === "pending")
-      .map((order) => order.id)
-  );
-
-  if (firstOrdersLoadRef.current) {
-    knownPendingOrderIdsRef.current = pendingOrderIds;
-    firstOrdersLoadRef.current = false;
-    return;
-  }
-
-  const hasNewPendingOrder = Array.from(pendingOrderIds).some(
-    (orderId) => !knownPendingOrderIdsRef.current.has(orderId)
-  );
-
-  knownPendingOrderIdsRef.current = pendingOrderIds;
-
-  if (hasNewPendingOrder) {
-    playNewOrderSound();
-  }
-}, [orders, soundEnabled]);
   return (
-    <main className="min-h-screen bg-zinc-100 p-6 text-zinc-900">
-      <header className="mb-6 flex items-center justify-between">
+    <main className="min-h-screen bg-zinc-100 p-4 text-zinc-900 md:p-6">
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-sm font-black uppercase tracking-[0.25em] text-[#10B557]">
-            Cocina ÃœWA
+            Cocina ÜWA
           </p>
           <h1 className="mt-2 text-4xl font-black">Pedidos en cocina</h1>
         </div>
 
-        <a
-          href="/admin"
-          className="rounded-xl border border-zinc-300 bg-white px-5 py-3 font-bold"
-        >
-          Volver
-        </a>
-        <button
-  type="button"
-  onClick={enableKitchenSound}
-  className={`rounded-2xl px-5 py-4 text-sm font-black shadow-sm ${
-    soundEnabled
-      ? "bg-green-100 text-green-700"
-      : "bg-zinc-950 text-white"
-  }`}
->
-  {soundEnabled ? "Sonido activo" : "Activar sonido"}
-</button>
+        <div className="flex flex-wrap items-center gap-3">
+          <a
+            href="/admin"
+            className="rounded-xl border border-zinc-300 bg-white px-5 py-3 font-bold"
+          >
+            Volver
+          </a>
+
+          <button
+            type="button"
+            onClick={enableKitchenSound}
+            className={`rounded-2xl px-5 py-4 text-sm font-black shadow-sm ${
+              soundEnabled
+                ? "bg-green-100 text-green-700"
+                : "bg-zinc-950 text-white"
+            }`}
+          >
+            {soundEnabled ? "Sonido activo" : "Activar sonido"}
+          </button>
+        </div>
       </header>
 
-      <section className="mb-6 grid gap-4 md:grid-cols-3">
+      {audioNeedsTouch && soundEnabled && (
+        <button
+          type="button"
+          onClick={enableKitchenSound}
+          className="mb-6 w-full animate-pulse rounded-3xl border-4 border-orange-400 bg-orange-500 p-5 text-center text-xl font-black text-white shadow-lg"
+        >
+          Toca aquí para reactivar la alarma de cocina
+        </button>
+      )}
+
+      <section className="mb-6 grid gap-4 md:grid-cols-4">
+        <div className="rounded-2xl bg-white p-5 shadow-sm">
+          <p className="text-xs font-black uppercase text-zinc-500">
+            Acción inmediata
+          </p>
+          <h2 className="mt-2 text-4xl font-black text-orange-500">
+            {actionOrders.length}
+          </h2>
+        </div>
+
         <div className="rounded-2xl bg-white p-5 shadow-sm">
           <p className="text-xs font-black uppercase text-zinc-500">
             Pendientes
@@ -685,133 +844,219 @@ useEffect(() => {
         </div>
 
         <div className="rounded-2xl bg-white p-5 shadow-sm">
-          <p className="text-xs font-black uppercase text-zinc-500">Listos</p>
+          <p className="text-xs font-black uppercase text-zinc-500">
+            Listos/impresos
+          </p>
           <h2 className="mt-2 text-4xl font-black">{readyOrders.length}</h2>
         </div>
 
         <div className="rounded-2xl bg-white p-5 shadow-sm">
           <p className="text-xs font-black uppercase text-zinc-500">
-            Total pedidos
+            Pedidos filtrados
           </p>
-          <h2 className="mt-2 text-4xl font-black">{orders.length}</h2>
+          <h2 className="mt-2 text-4xl font-black">{filteredOrders.length}</h2>
         </div>
       </section>
 
-      {loading ? (
-        <div className="rounded-3xl bg-white p-10 text-center shadow-sm">
-          <p className="text-xl font-black">Cargando pedidos...</p>
+      <section className="mb-6 rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm">
+        <div className="grid gap-4 xl:grid-cols-[1fr_180px_180px]">
+          <div>
+            <h2 className="text-xl font-black">Buscar pedido</h2>
+            <p className="mb-3 text-sm font-bold text-zinc-500">
+              Busca por número de orden o nombre del cliente.
+            </p>
+
+            <input
+              value={orderSearch}
+              onChange={(event) => setOrderSearch(event.target.value)}
+              placeholder="Buscar pedido # o nombre..."
+              className="w-full rounded-2xl border border-zinc-300 bg-white px-4 py-4 text-lg font-black outline-none focus:border-[#10B557]"
+            />
+          </div>
+
+          <div>
+            <p className="mb-3 text-sm font-black uppercase text-zinc-500">
+              Fecha
+            </p>
+            <select
+              value={dateFilter}
+              onChange={(event) => setDateFilter(event.target.value as DateFilter)}
+              className="w-full rounded-2xl border border-zinc-300 bg-white px-4 py-4 text-base font-black outline-none focus:border-[#10B557]"
+            >
+              <option value="today">Hoy</option>
+              <option value="yesterday">Ayer</option>
+              <option value="tomorrow">Mañana</option>
+              <option value="all">Todas</option>
+            </select>
+          </div>
+
+          <div>
+            <p className="mb-3 text-sm font-black uppercase text-zinc-500">
+              Canal
+            </p>
+            <select
+              value={channelFilter}
+              onChange={(event) =>
+                setChannelFilter(event.target.value as ChannelFilter)
+              }
+              className="w-full rounded-2xl border border-zinc-300 bg-white px-4 py-4 text-base font-black outline-none focus:border-[#10B557]"
+            >
+              <option value="all">Todos</option>
+              <option value="totem">Tótem</option>
+              <option value="online">Online</option>
+              <option value="company">Empresa</option>
+              <option value="delivery">Delivery/Uber</option>
+            </select>
+          </div>
         </div>
-      ) : pendingOrders.length === 0 && readyOrders.length === 0 ? (
-        <div className="rounded-3xl bg-white p-10 text-center shadow-sm">
-          <p className="text-2xl font-black">No hay pedidos todavÃ­a</p>
-          <p className="mt-2 text-zinc-500">
-            Cuando se confirme un pedido desde el tÃ³tem aparecerÃ¡ aquÃ­.
-          </p>
-        </div>
-      ) : (
-        <div className="grid gap-6">
-          <section>
-            <section className="mb-6 rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm">
-  <div className="flex flex-wrap items-center justify-between gap-4">
-    <div>
-      <h2 className="text-xl font-black">Buscar pedido</h2>
-      <p className="text-sm font-bold text-zinc-500">
-        Busca por número de orden o nombre del cliente. Ej: 8, 008, Andrés o Claudia.
-      </p>
-    </div>
+      </section>
 
-    <div className="flex w-full max-w-md items-center gap-3">
-      <input
-        value={orderSearch}
-        onChange={(event) => setOrderSearch(event.target.value)}
-        placeholder="Buscar pedido # o nombre..."
-        className="w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-lg font-black outline-none focus:border-[#10B557]"
-      />
+      <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
+        <section className="min-w-0">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-2xl font-black">
+                {boardItems.find((item) => item.key === selectedBoard)?.label}
+              </h2>
+              <p className="text-sm font-bold text-zinc-500">
+                {boardItems.find((item) => item.key === selectedBoard)?.helper}
+              </p>
+            </div>
 
-      {orderSearch && (
-        <button
-          type="button"
-          onClick={() => setOrderSearch("")}
-          className="rounded-2xl bg-zinc-900 px-4 py-3 text-sm font-black text-white"
-        >
-          Limpiar
-        </button>
-      )}
-    </div>
-  </div>
-</section>
-            <h2 className="mb-4 text-2xl font-black">Pendientes</h2>
+            {orderSearch && (
+              <button
+                type="button"
+                onClick={() => setOrderSearch("")}
+                className="rounded-2xl bg-zinc-900 px-4 py-3 text-sm font-black text-white"
+              >
+                Limpiar búsqueda
+              </button>
+            )}
+          </div>
 
-            {pendingOrders.length === 0 ? (
-              <div className="rounded-2xl bg-white p-6 text-center shadow-sm">
-                <p className="font-bold text-zinc-500">
-                  No hay pedidos pendientes.
-                </p>
-              </div>
-            ) : (
-              <div className="grid gap-2 xl:grid-cols-4">
-                {filteredPendingOrders.map((order) => (
+          {loading ? (
+            <div className="rounded-3xl bg-white p-10 text-center shadow-sm">
+              <p className="text-xl font-black">Cargando pedidos...</p>
+            </div>
+          ) : activeOrders.length === 0 ? (
+            <div className="rounded-3xl bg-white p-10 text-center shadow-sm">
+              <p className="text-2xl font-black">No hay pedidos en esta categoría</p>
+              <p className="mt-2 text-zinc-500">
+                Cambia el filtro o revisa otra pizarra de la barra derecha.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-3 2xl:grid-cols-2">
+              {activeOrders.map((order) => {
+                const urgent = requiresImmediateAction(order);
+
+                return (
                   <article
                     key={order.id}
-                    className={`rounded-3xl border-2 p-6 shadow-sm ${isCompanyOrder(order) ? "border-orange-500 bg-orange-50" : "border-[#10B557] bg-white"}`}
+                    className={`rounded-3xl border-2 p-5 shadow-sm ${getCardStyle(order)} ${
+                      urgent ? "animate-pulse" : ""
+                    }`}
                   >
-      <div className="mb-5 flex items-start justify-between gap-4">
-  <div>
-    <h3 className="text-3xl font-black">
-      Pedido #{String(order.orderNumber).padStart(3, "0")}
-    </h3>
+                    <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <h3 className="text-3xl font-black">
+                            Pedido #{String(order.orderNumber).padStart(3, "0")}
+                          </h3>
 
-    <p className="mt-1 text-sm font-bold text-zinc-500">
-      Hora: {formatTime(order.createdAt)}
-    </p>
-    <p className="mt-1 text-sm font-black text-zinc-700">
-  Cliente: {order.customerName || "Sin nombre"}
-</p>
-{order.customerComment && (
-  <div className="mt-3 rounded-2xl bg-yellow-50 p-4">
-    <p className="text-xs font-black uppercase text-yellow-700">
-      Comentario cocina
-    </p>
-    <p className="mt-1 text-base font-black text-zinc-800">
-      {order.customerComment}
-    </p>
-  </div>
-)}
-    <div className="mt-3 flex flex-wrap gap-2">
-      <span
-        className={`rounded-full px-4 py-2 text-xs font-black uppercase ${isCompanyOrder(order) ? "bg-orange-100 text-orange-700" : isOnlineOrder(order) ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}
-      >
-        {getOrderSourceLabel(order)}
-      </span>
+                          {urgent && (
+                            <span className="animate-bounce rounded-full bg-orange-500 px-4 py-2 text-xs font-black uppercase text-white">
+                              Acción ahora
+                            </span>
+                          )}
+                        </div>
 
-      {isOnlineOrder(order) && (
-        <span className="rounded-full bg-purple-100 px-4 py-2 text-xs font-black uppercase text-purple-700">
-          {getFulfillmentLabel(order)}
-        </span>
-      )}
+                        <p className="mt-1 text-sm font-bold text-zinc-500">
+                          Hora: {formatTime(order.createdAt)} · {formatDate(order.createdAt)}
+                        </p>
 
-      {isOnlineOrder(order) && order.fulfillmentType === "scheduled" && (
-        <span className="rounded-full bg-yellow-100 px-4 py-2 text-xs font-black uppercase text-yellow-700">
-          {formatScheduledFor(order.scheduledFor)}
-        </span>
-      )}
-    </div>
-  </div>
+                        <p className="mt-1 text-sm font-black text-zinc-700">
+                          Cliente: {order.customerName || "Sin nombre"}
+                        </p>
 
-  <span className="rounded-full bg-yellow-100 px-4 py-2 text-sm font-black">
-    Pendiente
-  </span>
-</div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <span
+                            className={`rounded-full px-4 py-2 text-xs font-black uppercase ${
+                              isCompanyOrder(order)
+                                ? "bg-orange-500 text-white"
+                                : isOnlineOrder(order)
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-green-100 text-green-700"
+                            }`}
+                          >
+                            {getOrderSourceLabel(order)}
+                          </span>
 
-                    <div className="space-y-5">
+                          <span className="rounded-full bg-purple-100 px-4 py-2 text-xs font-black uppercase text-purple-700">
+                            {getFulfillmentLabel(order)}
+                          </span>
+
+                          {order.fulfillmentType === "scheduled" && order.scheduledFor && (
+                            <span className="rounded-full bg-yellow-100 px-4 py-2 text-xs font-black uppercase text-yellow-700">
+                              {formatDateTime(order.scheduledFor)}
+                            </span>
+                          )}
+
+                          {order.printStatus && (
+                            <span
+                              className={`rounded-full px-4 py-2 text-xs font-black uppercase ${
+                                order.printStatus === "error"
+                                  ? "bg-red-100 text-red-700"
+                                  : order.printStatus === "printed"
+                                  ? "bg-zinc-900 text-white"
+                                  : "bg-zinc-100 text-zinc-700"
+                              }`}
+                            >
+                              Impresión: {order.printStatus}
+                            </span>
+                          )}
+                        </div>
+
+                        {order.customerComment && (
+                          <div className="mt-3 rounded-2xl bg-yellow-50 p-4">
+                            <p className="text-xs font-black uppercase text-yellow-700">
+                              Comentario cocina
+                            </p>
+                            <p className="mt-1 text-base font-black text-zinc-800">
+                              {order.customerComment}
+                            </p>
+                          </div>
+                        )}
+
+                        {order.lastPrintError && (
+                          <div className="mt-3 rounded-2xl bg-red-50 p-4">
+                            <p className="text-xs font-black uppercase text-red-700">
+                              Error impresión
+                            </p>
+                            <p className="mt-1 text-sm font-black text-red-800">
+                              {order.lastPrintError}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      <span
+                        className={`rounded-full px-4 py-2 text-sm font-black ${
+                          isPrintedOrReady(order)
+                            ? "bg-green-100 text-green-700"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}
+                      >
+                        {isPrintedOrReady(order) ? "Listo" : "Pendiente"}
+                      </span>
+                    </div>
+
+                    <div className="space-y-4">
                       {order.items.map((item) => {
                         const groupedModifiers = groupModifiers(item.modifiers);
 
                         return (
-                          <div
-                            key={item.id}
-                            className="rounded-2xl bg-zinc-50 p-4"
-                          >
+                          <div key={item.id} className="rounded-2xl bg-white/80 p-4">
                             <h4 className="text-xl font-black">
                               {item.quantity}x {item.product.name}
                             </h4>
@@ -843,171 +1088,96 @@ useEffect(() => {
                       </p>
 
                       <div className="flex flex-wrap gap-3">
-                        <button
-                          onClick={() => printOrderTicket(order)}
-                          className="rounded-2xl bg-zinc-900 px-6 py-4 text-lg font-black text-white"
-                        >
-                          Imprimir comanda
-                        </button>
+                        {isCompanyOrder(order) && order.status === "pending" ? (
+                          <button
+                            onClick={() => validatePrintAndReady(order)}
+                            disabled={updatingOrderId === order.id}
+                            className="rounded-2xl bg-orange-500 px-6 py-4 text-base font-black text-white disabled:bg-zinc-300"
+                          >
+                            Validar pago, imprimir y dejar listo
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => printOrderTicket(order)}
+                              className="rounded-2xl bg-zinc-900 px-5 py-4 text-base font-black text-white"
+                            >
+                              Reimprimir
+                            </button>
 
-                        <button
-                          onClick={() => updateOrderStatus(order, "ready")}
-                          disabled={updatingOrderId === order.id}
-                          className={`rounded-2xl px-6 py-4 text-lg font-black text-white disabled:bg-zinc-300 ${isCompanyOrder(order) ? "bg-orange-500" : "bg-[#10B557]"}`}
-                        >
-                          {updatingOrderId === order.id
-                            ? "Actualizando..."
-                            : isCompanyOrder(order) ? "Aceptar con clave" : "Marcar como listo"}
-                        </button>
+                            {order.status === "pending" && (
+                              <button
+                                onClick={() => updateOrderStatus(order, "ready")}
+                                disabled={updatingOrderId === order.id}
+                                className="rounded-2xl bg-[#10B557] px-5 py-4 text-base font-black text-white disabled:bg-zinc-300"
+                              >
+                                {updatingOrderId === order.id
+                                  ? "Actualizando..."
+                                  : "Marcar listo"}
+                              </button>
+                            )}
+                          </>
+                        )}
                       </div>
                     </div>
                   </article>
-                ))}
-              </div>
-            )}
-          </section>
+                );
+              })}
+            </div>
+          )}
+        </section>
 
-          <section>
-            <h2 className="mb-4 text-2xl font-black">Listos</h2>
+        <aside className="xl:sticky xl:top-6 xl:h-fit">
+          <div className="rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <h2 className="mb-1 text-xl font-black">Pizarras</h2>
+            <p className="mb-4 text-sm font-bold text-zinc-500">
+              Lo naranjo requiere acción inmediata.
+            </p>
 
-            {readyOrders.length === 0 ? (
-              <div className="rounded-2xl bg-white p-6 text-center shadow-sm">
-                <p className="font-bold text-zinc-500">
-                  TodavÃ­a no hay pedidos listos.
-                </p>
-              </div>
-            ) : (
-              <div className="grid gap-4 xl:grid-cols-2">
-                {filteredReadyOrders.map((order) => (
-                  <article
-                    key={order.id}
-                    className="rounded-3xl bg-white p-5 opacity-80 shadow-sm"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h3 className="text-3xl font-black">
-                          Pedido #{String(order.orderNumber).padStart(3, "0")}
-                        </h3>
-                        <p className="mt-1 text-sm font-bold text-zinc-500">
-                          Hora: {formatTime(order.createdAt)}
-                        </p>
-                        <p className="mt-1 text-sm font-black text-zinc-700">
-  Cliente: {order.customerName || "Sin nombre"}
-</p>
-{order.customerComment && (
-  <div className="mt-3 rounded-2xl bg-yellow-50 p-4">
-    <p className="text-xs font-black uppercase text-yellow-700">
-      Comentario cocina
-    </p>
-    <p className="mt-1 text-base font-black text-zinc-800">
-      {order.customerComment}
-    </p>
-  </div>
-)}
-                      </div>
+            <div className="space-y-3">
+              {boardItems.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setSelectedBoard(item.key)}
+                  className={`relative w-full rounded-2xl border-2 p-4 text-left transition ${
+                    selectedBoard === item.key
+                      ? "border-zinc-950 bg-zinc-950 text-white"
+                      : item.urgent
+                      ? "animate-pulse border-orange-400 bg-orange-50 text-zinc-950"
+                      : "border-zinc-200 bg-white text-zinc-950"
+                  }`}
+                >
+                  {item.urgent && (
+                    <span className="absolute -right-2 -top-2 flex h-8 min-w-8 animate-bounce items-center justify-center rounded-full bg-orange-500 px-2 text-sm font-black text-white shadow-lg">
+                      {item.count}
+                    </span>
+                  )}
 
-                      <span className="rounded-full bg-green-100 px-4 py-2 text-sm font-black text-green-700">
-                        Listo
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-base font-black">{item.label}</p>
+                      <p
+                        className={`text-xs font-bold ${
+                          selectedBoard === item.key ? "text-zinc-300" : "text-zinc-500"
+                        }`}
+                      >
+                        {item.helper}
+                      </p>
+                    </div>
+
+                    {!item.urgent && (
+                      <span className="rounded-full bg-zinc-100 px-3 py-1 text-sm font-black text-zinc-700">
+                        {item.count}
                       </span>
-                    </div>
-
-                    <div className="mt-4 flex flex-wrap gap-3">
-                      <button
-                        onClick={() => printOrderTicket(order)}
-                        className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-black text-white"
-                      >
-                        Reimprimir comanda
-                      </button>
-
-                      <button
-                        onClick={() => updateOrderStatus(order, "pending")}
-                        disabled={updatingOrderId === order.id}
-                        className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-black"
-                      >
-                        Volver a pendiente
-                      </button>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-          </section>
-        </div>
-      )}
-    
-      {approvalOrder && (
-        <div
-          className="fixed inset-0 flex items-center justify-center bg-black/60 p-4"
-          style={{ zIndex: 999999 }}
-        >
-          <div className="w-full max-w-lg rounded-[2rem] bg-white p-6 shadow-2xl">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.25em] text-orange-600">
-                  Pedido empresa
-                </p>
-                <h2 className="mt-2 text-3xl font-black">
-                  Autorizar pedido empresa
-                </h2>
-                <p className="mt-2 text-sm font-bold text-zinc-500">
-                  Pedido #{String(approvalOrder.orderNumber).padStart(3, "0")} requiere clave para confirmar armado.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setApprovalOrder(null);
-                  setApprovalStatus("");
-                  setApprovalPin("");
-                  setApprovalMessage("");
-                }}
-                className="rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-black"
-              >
-                Cerrar
-              </button>
+                    )}
+                  </div>
+                </button>
+              ))}
             </div>
-
-            <div className="mt-6 rounded-3xl bg-orange-50 p-5">
-              <p className="text-sm font-black text-orange-800">
-                Solo acepta este pedido si ya fue validada la transferencia o autorizado el armado de bowls.
-              </p>
-            </div>
-
-            <label className="mt-5 block">
-              <span className="text-xs font-black uppercase text-zinc-500">
-                Clave de autorización
-              </span>
-
-              <input
-                type="password"
-                value={approvalPin}
-                onChange={(event) => setApprovalPin(event.target.value)}
-                placeholder="Ingresa clave"
-                className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-4 text-center text-2xl font-black outline-none focus:border-orange-500"
-              />
-            </label>
-
-            {approvalMessage && (
-              <p className="mt-4 rounded-2xl bg-red-50 p-4 text-sm font-black text-red-600">
-                {approvalMessage}
-              </p>
-            )}
-
-            <button
-              type="button"
-              onClick={confirmCompanyOrderApproval}
-              disabled={updatingOrderId === approvalOrder.id}
-              className="mt-5 w-full rounded-2xl bg-orange-500 px-5 py-4 text-lg font-black text-white disabled:bg-zinc-300"
-            >
-              {updatingOrderId === approvalOrder.id
-                ? "Autorizando..."
-                : "Aceptar y marcar como listo"}
-            </button>
           </div>
-        </div>
-      )}
-</main>
+        </aside>
+      </div>
+    </main>
   );
 }
-

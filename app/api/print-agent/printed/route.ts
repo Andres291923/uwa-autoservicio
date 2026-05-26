@@ -57,6 +57,7 @@ export async function POST(request: Request) {
         id: orderId,
       },
       data: {
+        status: "ready",
         printStatus: "printed",
         printedAt: new Date(),
         printCount: {
@@ -83,3 +84,4 @@ export async function POST(request: Request) {
     );
   }
 }
+
