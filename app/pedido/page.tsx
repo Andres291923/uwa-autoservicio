@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -1801,12 +1801,27 @@ export default function PedidoPage() {
 
         {scheduleBanner && (
           <div className="border-t border-emerald-100 bg-emerald-50 px-4 py-3 text-center">
-            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-emerald-700">
-              Horario de atención
-            </p>
-            <p className="mt-1 text-sm font-bold text-zinc-800">
-              {scheduleBanner}
-            </p>
+            <div className="mx-auto flex max-w-5xl flex-col items-center justify-center gap-3 md:flex-row md:gap-10">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-emerald-700">
+                  Horario de atención
+                </p>
+                <p className="mt-1 text-sm font-bold text-zinc-800">
+                  {scheduleBanner}
+                </p>
+              </div>
+
+              <div className="hidden h-10 w-px bg-emerald-200 md:block" />
+
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.25em] text-emerald-700">
+                  <span className="mr-1 tracking-normal">📍</span> Ubicación
+                </p>
+                <p className="mt-1 text-sm font-bold text-zinc-800">
+                  Plaza Perú 127, Concepción
+                </p>
+              </div>
+            </div>
           </div>
         )}
       </header>
