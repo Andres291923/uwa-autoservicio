@@ -1,67 +1,6 @@
-import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
-
-function timeToMinutesHardLock(time: string) {
-  const [hour, minute] = String(time || "00:00").split(":").map(Number);
-  return (hour || 0) * 60 + (minute || 0);
-}
-
-function getChileDayHardLock(date: Date) {
-  const weekday = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Santiago",
-    weekday: "short",
-  }).format(date);
-
-  const map: Record<string, number> = {
-    Sun: 0,
-    Mon: 1,
-    Tue: 2,
-    Wed: 3,
-    Thu: 4,
-    Fri: 5,
-    Sat: 6,
-  };
-
-  return map[weekday] ?? 0;
-}
-
-function getChileMinutesHardLock(date: Date) {
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "America/Santiago",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(date);
-
-  const hour = Number(parts.find((part) => part.type === "hour")?.value || 0);
-  const minute = Number(parts.find((part) => part.type === "minute")?.value || 0);
-
-  return hour * 60 + minute;
-}
-
-async function isStoreOpenNowHardLock() {
-  const now = new Date();
-  const dayOfWeek = getChileDayHardLock(now);
-  const currentMinutes = getChileMinutesHardLock(now);
-
-  const schedule = await prisma.storeOpeningHour.findUnique({
-    where: {
-      businessSettingsId_dayOfWeek: {
-        businessSettingsId: 1,
-        dayOfWeek,
-      },
-    },
-  });
-
-  if (!schedule || !schedule.enabled) return false;
-
-  const openMinutes = timeToMinutesHardLock(schedule.openTime);
-  const closeMinutes = timeToMinutesHardLock(schedule.closeTime);
-
-  return currentMinutes >= openMinutes && currentMinutes < closeMinutes;
-}
 
 let cachedToken: {
   accessToken: string;
@@ -216,18 +155,6 @@ async function requestQuote(params: {
 
 export async function POST(request: Request) {
   try {
-    const storeIsOpen = await isStoreOpenNowHardLock();
-
-    if (!storeIsOpen) {
-      return NextResponse.json(
-        {
-          error:
-            "HARD_LOCK_STORE_CLOSED_UBER_QUOTE: Tienda cerrada. Delivery solo está disponible dentro del horario de atención.",
-        },
-        { status: 400 }
-      );
-    }
-
     const body = await request.json();
 
     const name = cleanText(body.name || body.customerName);
