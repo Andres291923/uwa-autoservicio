@@ -145,6 +145,44 @@ function formatPrice(price: number) {
     maximumFractionDigits: 0,
   }).format(price);
 }
+function normalizeText(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function getCategoryEmoji(name: string) {
+  const text = normalizeText(name);
+
+  if (text.includes("bebida") || text.includes("jugo") || text.includes("agua")) return "🥤";
+  if (text.includes("bowl") || text.includes("ensalada")) return "🥗";
+  if (text.includes("postre") || text.includes("dulce")) return "🍰";
+  if (text.includes("promo")) return "🔥";
+
+  return "✨";
+}
+
+function isBeverageProduct(product: Product) {
+  const text = normalizeText(`${product.name} ${product.category?.name || ""}`);
+
+  return (
+    text.includes("bebida") ||
+    text.includes("jugo") ||
+    text.includes("agua") ||
+    text.includes("coca") ||
+    text.includes("vital")
+  );
+}
+
+function isBestSellerProduct(product: Product, bestSellerProductId: number | null) {
+  return Boolean(
+    bestSellerProductId &&
+      product.id === bestSellerProductId &&
+      !isBeverageProduct(product)
+  );
+}
+
 
 function formatShortDate(value: string | null | undefined) {
   if (!value) return "";
@@ -179,6 +217,7 @@ export default function TotemPage() {
   const [settings, setSettings] = useState<BusinessSettings>(defaultSettings);
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [bestSellerProductId, setBestSellerProductId] = useState<number | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | "all">(
     "all"
   );
@@ -196,7 +235,9 @@ export default function TotemPage() {
   const [confirmingOrder, setConfirmingOrder] = useState(false);
   const [orderMessage, setOrderMessage] = useState("");
   const [catalogChangeMessage, setCatalogChangeMessage] = useState("");
-  const [customerMessage, setCustomerMessage] = useState("");
+  const [lastAddedMessage, setLastAddedMessage] = useState("");
+  const [upsellVisible, setUpsellVisible] = useState(false);
+  const [upsellDeclined, setUpsellDeclined] = useState(false);  const [customerMessage, setCustomerMessage] = useState("");
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<PaymentMethod | null>(null);
   const [tipSelected, setTipSelected] = useState(false);
@@ -226,7 +267,34 @@ export default function TotemPage() {
     setCatalogChangeMessage(message);
   }
 
-  function buildCatalogChangeMessage(details: string[]) {
+
+  function showAddedToast(productName: string) {
+    const cleanName = productName.trim() || "Producto";
+    setLastAddedMessage(`${cleanName} agregado 😍`);
+
+    window.setTimeout(() => {
+      setLastAddedMessage("");
+    }, 1800);
+  }
+
+  function openSummaryStep() {
+    setSelectedProduct(null);
+    setStep("summary");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function continueWithoutUpsell() {
+    setUpsellDeclined(true);
+    setUpsellVisible(false);
+    openSummaryStep();
+  }
+
+  function addUpsellProductAndContinue(product: Product) {
+    setUpsellDeclined(true);
+    setUpsellVisible(false);
+    addSimpleProductToCart(product);
+    openSummaryStep();
+  }  function buildCatalogChangeMessage(details: string[]) {
     const cleanDetails = Array.from(
       new Set(details.map((item) => item.trim()).filter(Boolean))
     );
@@ -441,6 +509,30 @@ export default function TotemPage() {
     }
   }
 
+
+  async function loadBestSeller() {
+    try {
+      const response = await fetch("/api/totem/best-sellers?days=30", {
+        cache: "no-store",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setBestSellerProductId(null);
+        return;
+      }
+
+      setBestSellerProductId(
+        typeof data.bestSellerProductId === "number"
+          ? data.bestSellerProductId
+          : null
+      );
+    } catch (error) {
+      console.error(error);
+      setBestSellerProductId(null);
+    }
+  }
   async function loadProducts(showLoading = true) {
     try {
       if (showLoading) {
@@ -490,7 +582,32 @@ export default function TotemPage() {
     );
   }, [products, selectedCategoryId]);
 
-  const activeModifierGroups = useMemo(
+
+  const cartHasBeverage = useMemo(() => {
+    return cart.some((item) => {
+      const product = products.find((candidate) => candidate.id === item.productId);
+      return product ? isBeverageProduct(product) : false;
+    });
+  }, [cart, products]);
+
+  const cartHasFood = useMemo(() => {
+    return cart.some((item) => {
+      const product = products.find((candidate) => candidate.id === item.productId);
+      return product ? !isBeverageProduct(product) : true;
+    });
+  }, [cart, products]);
+
+  const beverageUpsellProducts = useMemo(() => {
+    const productIdsInCart = new Set(cart.map((item) => item.productId));
+
+    return products
+      .filter((product) => product.active)
+      .filter((product) => product.category?.active !== false)
+      .filter((product) => isBeverageProduct(product))
+      .filter((product) => !productIdsInCart.has(product.id))
+      .sort((a, b) => a.order - b.order || a.id - b.id)
+      .slice(0, 3);
+  }, [products, cart]);  const activeModifierGroups = useMemo(
     () => getActiveModifierGroups(selectedProduct),
     [selectedProduct]
   );
@@ -623,8 +740,10 @@ export default function TotemPage() {
         customerComment: "",
       },
     ]);
-  }
 
+    showAddedToast(product.name);
+    setUpsellDeclined(false);
+  }
   function addConfiguredProductToCart() {
     if (!selectedProduct || !canAddSelectedProduct) return;
 
@@ -663,9 +782,10 @@ export default function TotemPage() {
       },
     ]);
 
+    showAddedToast(selectedProduct.name);
+    setUpsellDeclined(false);
     closeProductBuilder();
   }
-
   function removeFromCart(id: number) {
     setCart((currentCart) => currentCart.filter((item) => item.id !== id));
   }
@@ -689,11 +809,18 @@ export default function TotemPage() {
       return;
     }
 
-    setSelectedProduct(null);
-    setStep("summary");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
+    if (
+      cartHasFood &&
+      !cartHasBeverage &&
+      beverageUpsellProducts.length > 0 &&
+      !upsellDeclined
+    ) {
+      setUpsellVisible(true);
+      return;
+    }
 
+    openSummaryStep();
+  }
   function goToCustomerStep() {
     if (cart.length === 0) return;
 
@@ -1152,6 +1279,7 @@ export default function TotemPage() {
   useEffect(() => {
     loadSettings();
     loadProducts();
+    loadBestSeller();
     loadStoreStatus();
 
     const statusInterval = window.setInterval(() => {
@@ -1162,9 +1290,14 @@ export default function TotemPage() {
       loadProducts(false);
     }, 3000);
 
+    const bestSellerInterval = window.setInterval(() => {
+      loadBestSeller();
+    }, 300000);
+
     return () => {
       window.clearInterval(statusInterval);
       window.clearInterval(productsInterval);
+      window.clearInterval(bestSellerInterval);
     };
   }, []);
 
@@ -1295,6 +1428,82 @@ export default function TotemPage() {
           {orderMessage}
         </div>
       )}
+      {lastAddedMessage && (
+        <div className="fixed left-1/2 top-[92px] z-[12000] -translate-x-1/2 rounded-full bg-zinc-950 px-6 py-3 text-center text-base font-black text-white shadow-2xl">
+          {lastAddedMessage}
+        </div>
+      )}
+
+      {upsellVisible && (
+        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-black/55 px-5">
+          <div className="w-full max-w-3xl rounded-[2rem] bg-white p-6 text-center shadow-2xl">
+            <p
+              className="text-xs font-black uppercase tracking-[0.25em]"
+              style={{ color: settings.primaryColor }}
+            >
+              Antes de pagar 😍
+            </p>
+
+            <h2 className="mt-2 text-4xl font-black tracking-[-0.05em]">
+              ¿Le sumamos una bebida?
+            </h2>
+
+            <p className="mt-2 text-base font-bold text-zinc-500">
+              Queda perfecto con tu bowl y sube tu experiencia.
+            </p>
+
+            <div className="mt-6 grid grid-cols-3 gap-3">
+              {beverageUpsellProducts.map((product) => (
+                <button
+                  key={product.id}
+                  type="button"
+                  onClick={() => addUpsellProductAndContinue(product)}
+                  className="rounded-[1.7rem] border border-zinc-200 bg-white p-3 shadow-sm active:scale-[0.98]"
+                >
+                  <div className="flex h-[145px] items-center justify-center rounded-[1.3rem] bg-zinc-50">
+                    {product.imageUrl ? (
+                      <img
+                        src={product.imageUrl}
+                        alt={product.name}
+                        className="block h-auto max-h-[125px] w-auto max-w-[82%] object-contain"
+                      />
+                    ) : (
+                      <span className="text-4xl">🥤</span>
+                    )}
+                  </div>
+
+                  <h3 className="mt-3 min-h-[42px] text-base font-black leading-tight">
+                    {product.name}
+                  </h3>
+
+                  <p
+                    className="mt-2 text-2xl font-black"
+                    style={{ color: settings.primaryColor }}
+                  >
+                    {formatPrice(product.price)}
+                  </p>
+
+                  <div
+                    className="mt-3 rounded-2xl py-3 text-sm font-black text-white"
+                    style={{ background: settings.primaryColor }}
+                  >
+                    Agregar
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={continueWithoutUpsell}
+              className="mt-5 w-full rounded-2xl border border-zinc-200 bg-white py-4 text-sm font-black text-zinc-600"
+            >
+              No gracias, continuar al resumen
+            </button>
+          </div>
+        </div>
+      )}
+
       {totemAuthVisible && (
         <div className="fixed inset-0 z-[10000] flex items-start justify-center overflow-y-auto bg-black/50 px-3 py-3 sm:px-5">
           <div className="w-full max-w-xl max-h-[calc(100dvh-24px)] overflow-y-auto overscroll-contain rounded-[2rem] bg-white p-5 shadow-2xl sm:p-7">
@@ -1507,13 +1716,13 @@ export default function TotemPage() {
       {selectedProduct ? (
         <section className="p-3 pb-32">
           <div className="mx-auto max-w-6xl rounded-[2rem] border border-white bg-white p-5 shadow-[0_18px_55px_rgba(15,23,42,0.10)] ring-1 ring-black/5">
-            <div className="mb-4 flex items-start justify-between gap-4">
+            <div className="mb-5 grid gap-4 rounded-[2rem] bg-[#f7f8f4] p-4 md:grid-cols-[1fr_260px]">
               <div>
                 <button
                   onClick={closeProductBuilder}
-                  className="mb-3 rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm font-black"
+                  className="mb-4 rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm font-black shadow-sm"
                 >
-                 Volver
+                  ← Volver
                 </button>
 
                 <p
@@ -1523,16 +1732,35 @@ export default function TotemPage() {
                   Producto seleccionado
                 </p>
 
-                <h2 className="mt-2 text-3xl font-black">
+                <h2 className="mt-2 text-4xl font-black leading-none tracking-[-0.04em]">
                   {selectedProduct.name}
                 </h2>
 
+                <p className="mt-2 text-base font-bold text-zinc-500">
+                  Arma tu combinación perfecta 😍
+                </p>
+
                 <p
-                  className="mt-2 text-2xl font-black"
+                  className="mt-3 text-3xl font-black"
                   style={{ color: settings.primaryColor }}
                 >
                   {formatPrice(selectedProduct.price)}
                 </p>
+              </div>
+
+              <div className="flex min-h-[190px] items-center justify-center rounded-[1.7rem] bg-white shadow-inner">
+                {selectedProduct.imageUrl ? (
+                  <img
+                    src={selectedProduct.imageUrl}
+                    alt={selectedProduct.name}
+                    className="block h-auto max-h-[170px] w-auto max-w-[86%] object-contain"
+                  />
+                ) : (
+                  <div className="text-center text-zinc-400">
+                    <div className="text-4xl">🥗</div>
+                    <p className="mt-2 text-xs font-black uppercase">Producto</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -2259,7 +2487,7 @@ export default function TotemPage() {
 <div className="space-y-2">
               <button
                 onClick={() => setSelectedCategoryId("all")}
-                className="w-full rounded-2xl px-3 py-4 text-left text-[12px] font-black uppercase leading-tight"
+                className="w-full rounded-2xl px-3 py-4 text-center text-[12px] font-black uppercase leading-tight"
                 style={{
                   background:
                     selectedCategoryId === "all"
@@ -2275,7 +2503,7 @@ export default function TotemPage() {
                 <button
                   key={category.id}
                   onClick={() => setSelectedCategoryId(category.id)}
-                  className="w-full rounded-2xl px-3 py-4 text-left text-[12px] font-black uppercase leading-tight"
+                  className="w-full rounded-2xl px-3 py-4 text-center text-[12px] font-black uppercase leading-tight"
                   style={{
                     background:
                       selectedCategoryId === category.id
@@ -2292,6 +2520,28 @@ export default function TotemPage() {
           </aside>
 
           <section className="min-w-0 overflow-x-hidden bg-[#f7f8f4] p-4 pb-36">
+            <div className="mb-4 overflow-hidden rounded-[2rem] bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p
+                    className="text-[11px] font-black uppercase tracking-[0.25em]"
+                    style={{ color: settings.primaryColor }}
+                  >
+                    Fresco · rápido · sin gluten
+                  </p>
+
+                  <h2 className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-zinc-950">
+                    Arma tu bowl a tu pinta 😍
+                  </h2>
+
+                  <p className="mt-2 text-sm font-bold text-zinc-500">
+                    Elige tus favoritos y nosotros lo preparamos al momento.
+                  </p>
+                </div>
+
+                
+              </div>
+            </div>
             {loading && (
               <div className="rounded-3xl bg-zinc-50 p-10 text-center">
                 <p className="text-xl font-black">Cargando productos...</p>
@@ -2323,7 +2573,21 @@ export default function TotemPage() {
                         onClick={() => openProduct(product)}
                         className="flex h-[390px] w-full flex-col text-center"
                       >
-                        <div className="mx-3 mb-2 flex h-[205px] min-h-[205px] items-center justify-center overflow-hidden rounded-[1.7rem] bg-white">
+                        <div className="relative mx-3 mb-2 flex h-[205px] min-h-[205px] items-center justify-center overflow-hidden rounded-[1.7rem] bg-white">
+                          <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1.5">
+                            {isBestSellerProduct(product, bestSellerProductId) && (
+                              <span className="rounded-full bg-orange-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.06em] text-orange-700">
+                                🔥 Más vendido
+                              </span>
+                            )}
+
+                            {!isBeverageProduct(product) && (
+                              <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.06em] text-emerald-700">
+                                Sin gluten
+                              </span>
+                            )}
+                          </div>
+
                           {product.imageUrl ? (
                             <img
                               src={product.imageUrl}
@@ -2428,6 +2692,9 @@ export default function TotemPage() {
     </main>
   );
 }
+
+
+
 
 
 
