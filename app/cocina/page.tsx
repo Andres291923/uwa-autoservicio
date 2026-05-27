@@ -63,6 +63,15 @@ type ChannelFilter = "all" | "totem" | "online" | "company" | "delivery";
 
 const CHILE_TIME_ZONE = "America/Santiago";
 
+function cleanUberComment(value: string | null | undefined) {
+  let text = String(value || "");
+
+  const garbageIndex = text.search(/CÃ|Ãƒ|Ã‚|Â/);
+  if (garbageIndex >= 0) text = text.slice(0, garbageIndex).trim();
+
+  return text.replace(/\s+\|\s*$/, "").trim();
+}
+
 function formatPrice(price: number) {
   return new Intl.NumberFormat("es-CL", {
     style: "currency",
@@ -432,7 +441,7 @@ function printOrderTicket(order: Order) {
 
           ${
             order.customerComment
-              ? `<div class="comment-box"><div class="comment-title">COMENTARIO COCINA</div>${escapeHtml(order.customerComment)}</div><div class="line"></div>`
+              ? `<div class="comment-box"><div class="comment-title">COMENTARIO COCINA</div>${escapeHtml(cleanUberComment(order.customerComment))}</div><div class="line"></div>`
               : ""
           }
 
@@ -1064,7 +1073,7 @@ export default function CocinaPage() {
                               Comentario cocina
                             </p>
                             <p className="mt-1 text-base font-black text-zinc-800">
-                              {order.customerComment}
+                              {cleanUberComment(order.customerComment)}
                             </p>
                           </div>
                         )}
@@ -1240,4 +1249,5 @@ export default function CocinaPage() {
     </main>
   );
 }
+
 
