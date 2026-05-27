@@ -2481,15 +2481,19 @@ export default function PedidoPage() {
                     }}
                     className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-blue-500"
                   >
-                    <option value="Concepción">Concepción</option>
-                    <option value="Hualpén">Hualpén</option>
-                    <option value="Talcahuano">Talcahuano</option>
-                    <option value="Chiguayante">Chiguayante</option>
-                    <option value="San Pedro de la Paz">San Pedro de la Paz</option>
-                    <option value="Coronel">Coronel</option>
-                    <option value="Penco">Penco</option>
-                    <option value="Tomé">Tomé</option>
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                  <option value="Concepción">Concepción</option>
                   </select>
+                  <p className="mt-2 rounded-2xl bg-blue-50 px-4 py-3 text-xs font-black text-blue-800">
+                    Uber Direct llega hasta 5 km maximo de distancia de nuestro local. Por ahora disponible solo para Concepcion.
+                  </p>
                   <p className="mt-2 text-xs font-bold text-zinc-500">
                     Selecciona la comuna correcta para que Uber pueda validar cobertura.
                   </p>
