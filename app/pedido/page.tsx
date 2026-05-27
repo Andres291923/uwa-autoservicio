@@ -262,7 +262,7 @@ function formatOrderStatus(value: string) {
 
 function formatOrderSource(value: string) {
   if (value === "online") return "Online";
-  return "TÃƒÂ³tem";
+  return "TÒ³tem";
 }
 
 function formatUberDeliveryStatus(value: string | null) {
@@ -311,8 +311,8 @@ function cleanCheckoutMessage(value: string) {
 }
 
 function formatPaymentMethod(value: string) {
-  if (value === "food_benefit") return "Beneficio alimentaciÃƒÂ³n";
-  if (value === "debit_credit") return "DÃƒÂ©bito / CrÃƒÂ©dito";
+  if (value === "food_benefit") return "Beneficio alimentaciÒ³n";
+  if (value === "debit_credit") return "DÒ©bito / CrÒ©dito";
   return value || "No informado";
 }
 
@@ -398,7 +398,7 @@ function buildScheduleBanner(openingHours: OpeningHour[]) {
           : item.dayOfWeek === 2
           ? "Martes"
           : item.dayOfWeek === 3
-          ? "MiÃƒÂ©rcoles"
+          ? "MiÒ©rcoles"
           : item.dayOfWeek === 4
           ? "Jueves"
           : "Viernes";
@@ -408,7 +408,7 @@ function buildScheduleBanner(openingHours: OpeningHour[]) {
   }
 
   if (saturday) {
-    parts.push(`SÃƒÂ¡bado ${saturday.openTime} a ${saturday.closeTime}`);
+    parts.push(`SÒ¡bado ${saturday.openTime} a ${saturday.closeTime}`);
   }
 
   if (sunday) {
@@ -461,7 +461,7 @@ export default function PedidoPage() {
   >("immediate");
 
   const [deliveryAddress, setDeliveryAddress] = useState("");
-  const [deliveryCity, setDeliveryCity] = useState("ConcepciÃƒÂ³n");
+  const [deliveryCity, setDeliveryCity] = useState("ConcepciÒ³n");
   const [deliveryPhone, setDeliveryPhone] = useState("");
   const [deliveryInstructions, setDeliveryInstructions] = useState("");
   const [deliveryQuote, setDeliveryQuote] = useState<DeliveryQuote | null>(null);
@@ -1350,14 +1350,14 @@ export default function PedidoPage() {
       setCouponMessage("");
 
       if (cart.length === 0) {
-        setCouponMessage("Agrega productos antes de usar un cupÃƒÂ³n.");
+        setCouponMessage("Agrega productos antes de usar un cupÒ³n.");
         return;
       }
 
       const cleanCode = couponCode.trim().toUpperCase().replace(/\s+/g, "");
 
       if (!cleanCode) {
-        setCouponMessage("Ingresa un cupÃƒÂ³n.");
+        setCouponMessage("Ingresa un cupÒ³n.");
         return;
       }
 
@@ -1378,7 +1378,7 @@ export default function PedidoPage() {
 
       if (!response.ok) {
         setAppliedCoupon(null);
-        setCouponMessage(data.error || "CupÃƒÂ³n invÃƒÂ¡lido.");
+        setCouponMessage(data.error || "CupÒ³n invÒ¡lido.");
         return;
       }
 
@@ -1389,10 +1389,10 @@ export default function PedidoPage() {
         percent: data.percent,
       });
       setCouponCode(data.code);
-      setCouponMessage(`CupÃƒÂ³n aplicado: ${data.name}`);
+      setCouponMessage(`CupÒ³n aplicado: ${data.name}`);
     } catch (error) {
       console.error(error);
-      setCouponMessage("Error al validar el cupÃƒÂ³n.");
+      setCouponMessage("Error al validar el cupÒ³n.");
     } finally {
       setValidatingCoupon(false);
     }
@@ -1428,12 +1428,12 @@ export default function PedidoPage() {
       }
 
       if (!deliveryAddress.trim()) {
-        setMessage("Ingresa la direcciÃƒÂ³n de entrega.");
+        setMessage("Ingresa la direcciÒ³n de entrega.");
         return;
       }
 
       if (getDeliveryPhoneLocalDigits(deliveryPhone).length !== 8) {
-        setMessage("Ingresa un telÃƒÂ©fono de contacto.");
+        setMessage("Ingresa un telÒ©fono de contacto.");
         return;
       }
 
@@ -1451,7 +1451,7 @@ export default function PedidoPage() {
           street: deliveryAddress,
           instructions: deliveryInstructions,
           city: deliveryCity,
-          state: "BiobÃƒÂ­o",
+          state: "BiobÒ­o",
           zipCode: "4030000",
           country: "CL",
         }),
@@ -1490,7 +1490,7 @@ export default function PedidoPage() {
 
       if (!storeIsOpenNow && fulfillmentType !== "scheduled") {
         showClosedStoreAndForceSchedule();
-        setMessage("No se puede pagar con Retiro ahora o Delivery mientras la tienda estÃƒÂ¡ cerrada. Programa tu pedido para retiro.");
+        setMessage("No se puede pagar con Retiro ahora o Delivery mientras la tienda estÒ¡ cerrada. Programa tu pedido para retiro.");
         setLoadingOrder(false);
         return;
       }
@@ -1517,12 +1517,12 @@ export default function PedidoPage() {
 
       if (fulfillmentType === "delivery") {
         if (!deliveryAddress.trim()) {
-          setMessage("Ingresa la direcciÃƒÂ³n de entrega.");
+          setMessage("Ingresa la direcciÒ³n de entrega.");
           return;
         }
 
         if (getDeliveryPhoneLocalDigits(deliveryPhone).length !== 8) {
-          setMessage("Ingresa un telÃƒÂ©fono de contacto.");
+          setMessage("Ingresa un telÒ©fono de contacto.");
           return;
         }
 
@@ -1541,7 +1541,7 @@ export default function PedidoPage() {
         }
 
         if (!selectedDaySchedule) {
-          setMessage("La tienda estÃƒÂ¡ cerrada ese dÃƒÂ­a. Elige otra fecha.");
+          setMessage("La tienda estÒ¡ cerrada ese dÒ­a. Elige otra fecha.");
           return;
         }
 
@@ -1602,7 +1602,7 @@ export default function PedidoPage() {
           : data.sandboxInitPoint || data.initPoint);
 
       if (!paymentUrl) {
-        setMessage("Mercado Pago no devolviÃƒÂ³ URL de pago.");
+        setMessage("Mercado Pago no devolviÒ³ URL de pago.");
         return;
       }
 
@@ -1759,7 +1759,7 @@ export default function PedidoPage() {
 
             <p className="mt-3 text-base font-bold text-zinc-500">
               En este momento no estamos tomando pedidos inmediatos. Puedes
-              programar tu pedido para mÃƒÂ¡s tarde.
+              programar tu pedido para mÒ¡s tarde.
             </p>
 
             <button suppressHydrationWarning
@@ -1779,7 +1779,7 @@ export default function PedidoPage() {
               onClick={() => setClosedStoreModalVisible(false)}
               className="mt-3 w-full rounded-2xl border border-zinc-200 bg-white py-4 text-sm font-black text-zinc-700"
             >
-              Seguir viendo catÃƒÂ¡logo
+              Seguir viendo catÒ¡logo
             </button>
           </div>
         </div>
@@ -1829,7 +1829,7 @@ export default function PedidoPage() {
             <div className="mx-auto flex max-w-5xl flex-col items-center justify-center gap-3 md:flex-row md:gap-10">
               <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.25em] text-emerald-700">
-                  Horario de atenciÃƒÂ³n
+                  Horario de atenciÒ³n
                 </p>
                 <p className="mt-1 text-sm font-bold text-zinc-800">
                   {scheduleBanner}
@@ -1840,10 +1840,10 @@ export default function PedidoPage() {
 
               <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.25em] text-emerald-700">
-                  <span className="mr-1 tracking-normal">Ã°Å¸â€œÂ</span> UbicaciÃƒÂ³n
+                  <span className="mr-1 tracking-normal">ðŸ�S</span> UbicaciÒ³n
                 </p>
                 <p className="mt-1 text-sm font-bold text-zinc-800">
-                  Plaza PerÃƒÂº 127, ConcepciÃƒÂ³n
+                  Plaza PerÒº 127, ConcepciÒ³n
                 </p>
               </div>
             </div>
@@ -1856,11 +1856,11 @@ export default function PedidoPage() {
         <div className="fixed inset-0 z-[20000] flex items-center justify-center bg-black/60 px-5">
           <div className="w-full max-w-xl rounded-[2rem] bg-white p-7 text-center shadow-2xl">
             <p className="text-xs font-black uppercase tracking-[0.25em] text-red-500">
-              Catalogo actualizado
+              Catálogo actualizado
             </p>
 
             <h2 className="mt-3 text-3xl font-black text-zinc-950">
-              Opcion no disponible
+              Opción no disponible
             </h2>
 
             <p className="mt-4 text-lg font-bold leading-relaxed text-zinc-600">
@@ -1891,7 +1891,7 @@ export default function PedidoPage() {
             </p>
 
             <h2 className="mt-2 text-4xl font-black leading-none tracking-[-0.05em] text-zinc-950">
-              Arma tu bowl perfecto Ã°Å¸ËœÂ
+                          Arma tu bowl perfecto
             </h2>
 
             <p className="mt-3 text-base font-bold text-zinc-500">
@@ -1950,7 +1950,7 @@ export default function PedidoPage() {
                     <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1.5">
                       {isBestSellerProduct(product, bestSellerProductId) && (
                         <span className="rounded-full bg-orange-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.06em] text-orange-700">
-                          Ã°Å¸â€Â¥ MÃƒÂ¡s vendido
+                          ðŸ⬝¥ MÒ¡s vendido
                         </span>
                       )}
 
@@ -2057,7 +2057,7 @@ export default function PedidoPage() {
 
                       {(walletSummary?.nextCashbackExpiration || loggedCustomer.nextCashbackExpiration) ? (
                         <p className="mt-1 text-xs font-bold text-emerald-700">
-                          PrÃƒÂ³ximo vencimiento: {formatPrice(walletSummary?.nextCashbackAmount ?? loggedCustomer.nextCashbackAmount ?? 0)} vence el {formatShortDate(walletSummary?.nextCashbackExpiration || loggedCustomer.nextCashbackExpiration)}
+                          PrÒ³ximo vencimiento: {formatPrice(walletSummary?.nextCashbackAmount ?? loggedCustomer.nextCashbackAmount ?? 0)} vence el {formatShortDate(walletSummary?.nextCashbackExpiration || loggedCustomer.nextCashbackExpiration)}
                         </p>
                       ) : (
                         <p className="mt-1 text-xs font-bold text-zinc-500">
@@ -2267,7 +2267,7 @@ export default function PedidoPage() {
                       Cuenta obligatoria
                     </span>
                     <p className="mt-2 rounded-2xl bg-yellow-50 p-4 text-sm font-black text-yellow-800">
-                      Para pedir online debes ingresar o crear una cuenta. AsÃƒÂ­ podrÃƒÂ¡s ver el seguimiento Uber y tu historial de pedidos.
+                      Para pedir online debes ingresar o crear una cuenta. AsÒ­ podrÒ¡s ver el seguimiento Uber y tu historial de pedidos.
                     </p>
                   </label>
                 )}
@@ -2283,7 +2283,7 @@ export default function PedidoPage() {
 
           {cart.length === 0 ? (
             <p className="mt-4 rounded-2xl bg-zinc-50 p-4 text-sm font-bold text-zinc-500">
-              AÃƒÂºn no agregas productos.
+              AÒºn no agregas productos.
             </p>
           ) : (
             <div className="mt-4 space-y-3">
@@ -2409,7 +2409,7 @@ export default function PedidoPage() {
                   Tienda cerrada
                 </p>
                 <p className="mt-2 text-sm font-bold text-yellow-950">
-                  Solo pedidos programados para retiro. Retiro ahora y Delivery se activan cuando estemos dentro del horario de atenciÃƒÂ³n.
+                  Solo pedidos programados para retiro. Retiro ahora y Delivery se activan cuando estemos dentro del horario de atenciÒ³n.
                 </p>
               </div>
             )}
@@ -2455,7 +2455,7 @@ export default function PedidoPage() {
 
                 {scheduledDate && !selectedDaySchedule && (
                   <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
-                    Tienda cerrada ese dÃƒÂ­a. Elige otra fecha.
+                    Tienda cerrada ese dÒ­a. Elige otra fecha.
                   </div>
                 )}
 
@@ -2475,13 +2475,13 @@ export default function PedidoPage() {
                     Datos para delivery
                   </p>
                   <p className="mt-1 text-xs font-bold text-zinc-600">
-                    Ingresa calle, nÃƒÂºmero y comuna para cotizar el despacho con Uber Direct.
+                    Ingresa calle, nÒºmero y comuna para cotizar el despacho con Uber Direct.
                   </p>
                 </div>
 
                 <label className="block">
                   <span className="text-xs font-black uppercase text-zinc-500">
-                    DirecciÃƒÂ³n de entrega
+                    DirecciÒ³n de entrega
                   </span>
                   <input
                     value={deliveryAddress}
@@ -2514,10 +2514,10 @@ export default function PedidoPage() {
                     
                     
                     
-                  <option value="ConcepciÃƒÂ³n">ConcepciÃƒÂ³n</option>
+                  <option value="ConcepciÒ³n">ConcepciÒ³n</option>
                   </select>
                   <p className="mt-2 rounded-2xl bg-blue-50 px-4 py-3 text-xs font-black text-blue-800">
-                    Uber Direct llega hasta un mÃƒÂ¡ximo de 5 km de distancia de nuestro local. Por ahora disponible solo para ConcepciÃƒÂ³n.
+                    Uber Direct llega hasta un mÒ¡ximo de 5 km de distancia de nuestro local. Por ahora disponible solo para ConcepciÒ³n.
                   </p>
                   <p className="mt-2 text-xs font-bold text-zinc-500">
                     Selecciona la comuna correcta para que Uber pueda validar cobertura.
@@ -2526,7 +2526,7 @@ export default function PedidoPage() {
 
                 <label className="block">
                   <span className="text-xs font-black uppercase text-zinc-500">
-                    TelÃƒÂ©fono de contacto
+                    TelÒ©fono de contacto
                   </span>
                   <div className="mt-2 flex overflow-hidden rounded-2xl border border-zinc-300 bg-white focus-within:border-blue-500">
                     <span className="flex items-center border-r border-zinc-200 bg-zinc-50 px-4 text-sm font-black text-zinc-700">
@@ -2556,7 +2556,7 @@ export default function PedidoPage() {
                       setDeliveryInstructions(event.target.value.slice(0, 250));
                       setDeliveryQuote(null);
                     }}
-                    placeholder="Ej: PortÃƒÂ³n negro, llamar al llegar"
+                    placeholder="Ej: PortÒ³n negro, llamar al llegar"
                     rows={3}
                     className="mt-2 w-full resize-none rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-blue-500"
                   />
@@ -2582,7 +2582,7 @@ export default function PedidoPage() {
                       </p>
                     </div>
                     <p className="mt-1 text-xs font-bold text-zinc-500">
-                      Esta cotizaciÃƒÂ³n se sumarÃƒÂ¡ al total del pedido.
+                      Esta cotizaciÒ³n se sumarÒ¡ al total del pedido.
                     </p>
                   </div>
                 )}
@@ -2598,7 +2598,7 @@ export default function PedidoPage() {
                 onChange={() => setPaymentMethod("debit_credit")}
                 className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-3 text-sm font-bold outline-none"
               >
-                <option value="debit_credit">DÃƒÂ©bito / CrÃƒÂ©dito</option>
+                <option value="debit_credit">DÒ©bito / CrÒ©dito</option>
               </select>
             </label>
           </div>
@@ -2607,10 +2607,10 @@ export default function PedidoPage() {
           <section className="mt-5 rounded-3xl border border-emerald-100 bg-emerald-50 p-4">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
-                CupÃƒÂ³n de descuento
+                CupÒ³n de descuento
               </p>
               <p className="mt-1 text-xs font-bold text-zinc-600">
-                Solo disponible para pagos online con dÃƒÂ©bito o crÃƒÂ©dito.
+                Solo disponible para pagos online con dÒ©bito o crÒ©dito.
               </p>
             </div>
 
@@ -2764,9 +2764,9 @@ export default function PedidoPage() {
               </div>
             ) : orderHistoryOrders.length === 0 ? (
               <div className="rounded-3xl bg-zinc-50 p-8 text-center">
-                <p className="text-xl font-black">AÃƒÂºn no tienes pedidos.</p>
+                <p className="text-xl font-black">AÒºn no tienes pedidos.</p>
                 <p className="mt-1 text-sm font-bold text-zinc-500">
-                  Cuando compres con tu cuenta, aparecerÃƒÂ¡n aquÃƒÂ­.
+                  Cuando compres con tu cuenta, aparecerÒ¡n aquÒ­.
                 </p>
               </div>
             ) : (
@@ -2854,12 +2854,12 @@ export default function PedidoPage() {
                       <div className="mt-3 grid gap-3 md:grid-cols-2">
                         <div className="rounded-2xl bg-red-50 p-4">
                           <p className="text-xs font-black uppercase text-red-600">
-                            CupÃƒÂ³n
+                            CupÒ³n
                           </p>
                           <p className="mt-1 text-sm font-black text-red-600">
                             {order.discountCouponCode
                               ? `${order.discountCouponCode} Ã‚Â· ${formatPrice(order.discountAmount)} (${order.discountPercent}%)`
-                              : "Sin cupÃƒÂ³n"}
+                              : "Sin cupÒ³n"}
                           </p>
                         </div>
 
@@ -3059,7 +3059,7 @@ export default function PedidoPage() {
                 />
 
                 <p className="mt-2 text-xs font-bold text-zinc-500">
-                  Este comentario aparecerÃƒÂ¡ en cocina y en la comanda.
+                  Este comentario aparecerÒ¡ en cocina y en la comanda.
                 </p>
               </label>
             </div>
