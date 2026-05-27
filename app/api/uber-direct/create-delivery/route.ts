@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -248,13 +248,13 @@ export async function POST(request: Request) {
         ? order.items.map((item) => ({
             name: item.product?.name || "Producto",
             quantity: item.quantity,
-            price: Math.round(Number(item.total || item.unitPrice || 0)),
+            price: Math.round(Number(item.total || item.unitPrice || 0) * 100),
           }))
         : [
             {
               name: `Pedido #${order.orderNumber}`,
               quantity: 1,
-              price: Math.round(Number(order.total || 0)),
+              price: Math.round(Number(order.total || 0) * 100),
             },
           ];
 
