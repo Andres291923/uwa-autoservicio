@@ -9,14 +9,14 @@ let cachedToken: {
 } | null = null;
 
 const postalCodeByCity: Record<string, string> = {
-  "Concepción": "4030000",
-  "Hualpén": "4600000",
+  "ConcepciÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n": "4030000",
+  "HualpÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©n": "4600000",
   "Talcahuano": "4260000",
   "Chiguayante": "4100000",
   "San Pedro de la Paz": "4130000",
   "Coronel": "4190000",
   "Penco": "4150000",
-  "Tomé": "4160000",
+  "TomÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©": "4160000",
 };
 
 function requiredEnv(name: string) {
@@ -75,7 +75,7 @@ async function getUberDirectToken() {
     throw new Error(
       data?.error_description ||
         data?.error ||
-        "Uber rechazó las credenciales."
+        "Uber rechazÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ las credenciales."
     );
   }
 
@@ -172,7 +172,7 @@ export async function POST(request: Request) {
     const quoteId = cleanText(body.quoteId || body.uberQuotePublicId);
     const customerName = cleanText(body.customerName || "Cliente");
     const deliveryAddress = cleanText(body.deliveryAddress);
-    const deliveryCity = cleanText(body.deliveryCity || "Concepción");
+    const deliveryCity = cleanText(body.deliveryCity || "ConcepciÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n");
     const deliveryState = cleanText(body.deliveryState || "Biobio");
     const deliveryZipCode =
       cleanText(body.deliveryZipCode || body.zipCode) ||
@@ -259,7 +259,7 @@ export async function POST(request: Request) {
           ];
 
     const payload: any = {
-      pickup_name: optionalEnv("UBER_DIRECT_PICKUP_NAME") || "ÜWA",
+      pickup_name: optionalEnv("UBER_DIRECT_PICKUP_NAME") || "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œWA",
       pickup_address: pickupAddress,
       pickup_phone_number: cleanPhone(
         optionalEnv("UBER_DIRECT_PICKUP_PHONE") || "+56997971213"
@@ -268,20 +268,14 @@ export async function POST(request: Request) {
       dropoff_address: dropoffAddress,
       dropoff_phone_number: deliveryPhone,
       dropoff_notes:
-        deliveryInstructions || `Pedido #${order.orderNumber} ÜWA`,
+        deliveryInstructions || `Pedido #${order.orderNumber} ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œWA`,
       manifest_items: manifestItems,
       manifest_reference: `UWA-${order.orderNumber}`,
       manifest_total_value: Math.round(Number(order.total || 0) * 100),
       quote_id: quoteId,
       external_store_id: externalStoreId,
       pickup_ready_dt: pickupReadyDate.toISOString(),
-      deliverable_action: "deliverable_action_leave_at_door",
-      undeliverable_action: "leave_at_door",
-      dropoff_verification: {
-        pincode: {
-          enabled: true,
-        },
-      },
+
     };
 
     if (optionalEnv("UBER_DIRECT_MODE") === "test") {
@@ -349,7 +343,7 @@ export async function POST(request: Request) {
       "UBER DIRECT CREADO",
       deliveryId ? `ID: ${deliveryId}` : "",
       trackingUrl ? `Tracking: ${trackingUrl}` : "",
-      deliveryCode ? `Código entrega: ${deliveryCode}` : "",
+      deliveryCode ? `CÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³digo entrega: ${deliveryCode}` : "",
     ]
       .filter(Boolean)
       .join(" | ");
