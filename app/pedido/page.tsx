@@ -2,6 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+function getDeliveryPhoneLocalDigits(value: string) {
+  const digits = String(value || "").replace(/\D/g, "");
+
+  if (digits.startsWith("569")) return digits.slice(3, 11);
+  if (digits.startsWith("56")) return digits.slice(2, 10);
+  if (digits.startsWith("9")) return digits.slice(1, 9);
+
+  return digits.slice(0, 8);
+}
+
+function buildDeliveryPhone(value: string) {
+  const localDigits = getDeliveryPhoneLocalDigits(value);
+  return localDigits ? `+569${localDigits}` : "";
+}
 type Category = {
   id: number;
   name: string;
@@ -1407,7 +1421,7 @@ export default function PedidoPage() {
         return;
       }
 
-      if (!deliveryPhone.trim()) {
+      if (getDeliveryPhoneLocalDigits(deliveryPhone).length !== 8) {
         setMessage("Ingresa un teléfono de contacto.");
         return;
       }
@@ -1422,7 +1436,7 @@ export default function PedidoPage() {
         },
         body: JSON.stringify({
           name: finalCustomerName,
-          phone: deliveryPhone,
+          phone: buildDeliveryPhone(deliveryPhone),
           street: deliveryAddress,
           instructions: deliveryInstructions,
           city: deliveryCity,
@@ -1496,7 +1510,7 @@ export default function PedidoPage() {
           return;
         }
 
-        if (!deliveryPhone.trim()) {
+        if (getDeliveryPhoneLocalDigits(deliveryPhone).length !== 8) {
           setMessage("Ingresa un teléfono de contacto.");
           return;
         }
@@ -1548,7 +1562,7 @@ export default function PedidoPage() {
           deliveryMethod: fulfillmentType === "delivery" ? "uber_direct" : "pickup",
           deliveryAddress: fulfillmentType === "delivery" ? deliveryAddress : "",
           deliveryCity: fulfillmentType === "delivery" ? deliveryCity : "",
-          deliveryPhone: fulfillmentType === "delivery" ? deliveryPhone : "",
+          deliveryPhone: fulfillmentType === "delivery" ? buildDeliveryPhone(deliveryPhone) : "",
           deliveryInstructions: fulfillmentType === "delivery" ? deliveryInstructions : "",
           uberQuotePublicId: fulfillmentType === "delivery" ? deliveryQuote?.publicId || null : null,
           uberDeliveryFee: fulfillmentType === "delivery" ? deliveryFee : 0,
@@ -2503,15 +2517,22 @@ export default function PedidoPage() {
                   <span className="text-xs font-black uppercase text-zinc-500">
                     Teléfono de contacto
                   </span>
-                  <input
-                    value={deliveryPhone}
-                    onChange={(event) => {
-                      setDeliveryPhone(event.target.value);
-                      setDeliveryQuote(null);
-                    }}
-                    placeholder="Ej: +56912345678"
-                    className="mt-2 w-full rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-blue-500"
-                  />
+                  <div className="mt-2 flex overflow-hidden rounded-2xl border border-zinc-300 bg-white focus-within:border-blue-500">
+                    <span className="flex items-center border-r border-zinc-200 bg-zinc-50 px-4 text-sm font-black text-zinc-700">
+                      +569
+                    </span>
+                    <input
+                      value={getDeliveryPhoneLocalDigits(deliveryPhone)}
+                      onChange={(event) => {
+                        setDeliveryPhone(buildDeliveryPhone(event.target.value));
+                        setDeliveryQuote(null);
+                      }}
+                      inputMode="numeric"
+                      maxLength={8}
+                      placeholder="Ej: 97971213"
+                      className="w-full px-4 py-3 text-sm font-bold outline-none"
+                    />
+                  </div>
                 </label>
 
                 <label className="block">
