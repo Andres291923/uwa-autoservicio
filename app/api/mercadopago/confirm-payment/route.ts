@@ -1,5 +1,5 @@
 import { getStoreOpenStatusNow, isScheduledFulfillment, storeClosedResponseMessage } from "@/lib/store-open";
-﻿import { NextResponse } from "next/server";
+ï»¿import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -260,7 +260,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         ok: false,
         status: "pending",
-        message: "Mercado Pago volvió sin payment_id. Aún no se puede confirmar.",
+        message: "Mercado Pago volviÃ³ sin payment_id. AÃºn no se puede confirmar.",
       });
     }
 
@@ -270,7 +270,7 @@ export async function POST(request: Request) {
 
     if (!mpSettings || !mpSettings.enabled || !mpSettings.accessToken) {
       return NextResponse.json(
-        { error: "Mercado Pago no está configurado correctamente." },
+        { error: "Mercado Pago no estÃ¡ configurado correctamente." },
         { status: 400 }
       );
     }
@@ -355,7 +355,7 @@ export async function POST(request: Request) {
         ok: false,
         status: paymentStatus || "unknown",
         statusDetail: mpData.status_detail || null,
-        message: "El pago aún no está aprobado.",
+        message: "El pago aÃºn no estÃ¡ aprobado.",
       });
     }
 
