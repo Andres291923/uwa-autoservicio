@@ -2492,7 +2492,7 @@ export default function PedidoPage() {
                   <option value="Concepción">Concepción</option>
                   </select>
                   <p className="mt-2 rounded-2xl bg-blue-50 px-4 py-3 text-xs font-black text-blue-800">
-                    Uber Direct llega hasta 5 km maximo de distancia de nuestro local. Por ahora disponible solo para Concepcion.
+                    Uber Direct llega hasta un máximo de 5 km de distancia de nuestro local. Por ahora disponible solo para Concepción.
                   </p>
                   <p className="mt-2 text-xs font-bold text-zinc-500">
                     Selecciona la comuna correcta para que Uber pueda validar cobertura.
