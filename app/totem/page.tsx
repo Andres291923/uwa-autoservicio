@@ -1310,7 +1310,7 @@ export default function TotemPage() {
       : "");
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#f7f8f4] pb-[118px] text-zinc-950">
+    <main className="min-h-screen overflow-x-hidden bg-[#f7f8f4] pb-[160px] text-zinc-950">
 
       {/* BADGE_WORKER_ROOT */}
       <TotemCompanyWorkerSessionBadge />
@@ -1339,7 +1339,7 @@ export default function TotemPage() {
                 {settings.businessName} {settings.kioskSubtitle}
               </p>
 
-              <h1 className="truncate text-[27px] font-black leading-none tracking-tight">
+              <h1 className="truncate text-[34px] font-black leading-none tracking-tight">
                 {selectedProduct
                   ? "Personaliza tu producto"
                   : step === "summary"
@@ -2519,7 +2519,7 @@ export default function TotemPage() {
             </div>
           </aside>
 
-          <section className="min-w-0 overflow-x-hidden bg-[#f7f8f4] p-4 pb-36">
+          <section className="min-w-0 overflow-x-hidden bg-[#f7f8f4] p-4 pb-48">
             <div className="mb-4 overflow-hidden rounded-[2rem] bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
               <div className="flex items-center justify-between gap-4">
                 <div>
@@ -2571,9 +2571,9 @@ export default function TotemPage() {
                     >
 <button
                         onClick={() => openProduct(product)}
-                        className="flex h-[315px] w-full flex-col text-center"
+                        className="flex h-[345px] w-full flex-col text-center"
                       >
-                        <div className="relative mx-3 mb-2 flex h-[155px] min-h-[155px] items-center justify-center overflow-hidden rounded-[1.7rem] bg-white">
+                        <div className="relative mx-3 mb-2 flex h-[145px] min-h-[145px] items-center justify-center overflow-hidden rounded-[1.7rem] bg-white">
                           <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1.5">
                             {isBestSellerProduct(product, bestSellerProductId) && (
                               <span className="rounded-full bg-orange-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.06em] text-orange-700">
@@ -2592,7 +2592,7 @@ export default function TotemPage() {
                             <img
                               src={product.imageUrl}
                               alt={product.name}
-                              className="block h-auto max-h-[135px] w-auto max-w-[84%] object-contain"
+                              className="block h-auto max-h-[128px] w-auto max-w-[82%] object-contain"
                             />
                           ) : (
                             <div className="flex h-full w-full flex-col items-center justify-center text-zinc-400">
@@ -2607,8 +2607,8 @@ export default function TotemPage() {
                           )}
                         </div>
 
-                        <div className="flex min-h-0 flex-1 flex-col p-4">
-                          <h2 className="flex min-h-[48px] w-full items-center justify-center text-center text-[27px] font-black leading-[25px] tracking-[-0.02em]">
+                        <div className="flex min-h-0 flex-1 flex-col p-4 pb-5">
+                          <h2 className="flex min-h-[48px] w-full items-center justify-center text-center text-[34px] font-black leading-[25px] tracking-[-0.02em]">
                             {product.name}
                           </h2>
 
@@ -2623,7 +2623,7 @@ export default function TotemPage() {
                           <div className="mt-auto flex items-end justify-between gap-2 pt-3">
                             <div className="min-w-0">
                               <p
-                                className="whitespace-nowrap text-[27px] font-black leading-none tracking-[-0.04em]"
+                                className="whitespace-nowrap text-[34px] font-black leading-none tracking-[-0.04em]"
                                 style={{ color: settings.primaryColor }}
                               >
                                 {formatPrice(product.price)}
@@ -2637,7 +2637,7 @@ export default function TotemPage() {
                             </div>
 
                             <div
-                              className="flex h-[48px] w-[48px] min-w-[48px] items-center justify-center rounded-2xl text-3xl font-black text-white shadow-lg"
+                              className="flex h-[60px] w-[60px] min-w-[60px] items-center justify-center rounded-2xl text-4xl font-black text-white shadow-lg"
                               style={{ background: settings.primaryColor }}
                             >
                               +
@@ -2652,7 +2652,7 @@ export default function TotemPage() {
             )}
           </section>
 
-          <footer className="fixed inset-x-0 bottom-0 z-[9999] border-t border-zinc-200 bg-white/95 px-3 py-3 shadow-[0_-12px_40px_rgba(0,0,0,0.12)] backdrop-blur">
+          <footer className="fixed inset-x-0 bottom-0 z-[9999] border-t border-zinc-200 bg-white/95 px-3 py-2 shadow-[0_-10px_35px_rgba(0,0,0,0.12)] backdrop-blur">
             <div className="mx-auto flex max-w-[840px] items-stretch overflow-hidden rounded-[28px] border border-zinc-200 bg-white shadow-2xl">
               <div className="flex min-w-[155px] flex-col justify-center px-7 py-5">
                 <p className="m-0 text-[15px] font-black uppercase tracking-[0.16em] text-zinc-400">
@@ -2692,6 +2692,7 @@ export default function TotemPage() {
     </main>
   );
 }
+
 
 
 
