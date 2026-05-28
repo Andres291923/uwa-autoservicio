@@ -1402,7 +1402,7 @@ export default function TotemPage() {
               Catálogo actualizado
             </p>
 
-            <h2 className="mt-3 text-3xl font-black text-zinc-950">
+            <h2 className="mt-3 text-2xl font-black text-zinc-950">
               Opción no disponible
             </h2>
 
@@ -1513,7 +1513,7 @@ export default function TotemPage() {
                   Cliente
                 </p>
 
-                <h2 className="mt-2 text-3xl font-black">
+                <h2 className="mt-2 text-2xl font-black">
                   Ingresa y gana cashback
                 </h2>
 
@@ -1641,7 +1641,7 @@ export default function TotemPage() {
                 onChange={(event) => setTotemAuthPin(cleanPin(event.target.value))}
                 placeholder="4 digitos"
                 maxLength={4}
-                className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-4 text-center text-3xl font-black tracking-[0.4em] outline-none focus:border-[#10B557]"
+                className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-4 text-center text-2xl font-black tracking-[0.4em] outline-none focus:border-[#10B557]"
               />
             </label>
 
@@ -1660,7 +1660,7 @@ export default function TotemPage() {
                   }
                   placeholder="Repite PIN"
                   maxLength={4}
-                  className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-4 text-center text-3xl font-black tracking-[0.4em] outline-none focus:border-[#10B557]"
+                  className="mt-2 w-full rounded-2xl border border-zinc-300 px-4 py-4 text-center text-2xl font-black tracking-[0.4em] outline-none focus:border-[#10B557]"
                 />
               </label>
             )}
@@ -1689,7 +1689,7 @@ export default function TotemPage() {
               Tienda cerrada
             </p>
 
-            <h2 className="mt-3 text-3xl font-black">
+            <h2 className="mt-3 text-2xl font-black">
               No puedes hacer pedidos inmediatos en este horario.
             </h2>
 
@@ -1715,7 +1715,7 @@ export default function TotemPage() {
       )}
       {selectedProduct ? (
         <section className="p-3 pb-32">
-          <div className="mx-auto max-w-6xl rounded-[2rem] border border-white bg-white p-5 shadow-[0_18px_55px_rgba(15,23,42,0.10)] ring-1 ring-black/5">
+          <div className="mx-auto max-w-6xl rounded-[2rem] border border-white bg-white p-4 shadow-[0_18px_55px_rgba(15,23,42,0.10)] ring-1 ring-black/5">
             <div className="mb-5 grid gap-4 rounded-[2rem] bg-[#f7f8f4] p-4 md:grid-cols-[1fr_260px]">
               <div>
                 <button
@@ -1741,7 +1741,7 @@ export default function TotemPage() {
                 </p>
 
                 <p
-                  className="mt-3 text-3xl font-black"
+                  className="mt-3 text-2xl font-black"
                   style={{ color: settings.primaryColor }}
                 >
                   {formatPrice(selectedProduct.price)}
@@ -1895,7 +1895,7 @@ export default function TotemPage() {
               </label>
             </div>
 
-            <div className="sticky bottom-4 mt-5 rounded-3xl border border-zinc-200 bg-white p-4 shadow-xl">
+            <div className="sticky bottom-2 mt-3 rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-lg">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.15em] text-zinc-400">
@@ -1903,7 +1903,7 @@ export default function TotemPage() {
                   </p>
 
                   <p
-                    className="text-3xl font-black"
+                    className="text-2xl font-black"
                     style={{ color: settings.primaryColor }}
                   >
                     {formatPrice(selectedProductTotal)}
@@ -1913,7 +1913,7 @@ export default function TotemPage() {
                 <button
                   onClick={addConfiguredProductToCart}
                   disabled={!canAddSelectedProduct}
-                  className="rounded-2xl px-9 py-5 text-lg font-black text-white shadow-lg disabled:bg-zinc-200 disabled:text-zinc-500"
+                  className="rounded-2xl px-7 py-4 text-base font-black text-white shadow-lg disabled:bg-zinc-200 disabled:text-zinc-500"
                   style={{
                     background: canAddSelectedProduct
                       ? settings.primaryColor
@@ -1930,7 +1930,7 @@ export default function TotemPage() {
         <section className="p-3 pb-32">
           <div className="mx-auto max-w-3xl rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-3xl font-black">Resumen compra</h2>
+              <h2 className="text-2xl font-black">Resumen compra</h2>
 
               <button
                 onClick={() => setStep("catalog")}
@@ -2086,7 +2086,7 @@ export default function TotemPage() {
         <section className="p-3 pb-32">
           <div className="mx-auto max-w-2xl rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-3xl font-black">Datos del pedido</h2>
+              <h2 className="text-2xl font-black">Datos del pedido</h2>
 
               <button
                 onClick={() => setStep("summary")}
@@ -2102,7 +2102,7 @@ export default function TotemPage() {
                   Cliente identificado
                 </p>
 
-                <p className="mt-1 text-3xl font-black">
+                <p className="mt-1 text-2xl font-black">
                   Hola, {loggedCustomerName} ðŸ‘‹
                 </p>
               </div>
@@ -2178,7 +2178,7 @@ export default function TotemPage() {
           <div className="mx-auto max-w-2xl rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <h2 className="text-3xl font-black">Elige medio de pago</h2>
+                <h2 className="text-2xl font-black">Elige medio de pago</h2>
                 <p className="mt-1 text-base font-bold text-zinc-500">
                   Selecciona cómo pagará el cliente.
                 </p>
@@ -2692,6 +2692,7 @@ export default function TotemPage() {
     </main>
   );
 }
+
 
 
 
