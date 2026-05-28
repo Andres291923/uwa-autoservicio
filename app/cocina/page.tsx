@@ -167,12 +167,18 @@ function isCompanyOrder(order: Order) {
 function isDeliveryOrder(order: Order) {
   const source = normalizeSearchText(order.orderSource);
   const totemCode = normalizeSearchText(order.totemCode);
+  const comment = normalizeSearchText(order.customerComment);
+  const paymentMethod = normalizeSearchText(order.paymentMethod);
 
   return (
     source.includes("uber") ||
     source.includes("delivery") ||
     totemCode.includes("uber") ||
-    totemCode.includes("delivery")
+    totemCode.includes("delivery") ||
+    comment.includes("delivery uber") ||
+    comment.includes("uber direct") ||
+    comment.includes("tracking:") ||
+    paymentMethod.includes("uber")
   );
 }
 
@@ -1249,5 +1255,6 @@ export default function CocinaPage() {
     </main>
   );
 }
+
 
 
