@@ -1310,19 +1310,19 @@ export default function TotemPage() {
       : "");
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#f7f8f4] pb-[112px] text-zinc-950">
+    <main className="min-h-screen overflow-x-hidden bg-[#f7f8f4] pb-[150px] text-zinc-950">
 
       {/* BADGE_WORKER_ROOT */}
       <TotemCompanyWorkerSessionBadge />
       <header className="sticky top-0 z-40 border-b border-emerald-100 bg-white/95 px-4 py-2 shadow-[0_8px_30px_rgba(16,181,87,0.08)] backdrop-blur">
-        <div className="flex h-[70px] items-center justify-between gap-3">
+        <div className="flex h-[84px] items-center justify-between gap-3">
           <div className="flex min-w-0 flex-1 items-center gap-3">
-            <div className="flex h-[50px] w-[50px] min-w-[50px] items-center justify-center overflow-hidden rounded-2xl bg-zinc-100">
+            <div className="flex h-[62px] w-[62px] min-w-[62px] items-center justify-center overflow-hidden rounded-2xl bg-zinc-100">
               {settings.logoUrl ? (
                 <img
                   src={settings.logoUrl}
                   alt={settings.businessName}
-                  className="block h-auto max-h-[42px] w-auto max-w-[42px] object-contain"
+                  className="block h-auto max-h-[52px] w-auto max-w-[52px] object-contain"
                 />
               ) : (
                 <span className="text-sm font-black text-zinc-400">
@@ -1333,13 +1333,13 @@ export default function TotemPage() {
 
             <div className="min-w-0 flex-1">
               <p
-                className="truncate text-[9px] font-black uppercase tracking-[0.18em]"
+                className="truncate text-[11px] font-black uppercase tracking-[0.16em]"
                 style={{ color: settings.primaryColor }}
               >
                 {settings.businessName} {settings.kioskSubtitle}
               </p>
 
-              <h1 className="truncate text-[23px] font-black leading-none tracking-tight">
+              <h1 className="truncate text-[36px] font-black leading-none tracking-tight">
                 {selectedProduct
                   ? "Personaliza tu producto"
                   : step === "summary"
@@ -1380,12 +1380,12 @@ export default function TotemPage() {
               onClick={() => openTotemAuth("login")}
               className="shrink-0 active:"
             >
-              <div className="flex h-[44px] min-w-[245px] items-center justify-center gap-2 rounded-xl bg-[#10B557] px-4 text-white shadow-sm">
+              <div className="flex h-[56px] min-w-[290px] items-center justify-center gap-2 rounded-xl bg-[#10B557] px-4 text-white shadow-sm">
                 <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-white/20 text-xs font-semibold">
                   $
                 </span>
 
-                <span className="whitespace-nowrap text-[12px] font-medium uppercase tracking-[0.04em]">
+                <span className="whitespace-nowrap text-[14px] font-black uppercase tracking-[0.04em]">
                   Ingresa y gana cashback
                 </span>
               </div>
@@ -1517,7 +1517,7 @@ export default function TotemPage() {
                   Ingresa y gana cashback
                 </h2>
 
-                <p className="mt-2 text-sm font-bold text-zinc-500">
+                <p className="mt-2 text-base font-bold text-zinc-500">
                   Usa tu correo y PIN rapido de 4 digitos.
                 </p>
               </div>
@@ -1788,7 +1788,7 @@ export default function TotemPage() {
                           {group.template.name}
                         </h3>
 
-                        <p className="mt-1 text-sm font-bold text-zinc-500">
+                        <p className="mt-1 text-base font-bold text-zinc-500">
                           Seleccionadas: {selectedIds.length}
                           {max > 0 ? `/${max}` : ""} {"\u00B7"} Mínimo: {min}
 {group.required ? " · Obligatorio" : " · Opcional"}
@@ -2028,7 +2028,7 @@ export default function TotemPage() {
 </span>
 </div>
 
-                    <p className="mt-1 text-sm font-bold text-zinc-500">
+                    <p className="mt-1 text-base font-bold text-zinc-500">
                       {tipPercent}% sugerido: {formatPrice(Math.round(cartTotal * (tipPercent / 100)))}
                     </p>
                   </div>
@@ -2078,7 +2078,7 @@ export default function TotemPage() {
                 background: cart.length > 0 ? settings.primaryColor : undefined,
               }}
             >
-              Siguiente
+              VER PEDIDO →
             </button>
           </div>
         </section>
@@ -2119,7 +2119,7 @@ export default function TotemPage() {
                   className="mt-3 w-full rounded-2xl border border-zinc-300 px-5 py-4 text-2xl font-black outline-none"
                 />
 
-                <p className="mt-2 text-sm font-bold text-zinc-500">
+                <p className="mt-2 text-base font-bold text-zinc-500">
                   Este nombre aparecera en cocina y en la comanda.
                 </p>
               </label>
@@ -2179,7 +2179,7 @@ export default function TotemPage() {
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <h2 className="text-3xl font-black">Elige medio de pago</h2>
-                <p className="mt-1 text-sm font-bold text-zinc-500">
+                <p className="mt-1 text-base font-bold text-zinc-500">
                   Selecciona cómo pagará el cliente.
                 </p>
               </div>
@@ -2347,7 +2347,7 @@ export default function TotemPage() {
 
                     <h3 className="text-2xl font-black">Débito / Crédito</h3>
 
-                    <p className="mt-2 text-sm font-bold text-zinc-500">
+                    <p className="mt-2 text-base font-bold text-zinc-500">
                       Pago con tarjeta bancaria en terminal.
                     </p>
                   </div>
@@ -2403,7 +2403,7 @@ export default function TotemPage() {
                       Beneficio alimentación
                     </h3>
 
-                    <p className="mt-2 text-sm font-bold text-zinc-500">
+                    <p className="mt-2 text-base font-bold text-zinc-500">
                       Edenred, Pluxee
                     </p>
                   </div>
@@ -2479,15 +2479,15 @@ export default function TotemPage() {
           </div>
         </section>
       ) : (
-        <section className="grid min-h-[calc(100vh-71px)] grid-cols-[126px_minmax(0,1fr)] overflow-x-hidden">
-          <aside className="sticky top-[71px] h-[calc(100vh-71px)] overflow-y-auto border-r border-emerald-100 bg-white/85 px-2.5 py-4 shadow-[8px_0_30px_rgba(15,23,42,0.04)]">
-            <h2 className="mb-3 px-1 text-[9px] font-black uppercase tracking-[0.22em] text-zinc-400">
+        <section className="grid min-h-[calc(100vh-71px)] grid-cols-[152px_minmax(0,1fr)] overflow-x-hidden">
+          <aside className="sticky top-[86px] h-[calc(100vh-86px)] overflow-y-auto border-r border-emerald-100 bg-white/85 px-2.5 py-4 shadow-[8px_0_30px_rgba(15,23,42,0.04)]">
+            <h2 className="mb-3 px-1 text-[11px] font-black uppercase tracking-[0.18em] text-zinc-400">
               Categorías
             </h2>
 <div className="space-y-2">
               <button
                 onClick={() => setSelectedCategoryId("all")}
-                className="w-full rounded-2xl px-3 py-4 text-center text-[12px] font-black uppercase leading-tight"
+                className="w-full rounded-2xl px-3 py-5 text-center text-[15px] font-black uppercase leading-tight"
                 style={{
                   background:
                     selectedCategoryId === "all"
@@ -2503,7 +2503,7 @@ export default function TotemPage() {
                 <button
                   key={category.id}
                   onClick={() => setSelectedCategoryId(category.id)}
-                  className="w-full rounded-2xl px-3 py-4 text-center text-[12px] font-black uppercase leading-tight"
+                  className="w-full rounded-2xl px-3 py-5 text-center text-[15px] font-black uppercase leading-tight"
                   style={{
                     background:
                       selectedCategoryId === category.id
@@ -2519,7 +2519,7 @@ export default function TotemPage() {
             </div>
           </aside>
 
-          <section className="min-w-0 overflow-x-hidden bg-[#f7f8f4] p-4 pb-36">
+          <section className="min-w-0 overflow-x-hidden bg-[#f7f8f4] p-5 pb-44">
             <div className="mb-4 overflow-hidden rounded-[2rem] bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
               <div className="flex items-center justify-between gap-4">
                 <div>
@@ -2530,11 +2530,11 @@ export default function TotemPage() {
                     Bowls frescos · rápidos · al momento
                   </p>
 
-                  <h2 className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-zinc-950">
+                  <h2 className="mt-2 text-[38px] font-black leading-none tracking-[-0.04em] text-zinc-950">
                     Arma tu bowl perfecto 😍
                   </h2>
 
-                  <p className="mt-2 text-sm font-bold text-zinc-500">
+                  <p className="mt-2 text-base font-bold text-zinc-500">
                     Elige tus ingredientes favoritos y nosotros lo preparamos al momento.
                   </p>
                 </div>
@@ -2559,7 +2559,7 @@ export default function TotemPage() {
             )}
 
             {!loading && visibleProducts.length > 0 && (
-              <div className="grid grid-cols-2 gap-4 xl:grid-cols-3 2xl:grid-cols-4">
+              <div className="grid grid-cols-2 gap-5 xl:grid-cols-3 2xl:grid-cols-4">
                 {visibleProducts.map((product) => {
                   const hasModifiers =
                     getActiveModifierGroups(product).length > 0;
@@ -2571,9 +2571,9 @@ export default function TotemPage() {
                     >
 <button
                         onClick={() => openProduct(product)}
-                        className="flex h-[390px] w-full flex-col text-center"
+                        className="flex h-[370px] w-full flex-col text-center"
                       >
-                        <div className="relative mx-3 mb-2 flex h-[205px] min-h-[205px] items-center justify-center overflow-hidden rounded-[1.7rem] bg-white">
+                        <div className="relative mx-3 mb-2 flex h-[210px] min-h-[210px] items-center justify-center overflow-hidden rounded-[1.7rem] bg-white">
                           <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1.5">
                             {isBestSellerProduct(product, bestSellerProductId) && (
                               <span className="rounded-full bg-orange-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.06em] text-orange-700">
@@ -2592,7 +2592,7 @@ export default function TotemPage() {
                             <img
                               src={product.imageUrl}
                               alt={product.name}
-                              className="block h-auto max-h-[178px] w-auto max-w-[84%] object-contain"
+                              className="block h-auto max-h-[188px] w-auto max-w-[88%] object-contain"
                             />
                           ) : (
                             <div className="flex h-full w-full flex-col items-center justify-center text-zinc-400">
@@ -2608,12 +2608,12 @@ export default function TotemPage() {
                         </div>
 
                         <div className="flex min-h-0 flex-1 flex-col p-4">
-                          <h2 className="flex min-h-[48px] w-full items-center justify-center text-center text-[19px] font-black leading-[21px] tracking-[-0.02em]">
+                          <h2 className="flex min-h-[48px] w-full items-center justify-center text-center text-[36px] font-black leading-[25px] tracking-[-0.02em]">
                             {product.name}
                           </h2>
 
                           {product.description ? (
-                            <p className="mt-1 line-clamp-2 min-h-[38px] text-[13px] font-semibold leading-[17px] text-zinc-500">
+                            <p className="mt-1 line-clamp-2 min-h-[38px] text-[15px] font-bold leading-[19px] text-zinc-500">
                               {product.description}
                             </p>
                           ) : (
@@ -2623,21 +2623,21 @@ export default function TotemPage() {
                           <div className="mt-auto flex items-end justify-between gap-2 pt-3">
                             <div className="min-w-0">
                               <p
-                                className="whitespace-nowrap text-[29px] font-black leading-none tracking-[-0.04em]"
+                                className="whitespace-nowrap text-[36px] font-black leading-none tracking-[-0.04em]"
                                 style={{ color: settings.primaryColor }}
                               >
                                 {formatPrice(product.price)}
                               </p>
 
                               {hasModifiers && (
-                                <p className="mt-1 text-[9px] font-black uppercase tracking-wide text-zinc-400">
+                                <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-zinc-400">
                                   Personalizable
                                 </p>
                               )}
                             </div>
 
                             <div
-                              className="flex h-[52px] w-[52px] min-w-[52px] items-center justify-center rounded-2xl text-3xl font-black text-white shadow-lg"
+                              className="flex h-[64px] w-[64px] min-w-[64px] items-center justify-center rounded-2xl text-3xl font-black text-white shadow-lg"
                               style={{ background: settings.primaryColor }}
                             >
                               +
@@ -2652,22 +2652,22 @@ export default function TotemPage() {
             )}
           </section>
 
-          <footer className="fixed inset-x-0 bottom-0 z-[9999] border-t border-zinc-200 bg-white/95 px-3 py-3 shadow-[0_-12px_40px_rgba(0,0,0,0.12)] backdrop-blur">
-            <div className="mx-auto flex max-w-[840px] items-stretch overflow-hidden rounded-[28px] border border-zinc-200 bg-white shadow-2xl">
-              <div className="flex min-w-[155px] flex-col justify-center px-5 py-3">
-                <p className="m-0 text-[12px] font-black uppercase tracking-[0.16em] text-zinc-400">
+          <footer className="fixed inset-x-0 bottom-0 z-[9999] border-t border-zinc-200 bg-white/95 px-4 py-5 shadow-[0_-18px_55px_rgba(0,0,0,0.18)] backdrop-blur">
+            <div className="mx-auto flex max-w-[980px] items-stretch overflow-hidden rounded-[34px] border border-zinc-200 bg-white shadow-2xl">
+              <div className="flex min-w-[220px] flex-col justify-center px-7 py-5">
+                <p className="m-0 text-[15px] font-black uppercase tracking-[0.16em] text-zinc-400">
                   Total
                 </p>
 
                 <p
-                  className="m-0 mt-1 text-[27px] font-black leading-none"
+                  className="m-0 mt-1 text-[44px] font-black leading-none"
                   style={{ color: settings.primaryColor }}
                 >
                   {formatPrice(finalTotal)}
                 </p>
 
                 {cartQuantity > 0 && (
-                  <p className="m-0 mt-1 text-[12px] font-black text-zinc-500">
+                  <p className="m-0 mt-1 text-[16px] font-black text-zinc-600">
                     {cartQuantity} producto{cartQuantity > 1 ? "s" : ""}
                   </p>
                 )}
@@ -2676,14 +2676,14 @@ export default function TotemPage() {
               <button
                 onClick={goToSummary}
                 disabled={cart.length === 0}
-                className="flex flex-1 items-center justify-center px-5 text-[22px] font-black disabled:cursor-not-allowed"
+                className="flex flex-1 items-center justify-center px-8 text-[38px] font-black disabled:cursor-not-allowed"
                 style={{
                   border: "none",
                   background: cart.length > 0 ? settings.primaryColor : "#e4e4e7",
                   color: cart.length > 0 ? "white" : "#71717a",
                 }}
               >
-                Siguiente &gt;
+                VER PEDIDO → &gt;
               </button>
             </div>
           </footer>
@@ -2692,6 +2692,7 @@ export default function TotemPage() {
     </main>
   );
 }
+
 
 
 
