@@ -2609,19 +2609,21 @@ export default function TotemPage() {
                         className="flex h-[345px] w-full flex-col text-center"
                       >
                         <div className="relative mx-3 mb-2 flex h-[145px] min-h-[145px] items-center justify-center overflow-hidden rounded-[1.7rem] bg-white">
-                          <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1.5">
-                            {isBestSellerProduct(product, bestSellerProductId) && (
-                              <span className="rounded-full bg-orange-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.06em] text-orange-700">
-                                🔥 Más vendido
-                              </span>
-                            )}
-
-                            {!isBeverageProduct(product) && (
+                          {!isBeverageProduct(product) && (
+                            <div className="absolute left-3 top-3 z-10">
                               <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.06em] text-emerald-700">
                                 Sin gluten
                               </span>
-                            )}
-                          </div>
+                            </div>
+                          )}
+
+                          {isBestSellerProduct(product, bestSellerProductId) && (
+                            <div className="absolute right-3 top-3 z-10">
+                              <span className="rounded-full bg-orange-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.06em] text-orange-700">
+                                🔥 Más vendido
+                              </span>
+                            </div>
+                          )}
 
                           {product.imageUrl ? (
                             <img
@@ -2727,6 +2729,7 @@ export default function TotemPage() {
     </main>
   );
 }
+
 
 
 
