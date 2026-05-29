@@ -2683,7 +2683,7 @@ export default function TotemPage() {
                   color: cart.length > 0 ? "white" : "#71717a",
                 }}
               >
-                Ver pedido → &gt;
+                Ver pedido →
               </button>
             </div>
           </footer>
@@ -2692,6 +2692,7 @@ export default function TotemPage() {
     </main>
   );
 }
+
 
 
 
