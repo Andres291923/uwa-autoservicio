@@ -2602,30 +2602,32 @@ export default function TotemPage() {
                   return (
                     <article
                       key={product.id}
-                      className="overflow-hidden rounded-[2rem] border border-white bg-white shadow-[0_18px_45px_rgba(15,23,42,0.08)] ring-1 ring-black/5 transition active:"
+                      className="relative overflow-hidden rounded-[2rem] border border-white bg-white shadow-[0_18px_45px_rgba(15,23,42,0.08)] ring-1 ring-black/5 transition active:"
                     >
+                      {/* TOTEM_CARD_BADGES_PRODUCT */}
+                      <div className="pointer-events-none absolute left-4 right-4 top-3 z-20 flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 justify-start">
+                          {!isBeverageProduct(product) && (
+                            <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.06em] text-emerald-700">
+                              Sin gluten
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex min-w-0 justify-end">
+                          {isBestSellerProduct(product, bestSellerProductId) && (
+                            <span className="rounded-full bg-orange-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.06em] text-orange-700">
+                              🔥 Más vendido
+                            </span>
+                          )}
+                        </div>
+                      </div>
 <button
                         onClick={() => openProduct(product)}
-                        className="flex h-[345px] w-full flex-col text-center"
+                        className="flex h-[345px] w-full flex-col pt-10 text-center"
                       >
                         <div className="relative mx-3 mb-2 flex h-[145px] min-h-[145px] items-center justify-center overflow-hidden rounded-[1.7rem] bg-white">
-                          {!isBeverageProduct(product) && (
-                            <div className="absolute left-3 top-3 z-10">
-                              <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.06em] text-emerald-700">
-                                Sin gluten
-                              </span>
-                            </div>
-                          )}
-
-                          {isBestSellerProduct(product, bestSellerProductId) && (
-                            <div className="absolute right-3 top-3 z-10">
-                              <span className="rounded-full bg-orange-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.06em] text-orange-700">
-                                🔥 Más vendido
-                              </span>
-                            </div>
-                          )}
-
-                          {product.imageUrl ? (
+{product.imageUrl ? (
                             <img
                               src={product.imageUrl}
                               alt={product.name}
@@ -2729,6 +2731,7 @@ export default function TotemPage() {
     </main>
   );
 }
+
 
 
 
