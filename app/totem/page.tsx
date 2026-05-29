@@ -2078,7 +2078,7 @@ export default function TotemPage() {
                 background: cart.length > 0 ? settings.primaryColor : undefined,
               }}
             >
-              VER PEDIDO →
+              Ver pedido →
             </button>
           </div>
         </section>
@@ -2676,14 +2676,14 @@ export default function TotemPage() {
               <button
                 onClick={goToSummary}
                 disabled={cart.length === 0}
-                className="flex flex-1 items-center justify-center px-5 text-[22px] font-black disabled:cursor-not-allowed"
+                className="flex flex-1 items-center justify-center px-5 text-[23px] font-bold disabled:cursor-not-allowed"
                 style={{
                   border: "none",
                   background: cart.length > 0 ? settings.primaryColor : "#e4e4e7",
                   color: cart.length > 0 ? "white" : "#71717a",
                 }}
               >
-                VER PEDIDO → &gt;
+                Ver pedido → &gt;
               </button>
             </div>
           </footer>
@@ -2692,6 +2692,7 @@ export default function TotemPage() {
     </main>
   );
 }
+
 
 
 
