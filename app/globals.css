@@ -372,3 +372,45 @@ body.orientation-booting::after {
 }
 /* TOTEM_MENU_HORIZONTAL_REAL_END */
 
+
+/* TOTEM_MENU_SIN_SOLAPAR_START */
+@media (max-width: 920px) {
+  .totem-shell > section.grid > aside {
+    position: static !important;
+    top: auto !important;
+    z-index: auto !important;
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 10px !important;
+    padding: 12px 14px 6px !important;
+    margin: 0 !important;
+    background: #f7f8f4 !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+  }
+
+  .totem-shell > section.grid > aside h2 {
+    display: none !important;
+  }
+
+  .totem-shell > section.grid > aside button {
+    flex: 0 0 auto !important;
+    min-width: 116px !important;
+    height: 48px !important;
+    border-radius: 999px !important;
+    padding: 0 18px !important;
+    font-size: 14px !important;
+  }
+
+  .totem-shell > section.grid > section {
+    padding-top: 8px !important;
+  }
+
+  .totem-shell > section.grid > section > div:first-child {
+    margin-top: 0 !important;
+  }
+}
+/* TOTEM_MENU_SIN_SOLAPAR_END */
+
