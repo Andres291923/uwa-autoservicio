@@ -315,3 +315,58 @@ body.orientation-booting::after {
 
 /* TOTEM_RESPONSIVE_REAL_END */
 
+
+/* TOTEM_CATEGORIAS_HORIZONTAL_START */
+@media (max-width: 920px) {
+  .totem-shell > section.grid > aside {
+    position: sticky !important;
+    top: 82px !important;
+    z-index: 60 !important;
+    height: auto !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    padding: 10px 12px !important;
+    background: rgba(247, 248, 244, 0.96) !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid rgba(16, 185, 129, 0.18) !important;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06) !important;
+    overflow: visible !important;
+  }
+
+  .totem-shell > section.grid > aside h2 {
+    display: none !important;
+  }
+
+  .totem-shell > section.grid > aside button {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 54px !important;
+    padding: 0 8px !important;
+    border-radius: 18px !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+  }
+
+  .totem-shell > section.grid > aside button span:first-child {
+    display: none !important;
+  }
+
+  .totem-shell > section.grid > aside button span {
+    margin: 0 !important;
+  }
+
+  .totem-shell > section.grid > section {
+    padding-top: 12px !important;
+  }
+
+  .totem-shell > section.grid > section > div:first-child {
+    margin-top: 0 !important;
+  }
+}
+/* TOTEM_CATEGORIAS_HORIZONTAL_END */
+
