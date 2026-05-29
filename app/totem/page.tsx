@@ -1310,7 +1310,7 @@ export default function TotemPage() {
       : "");
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#f7f8f4] pb-[160px] text-zinc-950">
+    <main className="totem-shell min-h-screen overflow-x-hidden bg-[#f7f8f4] pb-[160px] text-zinc-950">
 
       {/* BADGE_WORKER_ROOT */}
       <TotemCompanyWorkerSessionBadge />
@@ -2692,6 +2692,7 @@ export default function TotemPage() {
     </main>
   );
 }
+
 
 
 
