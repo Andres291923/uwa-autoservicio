@@ -1925,6 +1925,41 @@ export default function TotemPage() {
               </div>
             </div>
           </div>
+        {cart.length > 0 && (
+            <footer className="fixed inset-x-0 bottom-0 z-[9999] border-t border-zinc-200 bg-white/95 px-3 py-2 shadow-[0_-10px_35px_rgba(0,0,0,0.12)] backdrop-blur">
+              <div className="mx-auto flex max-w-[840px] items-stretch overflow-hidden rounded-[28px] border border-zinc-200 bg-white shadow-2xl">
+                <div className="flex min-w-[155px] flex-col justify-center px-7 py-5">
+                  <p className="m-0 text-[15px] font-black uppercase tracking-[0.16em] text-zinc-400">
+                    Total
+                  </p>
+
+                  <p
+                    className="m-0 mt-1 text-[30px] font-black leading-none"
+                    style={{ color: settings.primaryColor }}
+                  >
+                    {formatPrice(finalTotal)}
+                  </p>
+
+                  <p className="m-0 mt-1 text-[16px] font-black text-zinc-600">
+                    {cartQuantity} producto{cartQuantity > 1 ? "s" : ""}
+                  </p>
+                </div>
+
+                <button
+                  onClick={goToSummary}
+                  className="flex flex-1 items-center justify-center px-5 text-[23px] font-bold"
+                  style={{
+                    border: "none",
+                    background: settings.primaryColor,
+                    color: "white",
+                  }}
+                >
+                  Ver pedido →
+                </button>
+              </div>
+            </footer>
+          )}
+
         </section>
       ) : step === "summary" ? (
         <section className="p-3 pb-32">
@@ -2692,6 +2727,8 @@ export default function TotemPage() {
     </main>
   );
 }
+
+
 
 
 
