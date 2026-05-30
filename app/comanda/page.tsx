@@ -178,7 +178,27 @@ export default function ComandaPage() {
   const [customerComment, setCustomerComment] = useState("");
   const [sending, setSending] = useState(false);
   const [lastOrderNumber, setLastOrderNumber] = useState<number | null>(null);
+  const [catalogChangeMessage, setCatalogChangeMessage] = useState("");
 
+  function buildCatalogChangeMessage(details: string[]) {
+    const cleanDetails = Array.from(
+      new Set(details.map((item) => item.trim()).filter(Boolean))
+    );
+
+    if (cleanDetails.length === 0) {
+      return "Lo sentimos, una opcion ya no esta disponible. Elige otra opcion para continuar.";
+    }
+
+    if (cleanDetails.length === 1) {
+      return `Lo sentimos, ${cleanDetails[0]} ya no esta disponible. Elige otra opcion para continuar.`;
+    }
+
+    return `Lo sentimos, estas opciones ya no estan disponibles: ${cleanDetails.join(", ")}. Elige otras opciones para continuar.`;
+  }
+
+  function showCatalogChangeMessage(message: string) {
+    setCatalogChangeMessage(message);
+  }
   async function checkSession() {
     try {
       const response = await fetch("/api/comanda/session", {
@@ -196,9 +216,11 @@ export default function ComandaPage() {
     }
   }
 
-  async function loadProducts() {
+  async function loadProducts(showLoading = true) {
     try {
-      setLoadingProducts(true);
+      if (showLoading) {
+        setLoadingProducts(true);
+      }
 
       const response = await fetch("/api/products", {
         cache: "no-store",
@@ -209,10 +231,15 @@ export default function ComandaPage() {
       setProducts(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error(error);
-      alert("No se pudieron cargar productos.");
-      setProducts([]);
+
+      if (showLoading) {
+        alert("No se pudieron cargar productos.");
+        setProducts([]);
+      }
     } finally {
-      setLoadingProducts(false);
+      if (showLoading) {
+        setLoadingProducts(false);
+      }
     }
   }
 
@@ -250,23 +277,22 @@ export default function ComandaPage() {
   useEffect(() => {
     checkSession();
   }, []);
-
-    useEffect(() => {
+  useEffect(() => {
     if (!unlocked) return;
 
     loadProducts();
 
-    const interval = window.setInterval(() => {
-      loadProducts();
-    }, 5000);
+    const productsInterval = window.setInterval(() => {
+      loadProducts(false);
+    }, 3000);
 
     const handleFocus = () => {
-      loadProducts();
+      loadProducts(false);
     };
 
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        loadProducts();
+        loadProducts(false);
       }
     };
 
@@ -274,12 +300,234 @@ export default function ComandaPage() {
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      window.clearInterval(interval);
+      window.clearInterval(productsInterval);
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [unlocked]);
 
+
+  // CATALOG_CART_SYNC_COMANDA
+  useEffect(() => {
+    if (products.length === 0) return;
+
+    if (cart.length > 0) {
+      let changed = false;
+      const removedDetails: string[] = [];
+      const nextCart: CartItem[] = [];
+
+      for (const item of cart) {
+        const latestProduct = products.find(
+          (candidate) =>
+            candidate.id === item.product.id && isProductAvailable(candidate)
+        );
+
+        if (!latestProduct) {
+          changed = true;
+          removedDetails.push(item.product.name);
+          if (editCartItemId === item.localId) {
+            setEditCartItemId(null);
+            setOpenProductId(null);
+          }
+          continue;
+        }
+
+        const activeGroups = getAvailableGroups(latestProduct);
+        const optionContext = new Map<
+          number,
+          { groupId: number; groupName: string; option: ModifierOption }
+        >();
+
+        for (const group of activeGroups) {
+          for (const option of group.template.options) {
+            optionContext.set(option.id, {
+              groupId: group.id,
+              groupName: group.template.name,
+              option,
+            });
+          }
+        }
+
+        const validOptionIds = item.modifierOptionIds.filter((optionId) =>
+          optionContext.has(optionId)
+        );
+
+        if (validOptionIds.length !== item.modifierOptionIds.length) {
+          changed = true;
+
+          const removedOptionLabels = item.modifierOptionIds
+            .filter((optionId) => !validOptionIds.includes(optionId))
+            .map((optionId) => {
+              const oldOption = getOptionsByIds(item.product, [optionId])[0];
+
+              if (oldOption) {
+                const oldGroup = getAvailableGroups(item.product).find((group) =>
+                  group.template.options.some((option) => option.id === optionId)
+                );
+
+                return `${oldGroup?.template.name || "Opcion"}: ${oldOption.name}`;
+              }
+
+              return "Opcion eliminada";
+            });
+
+          removedDetails.push(...removedOptionLabels);
+        }
+
+        let invalidRequiredGroup = false;
+
+        for (const group of activeGroups) {
+          const minRequired = Math.max(
+            Number(group.min || 0),
+            group.required ? 1 : 0
+          );
+          const max = Number(group.max || 0);
+
+          const selectedCount = validOptionIds.filter((optionId) =>
+            group.template.options.some((option) => option.id === optionId)
+          ).length;
+
+          if (selectedCount < minRequired) {
+            invalidRequiredGroup = true;
+            break;
+          }
+
+          if (max > 0 && selectedCount > max) {
+            invalidRequiredGroup = true;
+            break;
+          }
+        }
+
+        if (invalidRequiredGroup) {
+          changed = true;
+          removedDetails.push(item.product.name);
+          if (editCartItemId === item.localId) {
+            setEditCartItemId(null);
+            setOpenProductId(null);
+          }
+          continue;
+        }
+
+        const nextItem: CartItem = {
+          ...item,
+          product: latestProduct,
+          modifierOptionIds: validOptionIds,
+        };
+
+        if (
+          item.product.name !== nextItem.product.name ||
+          item.product.price !== nextItem.product.price ||
+          JSON.stringify(item.modifierOptionIds) !==
+            JSON.stringify(nextItem.modifierOptionIds)
+        ) {
+          changed = true;
+        }
+
+        nextCart.push(nextItem);
+      }
+
+      if (changed) {
+        setCart(nextCart);
+        showCatalogChangeMessage(buildCatalogChangeMessage(removedDetails));
+
+        if (nextCart.length === 0) {
+          setOpenProductId(null);
+          setEditCartItemId(null);
+          setSelectedByProduct({});
+        }
+      }
+    }
+
+    if (openProductId) {
+      const latestOpenProduct = products.find(
+        (candidate) =>
+          candidate.id === openProductId && isProductAvailable(candidate)
+      );
+
+      if (!latestOpenProduct) {
+        setOpenProductId(null);
+        setEditCartItemId(null);
+        setSelectedByProduct((current) => ({
+          ...current,
+          [openProductId]: {},
+        }));
+        showCatalogChangeMessage(
+          "Lo sentimos, este producto ya no esta disponible. Elige otro producto para continuar."
+        );
+        return;
+      }
+
+      const activeGroups = getAvailableGroups(latestOpenProduct);
+      const currentSelection = selectedByProduct[openProductId] || {};
+      const allowedByGroup = new Map<number, Set<number>>();
+
+      for (const group of activeGroups) {
+        allowedByGroup.set(
+          group.id,
+          new Set(group.template.options.map((option) => option.id))
+        );
+      }
+
+      let changedSelection = false;
+      const removedSelectedDetails: string[] = [];
+      const nextSelection: Record<number, number[]> = {};
+
+      for (const [groupIdText, selectedIds] of Object.entries(
+        currentSelection
+      )) {
+        const groupId = Number(groupIdText);
+        const allowedOptions = allowedByGroup.get(groupId);
+
+        if (!allowedOptions) {
+          changedSelection = true;
+          continue;
+        }
+
+        const validIds = selectedIds.filter((optionId) =>
+          allowedOptions.has(optionId)
+        );
+
+        if (validIds.length !== selectedIds.length) {
+          changedSelection = true;
+
+          const originalGroup = getAvailableGroups(
+            products.find((candidate) => candidate.id === openProductId) ||
+              latestOpenProduct
+          ).find((group) => group.id === groupId);
+
+          const removedNames = selectedIds
+            .filter((optionId) => !validIds.includes(optionId))
+            .map((optionId) => {
+              const option = originalGroup?.template.options.find(
+                (item) => item.id === optionId
+              );
+
+              return option
+                ? `${originalGroup?.template.name || "Opcion"}: ${option.name}`
+                : "";
+            })
+            .filter(Boolean);
+
+          removedSelectedDetails.push(...removedNames);
+        }
+
+        if (validIds.length > 0) {
+          nextSelection[groupId] = validIds;
+        }
+      }
+
+      if (changedSelection) {
+        setSelectedByProduct((current) => ({
+          ...current,
+          [openProductId]: nextSelection,
+        }));
+
+        showCatalogChangeMessage(
+          buildCatalogChangeMessage(removedSelectedDetails)
+        );
+      }
+    }
+  }, [products]);
   const availableProducts = useMemo(() => {
     const cleanSearch = normalizeText(search);
 
@@ -655,6 +903,31 @@ export default function ComandaPage() {
         </div>
       </header>
 
+        {catalogChangeMessage && (
+          <div className="fixed inset-0 z-[20000] flex items-center justify-center bg-black/60 px-5">
+            <div className="w-full max-w-xl rounded-[2rem] bg-white p-7 text-center shadow-2xl">
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-red-500">
+                Catalogo actualizado
+              </p>
+
+              <h2 className="mt-3 text-2xl font-black text-zinc-950">
+                Opcion no disponible
+              </h2>
+
+              <p className="mt-4 text-lg font-bold leading-relaxed text-zinc-600">
+                {catalogChangeMessage}
+              </p>
+
+              <button
+                type="button"
+                onClick={() => setCatalogChangeMessage("")}
+                className="mt-7 w-full rounded-2xl bg-[#10B557] py-5 text-xl font-black text-white shadow-lg"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        )}
       <section className="mx-auto max-w-3xl space-y-4 p-4 pb-10">
         <div className="rounded-[2rem] border border-zinc-200 bg-white p-5 shadow-sm">
           <label>
@@ -820,7 +1093,7 @@ export default function ComandaPage() {
                                                 : "border-zinc-300 bg-white text-transparent"
                                             }`}
                                           >
-                                            ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ
+                                            ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“
                                           </span>
                                         </button>
                                       );
