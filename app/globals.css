@@ -549,7 +549,8 @@ body.orientation-booting::after {
   }
 
   .totem-shell > section.grid > section .grid.grid-cols-2 > article p {
-    font-size: 12px !important;
+    font-size: 14px !important;
+    line-height: 1.25 !important;
   }
 
   .totem-shell > section.grid > section .grid.grid-cols-2 > article [style*="color"] {
@@ -590,4 +591,30 @@ body.orientation-booting::after {
 }
 
 /* TOTEM_TABLET_VERTICAL_A9_END */
+
+/* TOTEM_TABLET_VERTICAL_FONT_14_START */
+
+/* Ajuste fino Galaxy Tab A9+ vertical: letras de productos más legibles */
+@media (min-width: 768px) and (max-width: 920px) and (min-height: 1000px) {
+  .totem-shell > section.grid > section .grid.grid-cols-2 > article p {
+    font-size: 14px !important;
+    line-height: 1.28 !important;
+  }
+
+  .totem-shell > section.grid > section .grid.grid-cols-2 > article p[class*="text-[12px]"] {
+    font-size: 14px !important;
+    line-height: 1.28 !important;
+  }
+
+  .totem-shell > section.grid > section .grid.grid-cols-2 > article p[class*="text-[11px]"] {
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+  }
+
+  .totem-shell > section.grid > section .grid.grid-cols-2 > article span {
+    font-size: 11px !important;
+  }
+}
+
+/* TOTEM_TABLET_VERTICAL_FONT_14_END */
 
