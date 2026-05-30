@@ -2652,7 +2652,7 @@ export default function TotemPage() {
                           </h2>
 
                           {product.description ? (
-                            <p className="mt-1 line-clamp-2 min-h-[38px] text-[12px] font-semibold leading-[16px] text-zinc-500">
+                            <p className="mt-1 line-clamp-2 min-h-[42px] text-[14px] font-semibold leading-[18px] text-zinc-500">
                               {product.description}
                             </p>
                           ) : (
@@ -2669,7 +2669,7 @@ export default function TotemPage() {
                               </p>
 
                               {hasModifiers && (
-                                <p className="mt-1 text-[11px] font-black uppercase tracking-wide text-zinc-400">
+                                <p className="mt-1 text-[14px] font-black uppercase tracking-wide text-zinc-400">
                                   Personalizable
                                 </p>
                               )}
@@ -2731,6 +2731,7 @@ export default function TotemPage() {
     </main>
   );
 }
+
 
 
 
