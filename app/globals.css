@@ -1431,3 +1431,81 @@ body.orientation-booting::after {
 }
 
 /* TOTEM_HEADER_FINAL_LIMPIO_END */
+
+/* TOTEM_LOGO_REDONDO_PERFECTO_START */
+
+/* Forzar logo ÜWA 100% circular en el header del tótem */
+.totem-shell .totem-logo-final,
+.totem-shell .totem-header-final .totem-logo-final {
+  width: 68px !important;
+  height: 68px !important;
+  min-width: 68px !important;
+  min-height: 68px !important;
+  max-width: 68px !important;
+  max-height: 68px !important;
+  aspect-ratio: 1 / 1 !important;
+  border-radius: 9999px !important;
+  overflow: hidden !important;
+  background: transparent !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 68px !important;
+}
+
+.totem-shell .totem-logo-img-final,
+.totem-shell .totem-logo-final img,
+.totem-shell .totem-header-final img {
+  width: 68px !important;
+  height: 68px !important;
+  min-width: 68px !important;
+  min-height: 68px !important;
+  max-width: 68px !important;
+  max-height: 68px !important;
+  aspect-ratio: 1 / 1 !important;
+  border-radius: 9999px !important;
+  clip-path: circle(50% at 50% 50%) !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  display: block !important;
+}
+
+/* Tablet vertical real */
+@media (min-width: 760px) and (max-width: 920px) {
+  .totem-shell .totem-logo-final,
+  .totem-shell .totem-header-final .totem-logo-final,
+  .totem-shell .totem-logo-img-final,
+  .totem-shell .totem-logo-final img,
+  .totem-shell .totem-header-final img {
+    width: 62px !important;
+    height: 62px !important;
+    min-width: 62px !important;
+    min-height: 62px !important;
+    max-width: 62px !important;
+    max-height: 62px !important;
+    flex-basis: 62px !important;
+    border-radius: 9999px !important;
+    clip-path: circle(50% at 50% 50%) !important;
+  }
+}
+
+/* Celular */
+@media (max-width: 759px) {
+  .totem-shell .totem-logo-final,
+  .totem-shell .totem-header-final .totem-logo-final,
+  .totem-shell .totem-logo-img-final,
+  .totem-shell .totem-logo-final img,
+  .totem-shell .totem-header-final img {
+    width: 54px !important;
+    height: 54px !important;
+    min-width: 54px !important;
+    min-height: 54px !important;
+    max-width: 54px !important;
+    max-height: 54px !important;
+    flex-basis: 54px !important;
+    border-radius: 9999px !important;
+    clip-path: circle(50% at 50% 50%) !important;
+  }
+}
+
+/* TOTEM_LOGO_REDONDO_PERFECTO_END */
