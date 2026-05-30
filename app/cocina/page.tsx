@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -59,7 +59,7 @@ type BoardKey =
   | "all";
 
 type DateFilter = "today" | "yesterday" | "tomorrow" | "all";
-type ChannelFilter = "all" | "totem" | "online" | "company" | "delivery";
+type ChannelFilter = "all" | "totem" | "online" | "company" | "delivery" | "manual";
 
 const CHILE_TIME_ZONE = "America/Santiago";
 
@@ -156,6 +156,19 @@ function groupModifiers(modifiers: OrderModifier[]) {
   return grouped;
 }
 
+function isManualOrder(order: Order) {
+  const source = normalizeSearchText(order.orderSource);
+  const totemCode = normalizeSearchText(order.totemCode);
+  const comment = normalizeSearchText(order.customerComment);
+
+  return (
+    source === "manual" ||
+    source.includes("manual") ||
+    totemCode.includes("comanda") ||
+    comment.includes("comanda manual")
+  );
+}
+
 function isOnlineOrder(order: Order) {
   return order.orderSource === "online" || order.totemCode === "online";
 }
@@ -183,6 +196,7 @@ function isDeliveryOrder(order: Order) {
 }
 
 function getOrderSourceLabel(order: Order) {
+  if (isManualOrder(order)) return "COMANDA MANUAL";
   if (isCompanyOrder(order)) return "PEDIDO EMPRESA";
   if (isDeliveryOrder(order)) return "DELIVERY / UBER";
   if (isOnlineOrder(order)) return "PEDIDO ONLINE";
@@ -241,6 +255,10 @@ function getCardStyle(order: Order) {
 
   if (isPrintedOrReady(order)) {
     return "border-zinc-200 bg-white opacity-80";
+  }
+
+  if (isManualOrder(order)) {
+    return "border-purple-400 bg-white";
   }
 
   if (isOnlineOrder(order)) {
@@ -754,7 +772,9 @@ export default function CocinaPage() {
         channelFilter === "all"
           ? true
           : channelFilter === "totem"
-          ? !isOnlineOrder(order) && !isCompanyOrder(order) && !isDeliveryOrder(order)
+          ? !isManualOrder(order) && !isOnlineOrder(order) && !isCompanyOrder(order) && !isDeliveryOrder(order)
+          : channelFilter === "manual"
+          ? isManualOrder(order)
           : channelFilter === "online"
           ? isOnlineOrder(order)
           : channelFilter === "company"
@@ -962,6 +982,7 @@ export default function CocinaPage() {
               <option value="online">Online</option>
               <option value="company">Empresa</option>
               <option value="delivery">Delivery/Uber</option>
+              <option value="manual">Comanda manual</option>
             </select>
           </div>
         </div>

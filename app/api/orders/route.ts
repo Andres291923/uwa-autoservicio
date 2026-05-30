@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { calculateWalletBreakdown } from "@/lib/wallet";
 
@@ -99,10 +99,13 @@ function normalizePaymentMethod(value: unknown) {
   if (value === "online") return "online";
   if (value === "mercado_pago") return "mercado_pago";
   if (value === "worker_wallet") return "worker_wallet";
+  if (value === "manual_paid") return "manual_paid";
+  if (value === "manual") return "manual";
   return "unknown";
 }
 
 function normalizeOrderSource(value: unknown) {
+  if (value === "manual" || value === "comanda") return "manual";
   if (value === "online") return "online";
   if (value === "mercado_pago") return "mercado_pago";
   if (value === "company") return "company";
@@ -473,7 +476,7 @@ export async function POST(request: Request) {
     }
 
 
-    if (fulfillmentType !== "scheduled") {
+    if (fulfillmentType !== "scheduled" && orderSource !== "manual") {
       const storeIsOpen = await isStoreOpenNow();
 
       if (!storeIsOpen) {
