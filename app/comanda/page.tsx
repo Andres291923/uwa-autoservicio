@@ -251,10 +251,33 @@ export default function ComandaPage() {
     checkSession();
   }, []);
 
-  useEffect(() => {
-    if (unlocked) {
+    useEffect(() => {
+    if (!unlocked) return;
+
+    loadProducts();
+
+    const interval = window.setInterval(() => {
       loadProducts();
-    }
+    }, 5000);
+
+    const handleFocus = () => {
+      loadProducts();
+    };
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadProducts();
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [unlocked]);
 
   const availableProducts = useMemo(() => {
@@ -797,7 +820,7 @@ export default function ComandaPage() {
                                                 : "border-zinc-300 bg-white text-transparent"
                                             }`}
                                           >
-                                            ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“
+                                            ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ
                                           </span>
                                         </button>
                                       );
