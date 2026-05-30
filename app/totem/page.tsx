@@ -1426,7 +1426,7 @@ export default function TotemPage() {
               ¿Le sumamos una bebida?
             </h2>
 
-            <p className="mt-2 text-base font-bold text-zinc-500">
+            <p className="totem-builder-subtitle mt-2 text-base font-bold text-zinc-500">
               Queda perfecto con tu bowl y sube tu experiencia.
             </p>
 
@@ -1495,7 +1495,7 @@ export default function TotemPage() {
                   INGRESA
                 </h2>
 
-                <p className="mt-2 text-base font-bold text-zinc-500">
+                <p className="totem-builder-subtitle mt-2 text-base font-bold text-zinc-500">
                   Usa tu correo y PIN rapido de 4 digitos.
                 </p>
               </div>
@@ -1667,7 +1667,7 @@ export default function TotemPage() {
               Tienda cerrada
             </p>
 
-            <h2 className="mt-3 text-2xl font-black">
+            <h2 className="totem-builder-price mt-3 text-2xl font-black">
               No puedes hacer pedidos inmediatos en este horario.
             </h2>
 
@@ -1692,41 +1692,41 @@ export default function TotemPage() {
         </div>
       )}
       {selectedProduct ? (
-        <section className="p-3 pb-32">
-          <div className="mx-auto max-w-6xl rounded-[2rem] border border-white bg-white p-4 shadow-[0_18px_55px_rgba(15,23,42,0.10)] ring-1 ring-black/5">
-            <div className="mb-5 grid gap-4 rounded-[2rem] bg-[#f7f8f4] p-4 md:grid-cols-[1fr_260px]">
+        <section className="totem-builder-section p-3 pb-32">
+          <div className="totem-builder-card mx-auto max-w-6xl rounded-[2rem] border border-white bg-white p-4 shadow-[0_18px_55px_rgba(15,23,42,0.10)] ring-1 ring-black/5">
+            <div className="totem-builder-hero mb-5 grid gap-4 rounded-[2rem] bg-[#f7f8f4] p-4 md:grid-cols-[1fr_260px]">
               <div>
                 <button
                   onClick={closeProductBuilder}
-                  className="mb-4 rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm font-black shadow-sm"
+                  className="totem-builder-back mb-4 rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm font-black shadow-sm"
                 >
                   ← Volver
                 </button>
 
                 <p
-                  className="text-xs font-black uppercase tracking-[0.2em]"
+                  className="totem-builder-kicker text-xs font-black uppercase tracking-[0.2em]"
                   style={{ color: settings.primaryColor }}
                 >
                   Producto seleccionado
                 </p>
 
-                <h2 className="mt-2 text-4xl font-black leading-none tracking-[-0.04em]">
+                <h2 className="totem-builder-title mt-2 text-4xl font-black leading-none tracking-[-0.04em]">
                   {selectedProduct.name}
                 </h2>
 
-                <p className="mt-2 text-base font-bold text-zinc-500">
+                <p className="totem-builder-subtitle mt-2 text-base font-bold text-zinc-500">
                   Arma tu combinación perfecta 😍
                 </p>
 
                 <p
-                  className="mt-3 text-2xl font-black"
+                  className="totem-builder-price mt-3 text-2xl font-black"
                   style={{ color: settings.primaryColor }}
                 >
                   {formatPrice(selectedProduct.price)}
                 </p>
               </div>
 
-              <div className="flex min-h-[190px] items-center justify-center rounded-[1.7rem] bg-white shadow-inner">
+              <div className="totem-builder-product-image flex min-h-[190px] items-center justify-center rounded-[1.7rem] bg-white shadow-inner">
                 {selectedProduct.imageUrl ? (
                   <img
                     src={selectedProduct.imageUrl}
@@ -1742,7 +1742,7 @@ export default function TotemPage() {
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="totem-modifier-list space-y-4">
               {activeModifierGroups.map((group) => {
                 const selectedIds = selectedOptionsByGroup[group.id] || [];
                 const min = getEffectiveMin(group);
@@ -1754,19 +1754,19 @@ export default function TotemPage() {
                 return (
                   <section
                     key={group.id}
-                    className={`rounded-3xl border p-4 ${
+                    className={`totem-modifier-group rounded-3xl border p-4 ${
                       valid
                         ? "border-zinc-200 bg-white"
                         : "border-yellow-300 bg-yellow-50"
                     }`}
                   >
-                    <div className="mb-4 flex items-start justify-between gap-3">
+                    <div className="totem-modifier-group-header mb-4 flex items-start justify-between gap-3">
                       <div>
-                        <h3 className="text-xl font-black">
+                        <h3 className="totem-modifier-title text-xl font-black">
                           {group.template.name}
                         </h3>
 
-                        <p className="mt-1 text-base font-bold text-zinc-500">
+                        <p className="totem-modifier-meta mt-1 text-base font-bold text-zinc-500">
                           Seleccionadas: {selectedIds.length}
                           {max > 0 ? `/${max}` : ""} {"\u00B7"} Mínimo: {min}
 {group.required ? " · Obligatorio" : " · Opcional"}
@@ -1774,13 +1774,13 @@ export default function TotemPage() {
                       </div>
 
                       {!valid && (
-                        <span className="rounded-full bg-yellow-200 px-3 py-1 text-xs font-black text-yellow-800">
+                        <span className="totem-modifier-alert rounded-full bg-yellow-200 px-3 py-1 text-xs font-black text-yellow-800">
                           Falta seleccionar
                         </span>
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                    <div className="totem-modifier-options-grid grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                       {group.template.options.map((option) => {
                         const selected = selectedIds.includes(option.id);
 
@@ -1789,7 +1789,7 @@ export default function TotemPage() {
                             key={option.id}
                             type="button"
                             onClick={() => toggleOption(group, option.id)}
-                            className="relative rounded-2xl border bg-white p-3 text-center transition"
+                            className="totem-modifier-option-card relative rounded-2xl border bg-white p-3 text-center transition"
                             style={{
                               minHeight: "190px",
                               borderColor: selected
@@ -1800,13 +1800,13 @@ export default function TotemPage() {
                                 : "0 1px 3px rgba(0,0,0,0.05)",
                             }}
                           >
-                            <div className="flex h-full flex-col items-center justify-start gap-2">
-                              <div className="flex h-[104px] w-[128px] items-center justify-center overflow-hidden bg-transparent">
+                            <div className="totem-modifier-option-inner flex h-full flex-col items-center justify-start gap-2">
+                              <div className="totem-modifier-option-imagebox flex h-[104px] w-[128px] items-center justify-center overflow-hidden bg-transparent">
                                 {option.imageUrl ? (
                                   <img
                                     src={option.imageUrl}
                                     alt={option.name}
-                                    className="block h-auto max-h-[96px] w-auto max-w-[118px] object-contain"
+                                    className="totem-modifier-option-image block h-auto max-h-[96px] w-auto max-w-[118px] object-contain"
                                   />
                                 ) : (
                                   <span className="text-2xl font-black text-zinc-400">
@@ -1815,13 +1815,13 @@ export default function TotemPage() {
                                 )}
                               </div>
 
-                              <p className="w-full break-words text-[15px] font-black leading-[18px] text-zinc-950">
+                              <p className="totem-modifier-option-name w-full break-words text-[15px] font-black leading-[18px] text-zinc-950">
                                 {option.name}
                               </p>
 
                               {option.price > 0 && (
                                 <p
-                                  className="text-xs font-black"
+                                  className="totem-modifier-option-price text-xs font-black"
                                   style={{ color: settings.primaryColor }}
                                 >
                                   + {formatPrice(option.price)}
@@ -1830,7 +1830,7 @@ export default function TotemPage() {
                             </div>
 
                             <div
-                              className="absolute right-3 top-3 flex h-[26px] w-[26px] items-center justify-center rounded-full text-sm font-black text-white"
+                              className="totem-modifier-check absolute right-3 top-3 flex h-[26px] w-[26px] items-center justify-center rounded-full text-sm font-black text-white"
                               style={{
                                 border: selected
                                   ? "none"
@@ -1851,7 +1851,7 @@ export default function TotemPage() {
               })}
             </div>
 
-            <div className="mt-5 rounded-3xl border border-zinc-200 bg-zinc-50 p-4">
+            <div className="totem-builder-comment mt-5 rounded-3xl border border-zinc-200 bg-zinc-50 p-4">
               <label className="block">
                 <span className="text-xs font-black uppercase tracking-[0.18em] text-zinc-500">
                   Comentario para cocina
@@ -1873,7 +1873,7 @@ export default function TotemPage() {
               </label>
             </div>
 
-            <div className="sticky bottom-2 mt-3 rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-lg">
+            <div className="totem-builder-footer sticky bottom-2 mt-3 rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-lg">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.15em] text-zinc-400">
@@ -1940,7 +1940,7 @@ export default function TotemPage() {
 
         </section>
       ) : step === "summary" ? (
-        <section className="p-3 pb-32">
+        <section className="totem-builder-section p-3 pb-32">
           <div className="mx-auto max-w-3xl rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-2xl font-black">Resumen compra</h2>
@@ -2041,7 +2041,7 @@ export default function TotemPage() {
 </span>
 </div>
 
-                    <p className="mt-1 text-base font-bold text-zinc-500">
+                    <p className="totem-modifier-meta mt-1 text-base font-bold text-zinc-500">
                       {tipPercent}% sugerido: {formatPrice(Math.round(cartTotal * (tipPercent / 100)))}
                     </p>
                   </div>
@@ -2096,7 +2096,7 @@ export default function TotemPage() {
           </div>
         </section>
       ) : step === "customer" ? (
-        <section className="p-3 pb-32">
+        <section className="totem-builder-section p-3 pb-32">
           <div className="mx-auto max-w-2xl rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-2xl font-black">Datos del pedido</h2>
@@ -2132,7 +2132,7 @@ export default function TotemPage() {
                   className="mt-3 w-full rounded-2xl border border-zinc-300 px-5 py-4 text-2xl font-black outline-none"
                 />
 
-                <p className="mt-2 text-base font-bold text-zinc-500">
+                <p className="totem-builder-subtitle mt-2 text-base font-bold text-zinc-500">
                   Este nombre aparecera en cocina y en la comanda.
                 </p>
               </label>
@@ -2187,12 +2187,12 @@ export default function TotemPage() {
           </div>
         </section>
       ) : step === "payment" ? (
-        <section className="p-3 pb-32">
+        <section className="totem-builder-section p-3 pb-32">
           <div className="mx-auto max-w-2xl rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-black">Elige medio de pago</h2>
-                <p className="mt-1 text-base font-bold text-zinc-500">
+                <p className="totem-modifier-meta mt-1 text-base font-bold text-zinc-500">
                   Selecciona cómo pagará el cliente.
                 </p>
               </div>
@@ -2360,7 +2360,7 @@ export default function TotemPage() {
 
                     <h3 className="text-2xl font-black">Débito / Crédito</h3>
 
-                    <p className="mt-2 text-base font-bold text-zinc-500">
+                    <p className="totem-builder-subtitle mt-2 text-base font-bold text-zinc-500">
                       Pago con tarjeta bancaria en terminal.
                     </p>
                   </div>
@@ -2416,7 +2416,7 @@ export default function TotemPage() {
                       Beneficio alimentación
                     </h3>
 
-                    <p className="mt-2 text-base font-bold text-zinc-500">
+                    <p className="totem-builder-subtitle mt-2 text-base font-bold text-zinc-500">
                       Edenred, Pluxee
                     </p>
                   </div>
@@ -2543,7 +2543,7 @@ export default function TotemPage() {
                     Arma tu bowl perfecto 😍
                   </h2>
 
-                  <p className="mt-2 text-base font-bold text-zinc-500">
+                  <p className="totem-builder-subtitle mt-2 text-base font-bold text-zinc-500">
                     Elige tus ingredientes favoritos y nosotros lo preparamos al momento.
                   </p>
                 </div>
@@ -2553,7 +2553,7 @@ export default function TotemPage() {
             </div>
             {loading && (
               <div className="rounded-3xl bg-zinc-50 p-10 text-center">
-                <p className="text-xl font-black">Cargando productos...</p>
+                <p className="totem-modifier-title text-xl font-black">Cargando productos...</p>
               </div>
             )}
 
