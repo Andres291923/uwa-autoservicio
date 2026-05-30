@@ -618,3 +618,177 @@ body.orientation-booting::after {
 
 /* TOTEM_TABLET_VERTICAL_FONT_14_END */
 
+/* TOTEM_TABLET_VERTICAL_LISTA_MOBILE_START */
+
+/* Galaxy Tab A9+ vertical: usar estilo tipo celular/lista premium */
+@media (min-width: 768px) and (max-width: 920px) and (min-height: 1000px) {
+  .totem-shell {
+    padding-bottom: 132px !important;
+  }
+
+  .totem-shell > section.grid {
+    display: block !important;
+  }
+
+  .totem-shell > section.grid > aside {
+    position: static !important;
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 14px !important;
+    padding: 12px 24px 10px !important;
+    margin: 0 !important;
+    background: #f7f8f4 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+  }
+
+  .totem-shell > section.grid > aside h2 {
+    display: none !important;
+  }
+
+  .totem-shell > section.grid > aside button {
+    flex: 0 0 auto !important;
+    min-width: 150px !important;
+    height: 52px !important;
+    border-radius: 999px !important;
+    padding: 0 24px !important;
+    font-size: 15px !important;
+    font-weight: 900 !important;
+  }
+
+  .totem-shell > section.grid > aside button span:first-child {
+    display: none !important;
+  }
+
+  .totem-shell > section.grid > section {
+    padding: 12px 28px 160px !important;
+  }
+
+  .totem-shell > section.grid > section > div:first-child {
+    margin-bottom: 22px !important;
+    padding: 26px 30px !important;
+    border-radius: 32px !important;
+  }
+
+  .totem-shell > section.grid > section > div:first-child p:first-child {
+    font-size: 13px !important;
+    letter-spacing: 0.24em !important;
+    line-height: 1.4 !important;
+  }
+
+  .totem-shell > section.grid > section > div:first-child h2 {
+    font-size: 52px !important;
+    line-height: 1.02 !important;
+    letter-spacing: -0.05em !important;
+  }
+
+  .totem-shell > section.grid > section > div:first-child p:last-child {
+    font-size: 24px !important;
+    line-height: 1.35 !important;
+  }
+
+  /* Productos como lista grande tipo celular */
+  .totem-shell > section.grid > section .grid.grid-cols-2 {
+    grid-template-columns: 1fr !important;
+    gap: 18px !important;
+  }
+
+  .totem-shell > section.grid > section .grid.grid-cols-2 > article {
+    min-height: 238px !important;
+    border-radius: 32px !important;
+  }
+
+  .totem-shell > section.grid > section .grid.grid-cols-2 > article > button {
+    height: 238px !important;
+    display: grid !important;
+    grid-template-columns: 245px minmax(0, 1fr) !important;
+    align-items: stretch !important;
+    padding: 42px 22px 20px !important;
+    text-align: left !important;
+  }
+
+  .totem-shell > section.grid > section .grid.grid-cols-2 > article > button > div:first-child {
+    height: 150px !important;
+    min-height: 150px !important;
+    margin: 0 !important;
+    align-self: center !important;
+    border-radius: 26px !important;
+  }
+
+  .totem-shell > section.grid > section .grid.grid-cols-2 > article > button > div:first-child img {
+    max-height: 140px !important;
+    max-width: 88% !important;
+  }
+
+  .totem-shell > section.grid > section .grid.grid-cols-2 > article > button > div:nth-child(2) {
+    padding: 0 8px 0 24px !important;
+    justify-content: center !important;
+  }
+
+  .totem-shell > section.grid > section .grid.grid-cols-2 > article h2 {
+    min-height: auto !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+    font-size: 34px !important;
+    line-height: 1.05 !important;
+    letter-spacing: -0.02em !important;
+  }
+
+  .totem-shell > section.grid > section .grid.grid-cols-2 > article p {
+    text-align: left !important;
+    font-size: 19px !important;
+    line-height: 1.3 !important;
+  }
+
+  .totem-shell > section.grid > section .grid.grid-cols-2 > article p[class*="text-[14px]"],
+  .totem-shell > section.grid > section .grid.grid-cols-2 > article p[class*="text-[12px]"],
+  .totem-shell > section.grid > section .grid.grid-cols-2 > article p[class*="text-[11px]"] {
+    font-size: 19px !important;
+    line-height: 1.3 !important;
+  }
+
+  .totem-shell > section.grid > section .grid.grid-cols-2 > article [style*="color"] {
+    font-size: 46px !important;
+    line-height: 1 !important;
+  }
+
+  .totem-shell > section.grid > section .grid.grid-cols-2 > article span {
+    font-size: 13px !important;
+  }
+
+  .totem-shell > section.grid > section .grid.grid-cols-2 > article button div[style*="background"] {
+    width: 74px !important;
+    height: 74px !important;
+    min-width: 74px !important;
+    border-radius: 22px !important;
+    font-size: 44px !important;
+  }
+
+  .totem-shell footer {
+    padding: 12px 28px !important;
+  }
+
+  .totem-shell footer > div {
+    max-width: none !important;
+    min-height: 96px !important;
+    border-radius: 30px !important;
+  }
+
+  .totem-shell footer p:first-child {
+    font-size: 13px !important;
+  }
+
+  .totem-shell footer p[style*="color"] {
+    font-size: 40px !important;
+  }
+
+  .totem-shell footer button {
+    font-size: 28px !important;
+    font-weight: 700 !important;
+  }
+}
+
+/* TOTEM_TABLET_VERTICAL_LISTA_MOBILE_END */
+
