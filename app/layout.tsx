@@ -14,12 +14,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "UWA Autoservicio",
-  description: "Sistema de autoservicio UWA",
+  title: "ÜWA Autoservicio",
+  description: "Sistema de autoservicio ÜWA",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    title: "ÃƒÅ“WA",
+    title: "ÜWA",
     statusBarStyle: "default",
   },
   icons: {
