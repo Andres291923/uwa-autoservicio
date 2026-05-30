@@ -414,3 +414,180 @@ body.orientation-booting::after {
 }
 /* TOTEM_MENU_SIN_SOLAPAR_END */
 
+/* TOTEM_TABLET_VERTICAL_A9_START */
+
+/* Galaxy Tab A9+ vertical / tótem real del local */
+@media (min-width: 768px) and (max-width: 920px) and (min-height: 1000px) {
+  .totem-shell {
+    padding-bottom: 132px !important;
+  }
+
+  .totem-shell > header {
+    padding: 8px 14px !important;
+  }
+
+  .totem-shell > header > div {
+    height: 68px !important;
+  }
+
+  .totem-shell > header h1 {
+    max-width: 310px !important;
+    font-size: 25px !important;
+    line-height: 1 !important;
+  }
+
+  .totem-shell > header p {
+    font-size: 9px !important;
+    letter-spacing: 0.16em !important;
+  }
+
+  .totem-shell > header button > div {
+    height: 50px !important;
+    min-width: 275px !important;
+    border-radius: 14px !important;
+  }
+
+  .totem-shell > section.grid {
+    display: block !important;
+    min-height: auto !important;
+  }
+
+  .totem-shell > section.grid > aside {
+    position: static !important;
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 12px !important;
+    padding: 12px 18px 8px !important;
+    margin: 0 !important;
+    background: #f7f8f4 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+  }
+
+  .totem-shell > section.grid > aside h2 {
+    display: none !important;
+  }
+
+  .totem-shell > section.grid > aside button {
+    flex: 0 0 auto !important;
+    min-width: 136px !important;
+    height: 48px !important;
+    padding: 0 20px !important;
+    border-radius: 999px !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
+  }
+
+  .totem-shell > section.grid > aside button span:first-child {
+    display: none !important;
+  }
+
+  .totem-shell > section.grid > section {
+    padding: 10px 18px 150px !important;
+  }
+
+  .totem-shell > section.grid > section > div:first-child {
+    margin-bottom: 14px !important;
+    padding: 18px 22px !important;
+    border-radius: 26px !important;
+  }
+
+  .totem-shell > section.grid > section > div:first-child p:first-child {
+    font-size: 10px !important;
+    letter-spacing: 0.22em !important;
+    line-height: 1.4 !important;
+  }
+
+  .totem-shell > section.grid > section > div:first-child h2 {
+    font-size: 34px !important;
+    line-height: 1.02 !important;
+    letter-spacing: -0.04em !important;
+  }
+
+  .totem-shell > section.grid > section > div:first-child p:last-child {
+    font-size: 15px !important;
+    line-height: 1.35 !important;
+  }
+
+  .totem-shell > section.grid > section .grid.grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+
+  .totem-shell > section.grid > section .grid.grid-cols-2 > article {
+    min-height: 385px !important;
+    border-radius: 28px !important;
+  }
+
+  .totem-shell > section.grid > section .grid.grid-cols-2 > article > button {
+    height: 385px !important;
+    padding-top: 42px !important;
+  }
+
+  .totem-shell > section.grid > section .grid.grid-cols-2 > article > button > div:first-child {
+    height: 142px !important;
+    min-height: 142px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .totem-shell > section.grid > section .grid.grid-cols-2 > article > button > div:first-child img {
+    max-height: 128px !important;
+    max-width: 86% !important;
+  }
+
+  .totem-shell > section.grid > section .grid.grid-cols-2 > article > button > div:nth-child(2) {
+    padding: 10px 16px 18px !important;
+  }
+
+  .totem-shell > section.grid > section .grid.grid-cols-2 > article h2 {
+    min-height: 44px !important;
+    font-size: 22px !important;
+    line-height: 1.05 !important;
+    letter-spacing: -0.02em !important;
+  }
+
+  .totem-shell > section.grid > section .grid.grid-cols-2 > article p {
+    font-size: 12px !important;
+  }
+
+  .totem-shell > section.grid > section .grid.grid-cols-2 > article [style*="color"] {
+    font-size: 34px !important;
+    line-height: 1 !important;
+  }
+
+  .totem-shell > section.grid > section .grid.grid-cols-2 > article button div[style*="background"] {
+    width: 58px !important;
+    height: 58px !important;
+    min-width: 58px !important;
+    border-radius: 19px !important;
+    font-size: 36px !important;
+  }
+
+  .totem-shell footer {
+    padding: 10px 18px !important;
+  }
+
+  .totem-shell footer > div {
+    max-width: none !important;
+    min-height: 84px !important;
+    border-radius: 26px !important;
+  }
+
+  .totem-shell footer p:first-child {
+    font-size: 11px !important;
+  }
+
+  .totem-shell footer p[style*="color"] {
+    font-size: 32px !important;
+  }
+
+  .totem-shell footer button {
+    font-size: 21px !important;
+    font-weight: 700 !important;
+  }
+}
+
+/* TOTEM_TABLET_VERTICAL_A9_END */
+
