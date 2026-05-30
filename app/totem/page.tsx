@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import TotemCompanyWorkerSessionBadge from "./TotemCompanyWorkerSessionBadge";
 
@@ -1314,15 +1314,15 @@ export default function TotemPage() {
 
       {/* BADGE_WORKER_ROOT */}
       <TotemCompanyWorkerSessionBadge />
-      <header className="sticky top-0 z-40 border-b border-emerald-100 bg-white/95 px-4 py-2 shadow-[0_8px_30px_rgba(16,181,87,0.08)] backdrop-blur">
-        <div className="flex h-[84px] items-center justify-between gap-3">
-          <div className="flex min-w-0 flex-1 items-center gap-3">
-            <div className="flex h-[62px] w-[62px] min-w-[62px] items-center justify-center overflow-hidden rounded-2xl bg-zinc-100">
+      <header className="totem-header-final sticky top-0 z-40 border-b border-emerald-100 bg-white/95 shadow-[0_8px_30px_rgba(16,181,87,0.08)] backdrop-blur">
+        <div className="totem-header-final-inner">
+          <div className="totem-header-brand-final">
+            <div className="totem-logo-final">
               {settings.logoUrl ? (
                 <img
                   src={settings.logoUrl}
                   alt={settings.businessName}
-                  className="block h-auto max-h-[52px] w-auto max-w-[52px] object-contain"
+                  className="totem-logo-img-final"
                 />
               ) : (
                 <span className="text-sm font-black text-zinc-400">
@@ -1331,36 +1331,21 @@ export default function TotemPage() {
               )}
             </div>
 
-            <div className="min-w-0 flex-1">
-              <p
-                className="truncate text-[11px] font-black uppercase tracking-[0.16em]"
-                style={{ color: settings.primaryColor }}
-              >
-                {settings.businessName} {settings.kioskSubtitle}
-              </p>
-
-              <h1 className="truncate text-[34px] font-black leading-none tracking-tight">
-                {selectedProduct
-                  ? "Personaliza tu producto"
-                  : step === "summary"
-                  ? "Resumen de compra"
-                  : step === "customer"
-                  ? "Datos del pedido"
-                  : step === "payment"
-                  ? "Medio de pago"
-                  : settings.kioskTitle}
-              </h1>
-            </div>
+            <p className="totem-brand-slogan-final" style={{ color: settings.primaryColor }}>
+              <span>ÜWA TE ACOMPAÑA A TU RITMO</span>
+              <span className="totem-brand-heart-final">♥</span>
+            </p>
           </div>
+
           {identifiedCustomer ? (
             <div className="shrink-0">
-              <div className="flex h-[44px] min-w-[270px] items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 shadow-sm">
+              <div className="flex h-[54px] min-w-[260px] items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 shadow-sm">
                 <div className="min-w-0 text-left">
                   <p className="truncate text-[10px] font-medium uppercase tracking-[0.08em] text-emerald-700">
                     Hola, {identifiedCustomer.name}
                   </p>
 
-                  <p className="mt-0.5 text-[14px] font-semibold leading-none text-[#10B557]">
+                  <p className="mt-0.5 text-[15px] font-black leading-none text-[#10B557]">
                     {formatPrice(identifiedCustomer.walletBalance)}
                   </p>
                 </div>
@@ -1368,9 +1353,9 @@ export default function TotemPage() {
                 <button
                   type="button"
                   onClick={resetIdentifiedCustomer}
-                  className="rounded-lg bg-white px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.04em] text-zinc-600 shadow-sm active:"
+                  className="rounded-xl bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.04em] text-zinc-600 shadow-sm active:scale-[0.98]"
                 >
-                  Cerrar sesión
+                  Cerrar
                 </button>
               </div>
             </div>
@@ -1378,17 +1363,10 @@ export default function TotemPage() {
             <button
               type="button"
               onClick={() => openTotemAuth("login")}
-              className="shrink-0 active:"
+              className="totem-login-button-final shrink-0 active:scale-[0.98]"
             >
-              <div className="flex h-[56px] min-w-[290px] items-center justify-center gap-2 rounded-xl bg-[#10B557] px-4 text-white shadow-sm">
-                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-white/20 text-xs font-semibold">
-                  $
-                </span>
-
-                <span className="whitespace-nowrap text-[14px] font-black uppercase tracking-[0.04em]">
-                  Ingresa y gana cashback
-                </span>
-              </div>
+              <span className="totem-login-icon-final">↪</span>
+              <span className="totem-login-text-final">INGRESA</span>
             </button>
           )}
         </div>
@@ -1514,7 +1492,7 @@ export default function TotemPage() {
                 </p>
 
                 <h2 className="mt-2 text-2xl font-black">
-                  Ingresa y gana cashback
+                  INGRESA
                 </h2>
 
                 <p className="mt-2 text-base font-bold text-zinc-500">
@@ -2557,13 +2535,9 @@ export default function TotemPage() {
           <section className="min-w-0 overflow-x-hidden bg-[#f7f8f4] p-4 pb-48">
             <div className="mb-4 overflow-hidden rounded-[2rem] bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
               <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p
-                    className="text-[11px] font-black uppercase tracking-[0.25em]"
-                    style={{ color: settings.primaryColor }}
-                  >
-                    Bowls frescos · rápidos · al momento
-                  </p>
+                <div>              <p className="text-[11px] font-black uppercase tracking-[0.25em] text-[#009f45]">
+                BOWLS FRESCOS · RÁPIDOS · AL MOMENTO
+              </p>
 
                   <h2 className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-zinc-950">
                     Arma tu bowl perfecto 😍
@@ -2731,6 +2705,9 @@ export default function TotemPage() {
     </main>
   );
 }
+
+
+
 
 
 
