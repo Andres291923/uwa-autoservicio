@@ -2497,7 +2497,22 @@ export default function TotemPage() {
             <h2 className="mb-3 px-1 text-[11px] font-black uppercase tracking-[0.18em] text-zinc-400">
               Categorías
             </h2>
-<div className="space-y-2">
+<div className="totem-category-menu space-y-2">
+                            <button
+                type="button"
+                onClick={() => {
+                  window.location.href = "/";
+                }}
+                aria-label="Volver a pantalla de reposo"
+                title="Volver a pantalla de reposo"
+                className="totem-idle-return-button"
+              >
+                <img
+                  src="/icons/flecha-reposo-uwa.svg?v=1"
+                  alt=""
+                  className="totem-idle-return-img"
+                />
+              </button>
               <button
                 onClick={() => setSelectedCategoryId("all")}
                 className="w-full rounded-2xl px-3 py-5 text-center text-[15px] font-black uppercase leading-tight"
