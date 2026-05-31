@@ -1413,16 +1413,16 @@ export default function TotemPage() {
       )}
 
       {upsellVisible && (
-        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-black/55 px-5">
-          <div className="w-full max-w-3xl rounded-[2rem] bg-white p-6 text-center shadow-2xl">
+        <div className="totem-upsell-overlay fixed inset-0 z-[11000] flex items-center justify-center bg-black/55 px-5">
+          <div className="totem-upsell-modal w-full max-w-3xl rounded-[2rem] bg-white p-6 text-center shadow-2xl">
             <p
-              className="text-xs font-black uppercase tracking-[0.25em]"
+              className="totem-upsell-kicker text-xs font-black uppercase tracking-[0.25em]"
               style={{ color: settings.primaryColor }}
             >
               Antes de pagar 😍
             </p>
 
-            <h2 className="mt-2 text-4xl font-black tracking-[-0.05em]">
+            <h2 className="totem-upsell-title mt-2 text-4xl font-black tracking-[-0.05em]">
               ¿Le sumamos una bebida?
             </h2>
 
@@ -1450,7 +1450,7 @@ export default function TotemPage() {
                     )}
                   </div>
 
-                  <h3 className="mt-3 min-h-[42px] text-base font-black leading-tight">
+                  <h3 className="totem-upsell-product-name mt-3 min-h-[42px] text-base font-black leading-tight">
                     {product.name}
                   </h3>
 
@@ -1462,7 +1462,7 @@ export default function TotemPage() {
                   </p>
 
                   <div
-                    className="mt-3 rounded-2xl py-3 text-sm font-black text-white"
+                    className="totem-upsell-add-button mt-3 rounded-2xl py-3 text-sm font-black text-white"
                     style={{ background: settings.primaryColor }}
                   >
                     Agregar
@@ -1474,7 +1474,7 @@ export default function TotemPage() {
             <button
               type="button"
               onClick={continueWithoutUpsell}
-              className="mt-5 w-full rounded-2xl border border-zinc-200 bg-white py-4 text-sm font-black text-zinc-600"
+              className="totem-upsell-skip mt-5 w-full rounded-2xl border border-zinc-200 bg-white py-4 text-sm font-black text-zinc-600"
             >
               No gracias, continuar al resumen
             </button>
