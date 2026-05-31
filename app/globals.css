@@ -1884,3 +1884,104 @@ body.orientation-booting::after {
 }
 
 /* TOTEM_IDLE_RETURN_BUTTON_END */
+
+/* IDLE_SCREEN_LOGO_BUTTON_START */
+
+/* Pantalla de reposo: logo ÜWA arriba izquierda sin tocar app/page.tsx */
+body:has(a[href="/totem"])::before,
+body:has(a[href="/totem/"])::before {
+  content: "" !important;
+  position: fixed !important;
+  top: calc(env(safe-area-inset-top, 0px) + 22px) !important;
+  left: calc(env(safe-area-inset-left, 0px) + 22px) !important;
+  width: 86px !important;
+  height: 86px !important;
+  border-radius: 9999px !important;
+  background-image: url("/icons/uwa-app-icon-v3.png?v=3") !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  z-index: 80 !important;
+  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.16)) !important;
+  pointer-events: none !important;
+}
+
+/* Subir el botón PIDE AQUÍ aprox 3 cm */
+body:has(a[href="/totem"]) a[href="/totem"],
+body:has(a[href="/totem/"]) a[href="/totem/"] {
+  transform: translateY(-115px) !important;
+}
+
+/* Tablet vertical */
+@media (min-width: 760px) and (max-width: 920px) and (min-height: 1000px) {
+  body:has(a[href="/totem"])::before,
+  body:has(a[href="/totem/"])::before {
+    top: calc(env(safe-area-inset-top, 0px) + 22px) !important;
+    left: calc(env(safe-area-inset-left, 0px) + 22px) !important;
+    width: 78px !important;
+    height: 78px !important;
+  }
+
+  body:has(a[href="/totem"]) a[href="/totem"],
+  body:has(a[href="/totem/"]) a[href="/totem/"] {
+    transform: translateY(-112px) !important;
+  }
+}
+
+/* Celular */
+@media (max-width: 759px) {
+  body:has(a[href="/totem"])::before,
+  body:has(a[href="/totem/"])::before {
+    top: calc(env(safe-area-inset-top, 0px) + 16px) !important;
+    left: calc(env(safe-area-inset-left, 0px) + 16px) !important;
+    width: 64px !important;
+    height: 64px !important;
+  }
+
+  body:has(a[href="/totem"]) a[href="/totem"],
+  body:has(a[href="/totem/"]) a[href="/totem/"] {
+    transform: translateY(-92px) !important;
+  }
+}
+
+/* IDLE_SCREEN_LOGO_BUTTON_END */
+
+/* IDLE_MOOD_START */
+
+/* Pantalla de reposo: solo pulso suave del boton PIDE AQUI, sin frase */
+body:has(a[href="/totem"]) a[href="/totem"],
+body:has(a[href="/totem/"]) a[href="/totem/"] {
+  position: relative !important;
+  animation: idlePulseUwa 2.2s ease-in-out infinite !important;
+  will-change: box-shadow, filter !important;
+}
+
+@keyframes idlePulseUwa {
+  0%, 100% {
+    box-shadow:
+      0 12px 30px rgba(16, 181, 87, 0.28),
+      0 0 0 0 rgba(16, 181, 87, 0.00) !important;
+    filter: brightness(1) !important;
+  }
+  50% {
+    box-shadow:
+      0 16px 34px rgba(16, 181, 87, 0.34),
+      0 0 0 12px rgba(16, 181, 87, 0.14) !important;
+    filter: brightness(1.04) !important;
+  }
+}
+
+/* IDLE_MOOD_END */
+
+/* IDLE_KILL_PHRASE_START */
+
+/* Seguridad final: no mostrar ninguna frase flotante en pantalla de reposo */
+body:has(a[href="/totem"])::after,
+body:has(a[href="/totem/"])::after {
+  content: none !important;
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* IDLE_KILL_PHRASE_END */
