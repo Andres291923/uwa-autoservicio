@@ -1940,7 +1940,7 @@ export default function TotemPage() {
 
         </section>
       ) : step === "summary" ? (
-        <section className="totem-builder-section p-3 pb-32">
+        <section className="totem-summary-section totem-builder-section p-3 pb-32">
           <div className="mx-auto max-w-3xl rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-2xl font-black">Resumen compra</h2>

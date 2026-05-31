@@ -1678,3 +1678,72 @@ body.orientation-booting::after {
 }
 
 /* TOTEM_MODIFICADORES_TABLET_GRANDES_END */
+
+/* TOTEM_SUMMARY_TABLET_BIG_START */
+
+/* Resumen de compra grande y legible para Galaxy Tab A9+ vertical */
+@media (min-width: 760px) and (max-width: 920px) and (min-height: 1000px) {
+  .totem-shell .totem-summary-section {
+    padding: 22px 28px 180px !important;
+  }
+
+  .totem-shell .totem-summary-section > div {
+    width: 100% !important;
+    max-width: none !important;
+    padding: 30px !important;
+    border-radius: 36px !important;
+  }
+
+  .totem-shell .totem-summary-section h2 {
+    font-size: 42px !important;
+    line-height: 1.05 !important;
+    letter-spacing: -0.03em !important;
+  }
+
+  .totem-shell .totem-summary-section article {
+    padding: 28px !important;
+    border-radius: 34px !important;
+  }
+
+  .totem-shell .totem-summary-section article h3 {
+    font-size: 31px !important;
+    line-height: 1.08 !important;
+  }
+
+  .totem-shell .totem-summary-section article p {
+    font-size: 22px !important;
+    line-height: 1.35 !important;
+  }
+
+  .totem-shell .totem-summary-section article p[style*="color"] {
+    font-size: 36px !important;
+    line-height: 1 !important;
+  }
+
+  .totem-shell .totem-summary-section article p[class*="uppercase"] {
+    margin-top: 18px !important;
+    font-size: 18px !important;
+    line-height: 1.2 !important;
+    letter-spacing: 0.13em !important;
+  }
+
+  .totem-shell .totem-summary-section article button {
+    font-size: 18px !important;
+    padding: 13px 20px !important;
+    border-radius: 18px !important;
+  }
+
+  .totem-shell .totem-summary-section > div > div:last-child p[style*="color"] {
+    font-size: 46px !important;
+    line-height: 1 !important;
+  }
+
+  .totem-shell .totem-summary-section button[style*="background"] {
+    min-height: 72px !important;
+    font-size: 24px !important;
+    font-weight: 950 !important;
+    border-radius: 24px !important;
+  }
+}
+
+/* TOTEM_SUMMARY_TABLET_BIG_END */
