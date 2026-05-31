@@ -52,7 +52,7 @@ export default function RootLayout({
       lang="es"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="orientation-booting min-h-full flex flex-col">
+      <body suppressHydrationWarning className="orientation-booting min-h-full flex flex-col">
         <OrientationLock />
         {children}
       </body>

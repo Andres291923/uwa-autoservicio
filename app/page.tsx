@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 
@@ -62,9 +62,14 @@ export default function HomePage() {
 
       {/* Botón inferior */}
       <section className="relative z-10 flex h-dvh w-dvw items-end justify-center px-6 pb-10 sm:pb-14">
-        <a
+                <img
+          src="/icons/uwa-app-icon-v3.png?v=3"
+          alt="ÜWA"
+          className="uwa-idle-logo"
+        />
+<a
   href="/totem"
-  className="inline-flex w-[420px] max-w-[86vw] items-center justify-center rounded-[2rem] px-10 py-5 text-center text-4xl font-black uppercase tracking-tight text-white shadow-[0_20px_50px_rgba(0,0,0,0.50),0_0_45px_rgba(16,181,87,0.70)] ring-2 ring-white/30 transition active:scale-95 whitespace-nowrap"
+  className="uwa-idle-start-button inline-flex w-[420px] max-w-[86vw] items-center justify-center rounded-[2rem] px-10 py-5 text-center text-4xl font-black uppercase tracking-tight text-white shadow-[0_20px_50px_rgba(0,0,0,0.50),0_0_45px_rgba(16,181,87,0.70)] ring-2 ring-white/30 transition active:scale-95 whitespace-nowrap"
   style={{
     background: primaryColor,
   }}
